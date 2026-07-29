@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-navy: #201B62;
+  --color-navy-light: #2D2679;
+  --color-gold: #A8791F;
+  --color-gold-light: #C9952E;
+  --color-gold-dark: #8B6318;
+  --color-ivory: #F5F0E8;
+  --color-cream: #FAF8F4;
+  --color-charcoal: #1A1A2E;
+  --color-stone: #6B7280;
+
+  --font-serif: var(--font-playfair), serif;
+  --font-sans: var(--font-inter), sans-serif;
+
+  --animate-kundali-spin: kundali-spin 60s linear infinite;
+  --animate-kundali-spin-slow: kundali-spin 120s linear infinite;
+  --animate-kundali-spin-reverse: kundali-spin-reverse 80s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes kundali-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes kundali-spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-charcoal font-sans antialiased;
+  }
+
+  ::selection {
+    @apply bg-navy/10 text-navy;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
