@@ -1,60 +1,94 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
-
-const SESSION_KEY = "kutumb_admin_session";
-
-// Mock credential — frontend-only gate, no real auth yet.
-// Replace with real backend-verified auth before going live.
-const ADMIN_EMAIL = "hello@kutumbadvisory.com";
-const ADMIN_PASSWORD = "admin@123";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 interface AdminAuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   adminEmail: string | null;
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextValue | null>(null);
 
+async function isAdminUser(userId: string): Promise<boolean> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("admin_users")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+  return !!data;
+}
+
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
+  const supabase = useMemo(() => createClient(), []);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    // sessionStorage is only available client-side; reading it post-mount
-    // (rather than in a lazy useState initializer) avoids a server/client
-    // hydration mismatch on the first render.
-    const stored = sessionStorage.getItem(SESSION_KEY);
-    if (stored) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsAuthenticated(true);
-      setAdminEmail(stored);
-    }
-    setIsLoading(false);
-  }, []);
+    let active = true;
 
-  const login = useCallback((email: string, password: string) => {
-    if (
-      email.trim().toLowerCase() === ADMIN_EMAIL &&
-      password === ADMIN_PASSWORD
-    ) {
-      sessionStorage.setItem(SESSION_KEY, email.trim());
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.user && (await isAdminUser(session.user.id))) {
+        if (!active) return;
+        setIsAuthenticated(true);
+        setAdminEmail(session.user.email ?? null);
+      }
+      if (active) setIsLoading(false);
+    })();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setIsAuthenticated(false);
+        setAdminEmail(null);
+        return;
+      }
+      const ok = await isAdminUser(session.user.id);
+      setIsAuthenticated(ok);
+      setAdminEmail(ok ? session.user.email ?? null : null);
+    });
+
+    return () => {
+      active = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error || !data.user) return false;
+
+      const ok = await isAdminUser(data.user.id);
+      if (!ok) {
+        await supabase.auth.signOut();
+        return false;
+      }
+
       setIsAuthenticated(true);
-      setAdminEmail(email.trim());
+      setAdminEmail(data.user.email ?? null);
       return true;
-    }
-    return false;
-  }, []);
+    },
+    [supabase]
+  );
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem(SESSION_KEY);
+    supabase.auth.signOut();
     setIsAuthenticated(false);
     setAdminEmail(null);
-  }, []);
+  }, [supabase]);
 
   return (
     <AdminAuthContext.Provider

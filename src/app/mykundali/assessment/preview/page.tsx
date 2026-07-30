@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { CheckCircle2 } from 'lucide-react'
 import { ScoreRing } from '@/components/mykundali/score-ring'
 import { LockedContent } from '@/components/mykundali/locked-content'
 import { PaywallSection } from '@/components/mykundali/paywall-section'
@@ -147,7 +148,7 @@ export default function PreviewPage() {
           <h3 className="font-serif text-xl text-navy mb-4">Recommendations</h3>
           <div className="p-5 bg-white rounded-2xl border border-slate-lighter/20 shadow-card mb-3">
             <div className="flex items-start gap-3">
-              <span className="text-success text-lg mt-0.5">✅</span>
+              <CheckCircle2 className="text-success shrink-0" size={20} strokeWidth={1.75} />
               <div>
                 <p className="font-medium text-charcoal">Emergency Fund</p>
                 <p className="text-sm text-slate mt-1">
@@ -161,7 +162,7 @@ export default function PreviewPage() {
               {[1, 2, 3].map((i) => (
                 <div key={i} className="p-5 bg-white rounded-2xl border border-slate-lighter/20 shadow-card">
                   <div className="flex items-start gap-3">
-                    <span className="text-lg mt-0.5">✅</span>
+                    <CheckCircle2 className="text-stone/40 shrink-0" size={20} strokeWidth={1.75} />
                     <div>
                       <p className="font-medium text-charcoal">Recommendation {i}</p>
                       <p className="text-sm text-slate mt-1">

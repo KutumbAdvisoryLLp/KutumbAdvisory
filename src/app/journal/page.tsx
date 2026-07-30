@@ -1,21 +1,21 @@
 import JournalHero from "@/components/JournalHero";
-import JournalFeatured from "@/components/JournalFeatured";
-import JournalInsights from "@/components/JournalInsights";
-import JournalTopics from "@/components/JournalTopics";
-import JournalPicks from "@/components/JournalPicks";
-import JournalGuides from "@/components/JournalGuides";
+import JournalArticles from "@/components/JournalArticles";
 import JournalCTA from "@/components/JournalCTA";
 import JournalNewsletter from "@/components/JournalNewsletter";
+import { createClient } from "@/lib/supabase/server";
 
-export default function JournalPage() {
+export default async function JournalPage() {
+  const supabase = await createClient();
+  const { data: articles } = await supabase
+    .from("articles")
+    .select("*")
+    .eq("published", true)
+    .order("article_date", { ascending: false });
+
   return (
     <>
       <JournalHero />
-      <JournalFeatured />
-      <JournalInsights />
-      <JournalTopics />
-      <JournalPicks />
-      <JournalGuides />
+      <JournalArticles articles={articles ?? []} />
       <JournalCTA />
       <JournalNewsletter />
     </>

@@ -1,8 +1,32 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
 
 export default function JournalNewsletter() {
+  const supabase = useMemo(() => createClient(), []);
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setStatus("submitting");
+    const { error } = await supabase
+      .from("newsletter_subscribers")
+      .insert({ email: email.trim() });
+
+    if (error) {
+      setStatus("error");
+      return;
+    }
+
+    setEmail("");
+    setStatus("success");
+  };
+
   return (
     <section className="bg-navy py-28 sm:py-36 lg:py-40">
       <div className="mx-auto max-w-3xl px-8 text-center lg:px-10">
@@ -41,22 +65,38 @@ export default function JournalNewsletter() {
             advisory work.
           </p>
 
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="mt-10 mx-auto flex max-w-md flex-col gap-3 sm:flex-row"
-          >
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 rounded-[18px] border border-white/10 bg-white/5 px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-gold/40 focus:bg-white/10"
-            />
-            <button
-              type="submit"
-              className="rounded-[18px] bg-gold px-6 py-3 text-sm font-semibold text-white transition-all duration-500 hover:bg-gold-light hover:shadow-xl hover:shadow-gold/20"
+          {status === "success" ? (
+            <p className="mt-10 font-serif text-lg text-gold">
+              You&apos;re subscribed. Thank you.
+            </p>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="mt-10 mx-auto flex max-w-md flex-col gap-3 sm:flex-row"
             >
-              Subscribe
-            </button>
-          </form>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="flex-1 rounded-[18px] border border-white/10 bg-white/5 px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-all duration-300 focus:border-gold/40 focus:bg-white/10"
+              />
+              <button
+                type="submit"
+                disabled={status === "submitting"}
+                className="rounded-[18px] bg-gold px-6 py-3 text-sm font-semibold text-white transition-all duration-500 hover:bg-gold-light hover:shadow-xl hover:shadow-gold/20 disabled:opacity-60"
+              >
+                {status === "submitting" ? "Subscribing…" : "Subscribe"}
+              </button>
+            </form>
+          )}
+
+          {status === "error" && (
+            <p className="mt-4 text-[12px] text-red-300">
+              Something went wrong — please try again.
+            </p>
+          )}
 
           <p className="mt-4 text-[11px] text-white/20 tracking-wide">
             No spam. Unsubscribe anytime.

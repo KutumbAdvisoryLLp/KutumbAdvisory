@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
+import ConfirmDialog from '@/components/admin/ConfirmDialog'
 
 const KUTUMB_LOGO_URL =
   'https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780312133/tree_qw9bji.png'
@@ -38,7 +39,14 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showRetakeConfirm, setShowRetakeConfirm] = useState(false)
   const { isLoggedIn, hydrated, user, logout } = useMykundaliAuth()
+
+  const confirmRetake = async () => {
+    setShowRetakeConfirm(false)
+    await fetch('/api/mykundali/assessment/retake', { method: 'POST' })
+    router.push('/mykundali/assessment/landing')
+  }
 
   useEffect(() => {
     if (hydrated && !isLoggedIn) {
@@ -63,7 +71,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-cream flex">
       {/* Sidebar (Desktop) */}
-      <aside className="hidden md:flex flex-col w-64 bg-navy p-6 fixed h-screen">
+      <aside className="hidden md:flex flex-col w-64 bg-navy p-6 fixed h-screen print:hidden">
         <Link href="/" className="flex items-center gap-3 mb-1 group">
           <Image
             src={KUTUMB_LOGO_URL}
@@ -104,13 +112,13 @@ export default function DashboardLayout({
         </nav>
 
         <div className="mt-6 pt-6 border-t border-white/10">
-          <Link
-            href="/mykundali/assessment/landing"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gold/80 border border-gold/20 hover:bg-gold/10 hover:text-gold transition-all"
+          <button
+            onClick={() => setShowRetakeConfirm(true)}
+            className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm text-gold/80 border border-gold/20 hover:bg-gold/10 hover:text-gold transition-all text-left"
           >
             <RefreshCw size={16} strokeWidth={1.75} />
             <span>Retake Assessment</span>
-          </Link>
+          </button>
         </div>
 
         <div className="flex-1" />
@@ -136,9 +144,9 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main column */}
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 md:ml-64 print:ml-0 flex flex-col min-h-screen">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-navy/8 px-6 py-4 flex items-center justify-between">
+        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-navy/8 px-6 py-4 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileOpen(true)}
@@ -208,14 +216,16 @@ export default function DashboardLayout({
                   </Link>
                 )
               })}
-              <Link
-                href="/mykundali/assessment/landing"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-4 py-4 mt-2 rounded-xl text-base text-gold/80 border border-gold/20"
+              <button
+                onClick={() => {
+                  setMobileOpen(false)
+                  setShowRetakeConfirm(true)
+                }}
+                className="flex items-center gap-3 px-4 py-4 mt-2 rounded-xl text-base text-gold/80 border border-gold/20 text-left"
               >
                 <RefreshCw size={18} strokeWidth={1.75} />
                 <span>Retake Assessment</span>
-              </Link>
+              </button>
               <button
                 onClick={() => {
                   setMobileOpen(false)
@@ -234,6 +244,17 @@ export default function DashboardLayout({
           <div className="max-w-6xl mx-auto px-6 py-8">{children}</div>
         </main>
       </div>
+
+      <ConfirmDialog
+        open={showRetakeConfirm}
+        title="Retake your Financial Kundali?"
+        description="Retaking the assessment resets your current results. You'll need to complete payment of ₹999 again to unlock your new Financial Kundali."
+        confirmLabel="Retake & Pay Again"
+        cancelLabel="Cancel"
+        danger={false}
+        onConfirm={confirmRetake}
+        onCancel={() => setShowRetakeConfirm(false)}
+      />
     </div>
   )
 }

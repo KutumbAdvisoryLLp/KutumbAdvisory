@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { Lead, LeadStatus } from "@/lib/admin-mock-data";
+import type { Lead, LeadStatus } from "@/types/admin";
 import { CloseIcon, PencilIcon } from "@/components/icons/admin";
 import StatusPill from "./StatusPill";
 

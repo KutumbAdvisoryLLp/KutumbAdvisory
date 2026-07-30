@@ -1,7 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import type { Json } from '@/lib/supabase/types'
+import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
+import { computeAssessmentResult, type GrahaAnswerMap } from '@/lib/kundali/assessment'
+import type { FamilyProfile, GrahaId, Member } from '@/types'
 
 const messages = [
   'Analyzing Wealth Architecture...',
@@ -14,9 +19,69 @@ const messages = [
 
 export default function LoadingPage() {
   const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+  const { userId } = useMykundaliAuth()
   const [progress, setProgress] = useState(0)
   const [messageIdx, setMessageIdx] = useState(0)
-  const [showCheck, setShowCheck] = useState(false)
+  const [saveError, setSaveError] = useState(false)
+  const showCheck = progress >= 100
+  const computeRef = useRef<Promise<boolean> | null>(null)
+
+  // Compute + persist the assessment result in parallel with the loading
+  // animation — the navigation effect below awaits this before redirecting.
+  useEffect(() => {
+    if (!userId) return
+    computeRef.current = (async () => {
+      const [profileRes, answersRes] = await Promise.all([
+        supabase.from('family_profiles').select('*').eq('customer_id', userId).maybeSingle(),
+        supabase.from('assessment_answers').select('graha_id, question_id, value').eq('customer_id', userId),
+      ])
+
+      const profileRow = profileRes.data
+      const profile: FamilyProfile = {
+        primaryMember: (profileRow?.primary_member as unknown as Member) ?? {
+          name: '', age: 35, relation: 'self', occupation: '', income: 0,
+        },
+        spouse: (profileRow?.spouse as unknown as Member) ?? undefined,
+        children: (profileRow?.children as unknown as Member[]) ?? [],
+        monthlyExpenses: profileRow?.monthly_expenses ?? 0,
+        totalAssets: profileRow?.total_assets ?? 0,
+        totalLiabilities: profileRow?.total_liabilities ?? 0,
+        riskProfile: profileRow?.risk_profile ?? 'moderate',
+        goals: profileRow?.goals ?? [],
+        existingInvestments: profileRow?.existing_investments ?? [],
+        existingInsurance: profileRow?.existing_insurance ?? [],
+      }
+
+      const answerMap: GrahaAnswerMap = {}
+      for (const row of answersRes.data ?? []) {
+        const grahaId = row.graha_id as GrahaId
+        if (!answerMap[grahaId]) answerMap[grahaId] = {}
+        answerMap[grahaId]![row.question_id] = row.value as never
+      }
+
+      const result = computeAssessmentResult(profile, answerMap)
+
+      const { error } = await supabase.from('assessment_results').upsert({
+        customer_id: userId,
+        overall_score: result.overallScore,
+        overall_status: result.overallStatus,
+        graha_scores: result.grahaScores,
+        graha_details: result.grahaDetails as unknown as Json,
+        recommendations: result.recommendations,
+        advisor_notes: result.advisorNotes,
+        action_plan: result.actionPlan as unknown as Json,
+        strongest_graha: result.strongestGraha,
+        weakest_graha: result.weakestGraha,
+      })
+
+      if (error) {
+        setSaveError(true)
+        return false
+      }
+      return true
+    })()
+  }, [userId, supabase])
 
   useEffect(() => {
     const duration = 4000
@@ -45,14 +110,14 @@ export default function LoadingPage() {
   }, [])
 
   useEffect(() => {
-    if (progress >= 100) {
-      setShowCheck(true)
-      const timer = setTimeout(() => {
-        router.push('/mykundali/assessment/preview')
+    if (showCheck) {
+      const timer = setTimeout(async () => {
+        const saved = await computeRef.current
+        if (saved) router.push('/mykundali/assessment/preview')
       }, 1500)
       return () => clearTimeout(timer)
     }
-  }, [progress, router])
+  }, [showCheck, router])
 
   return (
     <div className="min-h-screen bg-navy flex flex-col items-center justify-center px-6">
@@ -79,7 +144,22 @@ export default function LoadingPage() {
       </div>
 
       {/* Message */}
-      {!showCheck ? (
+      {saveError ? (
+        <div className="flex flex-col items-center gap-4 text-center">
+          <p className="text-gold font-serif text-2xl">
+            We couldn&apos;t save your Financial Kundali
+          </p>
+          <p className="text-white/50 text-sm max-w-sm">
+            Something went wrong while saving your results. Please try again.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 rounded-xl bg-gold px-6 py-3 text-sm font-medium text-navy transition-opacity hover:opacity-90"
+          >
+            Retry
+          </button>
+        </div>
+      ) : !showCheck ? (
         <p
           key={messageIdx}
           className="text-gold-light font-serif text-xl md:text-2xl text-center transition-opacity duration-500"

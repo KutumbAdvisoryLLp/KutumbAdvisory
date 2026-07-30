@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAdminAuth } from "@/components/admin/AdminAuthContext";
 import { useToast } from "@/components/admin/ToastContext";
+import { createClient } from "@/lib/supabase/client";
 import { AdminInput, AdminTextarea } from "@/components/admin/FormControls";
 import { ImageIcon } from "@/components/icons/admin";
 
@@ -47,30 +48,65 @@ function SectionCard({
 export default function AdminSettingsPage() {
   const { adminEmail } = useAdminAuth();
   const { showToast } = useToast();
+  const supabase = useMemo(() => createClient(), []);
 
   const [siteTitle, setSiteTitle] = useState("Kutumb Advisory — Family Wealth Platform");
   const [metaDescription, setMetaDescription] = useState(
     "Kutumb is a premium Family Wealth Advisory platform. Discover your Financial Kundali and bring clarity to your family's financial universe."
   );
   const [faviconUrl, setFaviconUrl] = useState("/favicon.ico");
-
   const [logoUrl, setLogoUrl] = useState(KUTUMB_LOGO_URL);
 
   const [accountEmail, setAccountEmail] = useState(adminEmail ?? "");
+  const [syncedAdminEmail, setSyncedAdminEmail] = useState(adminEmail);
+  if (adminEmail !== syncedAdminEmail) {
+    setSyncedAdminEmail(adminEmail);
+    setAccountEmail(adminEmail ?? "");
+  }
+
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [accountError, setAccountError] = useState("");
 
-  const handleSaveMetadata = () => {
-    showToast("Site metadata saved");
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("*")
+        .eq("id", 1)
+        .maybeSingle();
+      if (data) {
+        setSiteTitle(data.site_title);
+        setMetaDescription(data.meta_description ?? "");
+        setFaviconUrl(data.favicon_url ?? "/favicon.ico");
+        if (data.logo_url) setLogoUrl(data.logo_url);
+      }
+    })();
+  }, [supabase]);
+
+  const handleSaveMetadata = async () => {
+    const { error } = await supabase
+      .from("site_settings")
+      .update({
+        site_title: siteTitle,
+        meta_description: metaDescription,
+        favicon_url: faviconUrl,
+      })
+      .eq("id", 1);
+    showToast(error ? "Could not save site metadata" : "Site metadata saved");
   };
 
-  const handleSaveLogo = () => {
-    showToast("Logo updated");
+  const handleSaveLogo = async () => {
+    const { error } = await supabase
+      .from("site_settings")
+      .update({ logo_url: logoUrl })
+      .eq("id", 1);
+    showToast(error ? "Could not save logo" : "Logo updated");
   };
 
-  const handleSaveAccount = () => {
+  const handleSaveAccount = async () => {
     setAccountError("");
+
     if (newPassword || confirmPassword) {
       if (newPassword.length < 8) {
         setAccountError("New password must be at least 8 characters.");
@@ -81,9 +117,33 @@ export default function AdminSettingsPage() {
         return;
       }
     }
+
+    const emailChanged = accountEmail.trim() && accountEmail.trim() !== adminEmail;
+
+    if (newPassword) {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        setAccountError(error.message);
+        return;
+      }
+    }
+
+    if (emailChanged) {
+      const { error } = await supabase.auth.updateUser({ email: accountEmail.trim() });
+      if (error) {
+        setAccountError(error.message);
+        return;
+      }
+    }
+
     setNewPassword("");
     setConfirmPassword("");
-    showToast("Admin account settings saved");
+
+    if (emailChanged) {
+      showToast("Check your inbox to confirm your new admin email");
+    } else {
+      showToast("Admin account settings saved");
+    }
   };
 
   return (
@@ -100,8 +160,7 @@ export default function AdminSettingsPage() {
           Site Settings
         </h1>
         <p className="mt-2 text-sm text-stone/60">
-          These settings are UI-only for now and are not yet wired to a real
-          backend.
+          Changes here apply across the live site.
         </p>
       </motion.div>
 
@@ -197,6 +256,8 @@ export default function AdminSettingsPage() {
           )}
           <p className="text-[11px] text-stone/40">
             Leave password fields blank to keep your current password.
+            Changing your email sends a confirmation link to the new address
+            before it takes effect.
           </p>
         </SectionCard>
       </div>

@@ -1,52 +1,39 @@
 'use client'
 
+import { useEffect, useState, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { GRAHAS, GRAHA_COLORS, GRAHA_EMOJIS } from '@/lib/kundali/grahas'
-import { getScoreStatus, getScoreColor } from '@/types'
+import { getScoreColor } from '@/types'
 import { ScoreRing } from '@/components/mykundali/score-ring'
-
-const scores: Record<string, number> = {
-  surya: 8, chandra: 6, mangal: 7, budh: 5, guru: 6,
-  shukra: 7, shani: 5, rahu: 4, ketu: 6,
-}
-
-const mockDetail = {
-  observations: [
-    'Single income stream — entire family relies on one source',
-    'No passive income generating assets',
-    'Stable employment with growth potential',
-  ],
-  suggestions: [
-    'Build 2+ diversified income streams',
-    'Explore passive income opportunities',
-    'Invest in upskilling for career advancement',
-    'Review salary negotiation position',
-  ],
-  advisorNote:
-    'Your income stability is commendable. However, relying on a single income stream is risky for a family. Let\'s explore ways to diversify through side businesses, investments, or freelance opportunities.',
-  advisor: 'Priya Sharma, CFP',
-  calculators: [
-    { name: 'Income Growth Calculator', desc: 'Project your earning potential' },
-    { name: 'Human Capital Calculator', desc: 'Calculate your lifetime earning power' },
-  ],
-  resources: [
-    '7 Ways to Diversify Your Income in 2025',
-    'The Power of Passive Income',
-    'How to Negotiate Your Salary',
-  ],
-  progress: [
-    { label: 'Income Streams', value: 40 },
-    { label: 'Passive Income', value: 20 },
-    { label: 'Career Growth Plan', value: 10 },
-  ],
-}
+import { createClient } from '@/lib/supabase/client'
+import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
+import type { GrahaDetail, GrahaId } from '@/types'
 
 export default function GrahaDetailPage() {
   const params = useParams()
   const grahaId = params.grahaId as string
   const graha = GRAHAS.find((g) => g.id === grahaId)
+
+  const supabase = useMemo(() => createClient(), [])
+  const { userId } = useMykundaliAuth()
+  const [detail, setDetail] = useState<GrahaDetail | null>(null)
+
+  useEffect(() => {
+    if (!userId || !graha) return
+    ;(async () => {
+      const { data } = await supabase
+        .from('assessment_results')
+        .select('graha_details')
+        .eq('customer_id', userId)
+        .maybeSingle()
+      if (data) {
+        const allDetails = data.graha_details as unknown as Record<GrahaId, GrahaDetail>
+        setDetail(allDetails[grahaId as GrahaId] ?? null)
+      }
+    })()
+  }, [userId, grahaId, graha, supabase])
 
   if (!graha) {
     return (
@@ -59,8 +46,16 @@ export default function GrahaDetailPage() {
     )
   }
 
-  const score = scores[grahaId] || 0
-  const status = getScoreStatus(score)
+  if (!detail) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-slate">Loading your {graha.name} insights…</p>
+      </div>
+    )
+  }
+
+  const score = detail.score
+  const status = detail.status
   const color = getScoreColor(status)
 
   return (
@@ -114,7 +109,7 @@ export default function GrahaDetailPage() {
         >
           <h2 className="font-serif text-xl text-navy mb-4">Observations</h2>
           <ul className="space-y-3">
-            {mockDetail.observations.map((obs, i) => (
+            {detail.observations.map((obs, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-slate">
                 <span className="text-gold-dark mt-0.5">•</span>
                 {obs}
@@ -131,7 +126,7 @@ export default function GrahaDetailPage() {
         >
           <h2 className="font-serif text-xl text-navy mb-4">Suggestions</h2>
           <ul className="space-y-3">
-            {mockDetail.suggestions.map((sug, i) => (
+            {detail.suggestions.map((sug, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-slate">
                 <span className="text-success mt-0.5">→</span>
                 {sug}
@@ -152,62 +147,44 @@ export default function GrahaDetailPage() {
         <h2 className="font-serif text-xl text-navy mb-4">Advisor Notes</h2>
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-full bg-gold-light/30 flex items-center justify-center flex-shrink-0">
-            <span className="text-gold-dark font-serif font-semibold">PS</span>
+            <span className="text-gold-dark font-serif font-semibold">KA</span>
           </div>
           <div>
             <p className="text-sm text-slate leading-relaxed">
-              &ldquo;{mockDetail.advisorNote}&rdquo;
+              &ldquo;{detail.advisorNote}&rdquo;
             </p>
             <p className="text-xs text-slate-light mt-3">
-              — {mockDetail.advisor}, Senior Wealth Architect
+              — Kutumb Advisory
             </p>
           </div>
         </div>
       </motion.div>
 
       {/* Calculators */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="mt-8"
-      >
-        <h2 className="font-serif text-xl text-navy mb-4">Recommended Calculators</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {mockDetail.calculators.map((calc) => (
-            <button
-              key={calc.name}
-              className="p-5 bg-white rounded-xl border border-slate-lighter/20 shadow-card hover:shadow-card-hover transition-all text-left group"
-            >
-              <p className="font-medium text-charcoal group-hover:text-gold-dark transition-colors">
-                {calc.name}
-              </p>
-              <p className="text-sm text-slate mt-1">{calc.desc}</p>
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Resources */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="mt-8"
-      >
-        <h2 className="font-serif text-xl text-navy mb-4">Related Resources</h2>
-        <div className="space-y-2">
-          {mockDetail.resources.map((res, i) => (
-            <div
-              key={i}
-              className="p-4 bg-white rounded-xl border border-slate-lighter/20 shadow-card flex items-center gap-3"
-            >
-              <span className="text-slate-light">📄</span>
-              <span className="text-sm text-charcoal">{res}</span>
-            </div>
-          ))}
-        </div>
-      </motion.div>
+      {detail.calculators.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-8"
+        >
+          <h2 className="font-serif text-xl text-navy mb-4">Recommended Calculators</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {detail.calculators.map((calc) => (
+              <Link
+                key={calc.name}
+                href="/toolkit"
+                className="p-5 bg-white rounded-xl border border-slate-lighter/20 shadow-card hover:shadow-card-hover transition-all text-left group block"
+              >
+                <p className="font-medium text-charcoal group-hover:text-gold-dark transition-colors">
+                  {calc.name}
+                </p>
+                <p className="text-sm text-slate mt-1">{calc.description}</p>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Progress Tracking */}
       <motion.div
@@ -218,8 +195,8 @@ export default function GrahaDetailPage() {
       >
         <h2 className="font-serif text-xl text-navy mb-4">Progress Tracking</h2>
         <div className="p-6 bg-white rounded-2xl border border-slate-lighter/20 shadow-card space-y-4">
-          {mockDetail.progress.map((p) => (
-            <div key={p.label}>
+          {detail.progress.map((p, i) => (
+            <div key={i}>
               <div className="flex items-center justify-between text-sm mb-1.5">
                 <span className="text-charcoal">{p.label}</span>
                 <span className="font-mono text-xs text-slate">{p.value}%</span>

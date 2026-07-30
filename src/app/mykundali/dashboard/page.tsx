@@ -1,30 +1,67 @@
 'use client'
 
+import { useEffect, useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Star } from 'lucide-react'
 import { ScoreRing } from '@/components/mykundali/score-ring'
 import { getGreeting } from '@/lib/utils'
 import { GRAHAS, GRAHA_COLORS, GRAHA_EMOJIS } from '@/lib/kundali/grahas'
+import { createClient } from '@/lib/supabase/client'
+import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
+import type { ActionItem, GrahaId } from '@/types'
 
-const scores: Record<string, number> = {
-  surya: 8, chandra: 6, mangal: 7, budh: 5, guru: 6,
-  shukra: 7, shani: 5, rahu: 4, ketu: 6,
-}
-const overallScore = 54
 const overallMax = 90
-const overallPercent = overallScore / overallMax
-const overallStars = Math.max(1, Math.round(overallPercent * 5))
-const overallStatus =
-  overallPercent >= 0.8 ? 'Excellent' : overallPercent >= 0.6 ? 'Good' : overallPercent >= 0.4 ? 'Fair' : 'Needs Attention'
 
-const priorities = [
-  { graha: 'Rahu', title: 'Reduce debt exposure', target: 'DTI < 30%', current: '45%', color: '#8B5CF6', priority: 'high' },
-  { graha: 'Surya', title: 'Diversify income streams', target: '3+ streams', current: '1', color: '#E89F3C', priority: 'medium' },
-  { graha: 'Budh', title: 'Build financial discipline', target: '20% savings', current: '10%', color: '#4CAF7D', priority: 'medium' },
-]
+const statusLabels: Record<string, string> = {
+  excellent: 'Excellent',
+  good: 'Good',
+  fair: 'Fair',
+  poor: 'Needs Attention',
+}
 
 export default function DashboardPage() {
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+  const { userId, user } = useMykundaliAuth()
+
+  const [loading, setLoading] = useState(true)
+  const [scores, setScores] = useState<Record<string, number>>({})
+  const [overallScore, setOverallScore] = useState(0)
+  const [overallStatus, setOverallStatus] = useState('fair')
+  const [advisorNotes, setAdvisorNotes] = useState('')
+  const [actionPlan, setActionPlan] = useState<ActionItem[]>([])
+
+  useEffect(() => {
+    if (!userId) return
+    ;(async () => {
+      const { data } = await supabase
+        .from('assessment_results')
+        .select('*')
+        .eq('customer_id', userId)
+        .maybeSingle()
+
+      if (!data) {
+        router.replace('/mykundali/assessment/landing')
+        return
+      }
+
+      setScores(data.graha_scores as unknown as Record<string, number>)
+      setOverallScore(data.overall_score)
+      setOverallStatus(data.overall_status)
+      setAdvisorNotes(data.advisor_notes ?? '')
+      setActionPlan((data.action_plan as unknown as ActionItem[]) ?? [])
+      setLoading(false)
+    })()
+  }, [userId, supabase, router])
+
+  const overallPercent = overallMax ? overallScore / overallMax : 0
+  const overallStars = Math.max(1, Math.round(overallPercent * 5))
+  const displayName = user?.fullName?.split(' ')[0] || 'there'
+
+  if (loading) return null
+
   return (
     <div>
       {/* Greeting */}
@@ -33,7 +70,7 @@ export default function DashboardPage() {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 className="font-serif text-3xl md:text-4xl text-navy">
-          {getGreeting()}, Rahul
+          {getGreeting()}, {displayName}
         </h1>
         <p className="text-slate mt-1">Here&apos;s your financial health overview.</p>
       </motion.div>
@@ -47,9 +84,6 @@ export default function DashboardPage() {
           className="p-6 bg-white rounded-2xl shadow-card flex flex-col items-center border border-slate-lighter/20"
         >
           <ScoreRing score={overallScore} maxScore={overallMax} size="lg" className="relative" />
-          <p className="mt-3 text-sm text-gold-dark">
-            ↑ 8% improvement since last month
-          </p>
         </motion.div>
 
         <motion.div
@@ -69,11 +103,10 @@ export default function DashboardPage() {
             ))}
           </div>
           <span className="inline-flex w-fit items-center rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold">
-            {overallStatus}
+            {statusLabels[overallStatus] ?? overallStatus}
           </span>
           <p className="text-sm text-slate mt-3 leading-relaxed">
-            Your financial health is strong with room for improvement in
-            protection and risk management.
+            {advisorNotes || 'Your financial health overview will appear here once your assessment is complete.'}
           </p>
         </motion.div>
       </div>
@@ -87,7 +120,7 @@ export default function DashboardPage() {
       >
         <h2 className="font-serif text-2xl text-navy mb-4">Nine Graha</h2>
         <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
-          {GRAHAS.map((g, i) => (
+          {GRAHAS.map((g) => (
             <Link
               key={g.id}
               href={`/mykundali/dashboard/grahas/${g.id}`}
@@ -104,13 +137,13 @@ export default function DashboardPage() {
                   <div
                     key={j}
                     className={`w-1.5 h-1.5 rounded-full ${
-                      j < scores[g.id] ? 'bg-gold' : 'bg-slate-lighter'
+                      j < (scores[g.id] ?? 0) ? 'bg-gold' : 'bg-slate-lighter'
                     }`}
                   />
                 ))}
               </div>
               <p className="text-xs font-mono text-slate mt-1">
-                {scores[g.id]}/10
+                {scores[g.id] ?? 0}/10
               </p>
             </Link>
           ))}
@@ -136,13 +169,13 @@ export default function DashboardPage() {
                   <div
                     className="w-full rounded-full transition-all duration-1000"
                     style={{
-                      height: `${(scores[g.id] / 10) * 100}%`,
+                      height: `${((scores[g.id] ?? 0) / 10) * 100}%`,
                       backgroundColor: GRAHA_COLORS[g.id],
                       marginTop: 'auto',
                     }}
                   />
                 </div>
-                <span className="text-xs font-mono text-slate">{scores[g.id]}</span>
+                <span className="text-xs font-mono text-slate">{scores[g.id] ?? 0}</span>
               </div>
             ))}
           </div>
@@ -158,14 +191,12 @@ export default function DashboardPage() {
           <h3 className="font-serif text-xl text-navy mb-4">Advisor Notes</h3>
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-gold-light/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-gold-dark font-serif font-semibold">PS</span>
+              <span className="text-gold-dark font-serif font-semibold">KA</span>
             </div>
             <div>
-              <p className="font-medium text-charcoal">Priya Sharma, CFP</p>
+              <p className="font-medium text-charcoal">Kutumb Advisory</p>
               <p className="text-sm text-slate mt-2 leading-relaxed">
-                Rahul, your strongest area is protection, but your risk exposure
-                needs attention. Let&apos;s focus on reducing debt and diversifying
-                income this quarter.
+                {advisorNotes || 'Complete your assessment to receive personalized notes.'}
               </p>
               <Link
                 href="/mykundali/dashboard/grahas"
@@ -187,9 +218,9 @@ export default function DashboardPage() {
       >
         <h2 className="font-serif text-2xl text-navy mb-4">Top Priorities</h2>
         <div className="space-y-3">
-          {priorities.map((p, i) => (
+          {actionPlan.slice(0, 3).map((p, i) => (
             <motion.div
-              key={p.title}
+              key={p.id}
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -198,12 +229,12 @@ export default function DashboardPage() {
             >
               <div
                 className="w-3 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: p.color }}
+                style={{ backgroundColor: GRAHA_COLORS[p.grahaId as GrahaId] }}
               />
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-charcoal">{p.title}</p>
-                <p className="text-sm text-slate">
-                  Target: {p.target} · Current: {p.current}
+                <p className="text-sm text-slate line-clamp-1">
+                  {p.description}
                 </p>
               </div>
               <Link
@@ -214,6 +245,9 @@ export default function DashboardPage() {
               </Link>
             </motion.div>
           ))}
+          {actionPlan.length === 0 && (
+            <p className="text-sm text-slate-light">No priorities yet.</p>
+          )}
         </div>
       </motion.div>
 

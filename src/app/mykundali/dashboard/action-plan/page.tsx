@@ -1,20 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { ProgressBar } from '@/components/mykundali/progress-bar'
+import { createClient } from '@/lib/supabase/client'
+import type { Json } from '@/lib/supabase/types'
+import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 import type { ActionItem } from '@/types'
-
-const allActions: ActionItem[] = [
-  { id: 'em1', grahaId: 'chandra', category: 'Emergency', title: 'Emergency Fund', description: 'Build 6 months of expenses as safety net', target: 600000, current: 240000, unit: '₹', status: 'in-progress', priority: 'high' },
-  { id: 'in1', grahaId: 'mangal', category: 'Insurance', title: 'Term Life Insurance', description: 'Secure family with adequate term cover', target: 10000000, current: 2000000, unit: '₹', status: 'in-progress', priority: 'high' },
-  { id: 'in2', grahaId: 'mangal', category: 'Insurance', title: 'Health Insurance for Family', description: 'Get comprehensive health cover for all members', target: undefined, current: undefined, unit: '', status: 'pending', priority: 'high' },
-  { id: 're1', grahaId: 'shani', category: 'Retirement', title: 'Retirement Corpus', description: 'Build retirement fund for dignified life', target: 30000000, current: 7500000, unit: '₹', status: 'in-progress', priority: 'medium' },
-  { id: 'es1', grahaId: 'ketu', category: 'Estate', title: 'Create a Will', description: 'Ensure your assets are distributed as per your wishes', target: undefined, current: undefined, unit: '', status: 'not-started', priority: 'medium' },
-  { id: 'in3', grahaId: 'guru', category: 'Investing', title: 'Start Monthly SIP', description: 'Build wealth through disciplined investing', target: 50000, current: 15000, unit: '₹', status: 'in-progress', priority: 'medium' },
-  { id: 'em2', grahaId: 'budh', category: 'Emergency', title: 'Reduce Monthly Expenses by 10%', description: 'Optimize spending to increase savings rate', target: undefined, current: undefined, unit: '', status: 'pending', priority: 'low' },
-  { id: 'es2', grahaId: 'ketu', category: 'Estate', title: 'Estate Planning Discussion', description: 'Have a family discussion about wealth transfer', target: undefined, current: undefined, unit: '', status: 'not-started', priority: 'low' },
-]
 
 const categories = ['All', 'Emergency', 'Insurance', 'Investing', 'Retirement', 'Estate']
 
@@ -26,22 +18,44 @@ function formatCurrency(val: number): string {
 }
 
 export default function ActionPlanPage() {
+  const supabase = useMemo(() => createClient(), [])
+  const { userId } = useMykundaliAuth()
   const [filter, setFilter] = useState('All')
-  const [actions, setActions] = useState(allActions)
+  const [actions, setActions] = useState<ActionItem[]>([])
+
+  useEffect(() => {
+    if (!userId) return
+    ;(async () => {
+      const { data } = await supabase
+        .from('assessment_results')
+        .select('action_plan')
+        .eq('customer_id', userId)
+        .maybeSingle()
+      if (data) setActions((data.action_plan as unknown as ActionItem[]) ?? [])
+    })()
+  }, [userId, supabase])
 
   const filtered = filter === 'All' ? actions : actions.filter((a) => a.category === filter)
   const completed = actions.filter((a) => a.status === 'completed').length
   const total = actions.length
-  const progress = Math.round((completed / total) * 100)
+  const progress = total > 0 ? Math.round((completed / total) * 100) : 0
 
   const toggleStatus = (id: string) => {
-    setActions((prev) =>
-      prev.map((a) =>
+    setActions((prev) => {
+      const next = prev.map((a) =>
         a.id === id
-          ? { ...a, status: a.status === 'completed' ? 'in-progress' as const : 'completed' as const }
+          ? { ...a, status: a.status === 'completed' ? ('in-progress' as const) : ('completed' as const) }
           : a
       )
-    )
+      if (userId) {
+        supabase
+          .from('assessment_results')
+          .update({ action_plan: next as unknown as Json })
+          .eq('customer_id', userId)
+          .then()
+      }
+      return next
+    })
   }
 
   return (
@@ -134,6 +148,7 @@ export default function ActionPlanPage() {
                   </div>
 
                   <p className="font-medium text-charcoal">{action.title}</p>
+                  <p className="text-sm text-slate mt-1">{action.description}</p>
 
                   {hasTarget && (
                     <div className="mt-2">

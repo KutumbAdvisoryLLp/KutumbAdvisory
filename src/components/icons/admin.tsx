@@ -33,6 +33,17 @@ export function ContactAdminIcon({ className, size = 24 }: IconProps) {
   );
 }
 
+export function UsersIcon({ className, size = 24 }: IconProps) {
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.5V20" />
+      <circle cx="9.5" cy="7.5" r="3.5" />
+      <path d="M19 20v-1.5a3.5 3.5 0 0 0-2.5-3.36" />
+      <path d="M15 4.14a3.5 3.5 0 0 1 0 6.72" />
+    </svg>
+  );
+}
+
 export function NewsletterIcon({ className, size = 24 }: IconProps) {
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import Button from '@/components/Button'
 import { ProgressBar } from '@/components/mykundali/progress-bar'
+import { createClient } from '@/lib/supabase/client'
+import type { Json } from '@/lib/supabase/types'
+import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 import type { FamilyProfile, Member } from '@/types'
 
 const emptyMember: Member = { name: '', age: 30, relation: 'child', occupation: '', income: 0 }
@@ -21,7 +24,10 @@ const riskOptions = [
 ] as const
 
 export default function FamilyProfilePage() {
+  const supabase = useMemo(() => createClient(), [])
+  const { userId } = useMykundaliAuth()
   const [step, setStep] = useState(0)
+  const [loaded, setLoaded] = useState(false)
   const [profile, setProfile] = useState<FamilyProfile>({
     primaryMember: { name: '', age: 35, relation: 'self', occupation: '', income: 0 },
     spouse: undefined,
@@ -40,6 +46,62 @@ export default function FamilyProfilePage() {
 
   const update = <K extends keyof FamilyProfile>(key: K, value: FamilyProfile[K]) =>
     setProfile((prev) => ({ ...prev, [key]: value }))
+
+  // Pre-fill from any previously-saved profile so refreshing mid-flow resumes.
+  useEffect(() => {
+    if (!userId) return
+    ;(async () => {
+      const { data } = await supabase
+        .from('family_profiles')
+        .select('*')
+        .eq('customer_id', userId)
+        .maybeSingle()
+
+      if (data) {
+        setProfile({
+          primaryMember: data.primary_member as unknown as Member,
+          spouse: (data.spouse as unknown as Member) ?? undefined,
+          children: (data.children as unknown as Member[]) ?? [],
+          monthlyExpenses: data.monthly_expenses ?? 0,
+          totalAssets: data.total_assets ?? 0,
+          totalLiabilities: data.total_liabilities ?? 0,
+          riskProfile: data.risk_profile ?? 'moderate',
+          goals: data.goals ?? [],
+          existingInvestments: data.existing_investments ?? [],
+          existingInsurance: data.existing_insurance ?? [],
+        })
+      }
+      setLoaded(true)
+    })()
+  }, [userId, supabase])
+
+  const saveProfile = useCallback(
+    async (current: FamilyProfile) => {
+      if (!userId) return
+      await supabase.from('family_profiles').upsert({
+        customer_id: userId,
+        primary_member: current.primaryMember as unknown as Json,
+        spouse: (current.spouse ?? null) as unknown as Json | null,
+        children: current.children as unknown as Json,
+        monthly_expenses: current.monthlyExpenses,
+        total_assets: current.totalAssets,
+        total_liabilities: current.totalLiabilities,
+        risk_profile: current.riskProfile,
+        goals: current.goals,
+        existing_investments: current.existingInvestments,
+        existing_insurance: current.existingInsurance,
+      })
+    },
+    [userId, supabase]
+  )
+
+  // Persist on every step change (not every keystroke) once the initial
+  // fetch has resolved, so refreshing mid-flow doesn't lose progress.
+  useEffect(() => {
+    if (!loaded) return
+    saveProfile(profile)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, loaded])
 
   const steps = [
     // Step 0: Primary Member
@@ -232,7 +294,7 @@ export default function FamilyProfilePage() {
               Continue →
             </Button>
           ) : (
-            <Link href="/mykundali/assessment/grahas">
+            <Link href="/mykundali/assessment/grahas" onClick={() => saveProfile(profile)}>
               <Button showArrow={false}>
                 Start Assessment →
               </Button>

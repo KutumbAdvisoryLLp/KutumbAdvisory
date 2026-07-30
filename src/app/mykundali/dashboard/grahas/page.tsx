@@ -1,14 +1,28 @@
 'use client'
 
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { GRAHAS, GRAHA_COLORS, GRAHA_EMOJIS } from '@/lib/kundali/grahas'
-
-const scores: Record<string, number> = {
-  surya: 8, chandra: 6, mangal: 7, budh: 5, guru: 6,
-  shukra: 7, shani: 5, rahu: 4, ketu: 6,
-}
+import { createClient } from '@/lib/supabase/client'
+import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 
 export default function GrahasListPage() {
+  const supabase = useMemo(() => createClient(), [])
+  const { userId } = useMykundaliAuth()
+  const [scores, setScores] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    if (!userId) return
+    ;(async () => {
+      const { data } = await supabase
+        .from('assessment_results')
+        .select('graha_scores')
+        .eq('customer_id', userId)
+        .maybeSingle()
+      if (data) setScores(data.graha_scores as unknown as Record<string, number>)
+    })()
+  }, [userId, supabase])
+
   return (
     <div>
       <h1 className="font-serif text-3xl text-navy">Nine Graha</h1>
@@ -36,13 +50,13 @@ export default function GrahasListPage() {
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
-                    width: `${(scores[g.id] / 10) * 100}%`,
+                    width: `${((scores[g.id] ?? 0) / 10) * 100}%`,
                     backgroundColor: GRAHA_COLORS[g.id],
                   }}
                 />
               </div>
               <span className="font-serif text-2xl font-semibold" style={{ color: GRAHA_COLORS[g.id] }}>
-                {scores[g.id]}
+                {scores[g.id] ?? 0}
               </span>
               <span className="text-xs text-slate-light">/10</span>
             </div>

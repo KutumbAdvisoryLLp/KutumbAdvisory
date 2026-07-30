@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
+import { createClient } from "@/lib/supabase/client";
 
 interface FormData {
   fullName: string;
@@ -340,9 +341,12 @@ const steps = [
 ];
 
 export default function ContactForm() {
+  const supabase = useMemo(() => createClient(), []);
   const [form, setForm] = useState<FormData>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = useCallback(
     (
@@ -372,12 +376,32 @@ export default function ContactForm() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError("");
     if (!validate()) return;
 
-    const lead: FormData = { ...form };
-    console.log("[Kutumb Lead]", lead);
+    setSubmitting(true);
+    const { error } = await supabase.from("leads").insert({
+      full_name: form.fullName,
+      email: form.email,
+      phone: form.phone,
+      city: form.city || null,
+      occupation: form.occupation || null,
+      age_group: form.ageGroup || null,
+      contact_as: form.contactAs || null,
+      primary_goal: form.primaryGoal || null,
+      preferred_meeting: form.preferredMeeting || null,
+      preferred_date: form.preferredDate || null,
+      preferred_time: form.preferredTime || null,
+      notes: form.notes || null,
+    });
+    setSubmitting(false);
+
+    if (error) {
+      setSubmitError("Something went wrong submitting your request. Please try again.");
+      return;
+    }
 
     setSubmitted(true);
   };
@@ -711,9 +735,10 @@ export default function ContactForm() {
                 >
                   <button
                     type="submit"
-                    className="group relative inline-flex items-center gap-3 rounded-xl bg-navy px-10 py-4 font-serif text-lg text-white transition-all duration-500 hover:bg-navy/90 hover:shadow-xl hover:shadow-navy/20"
+                    disabled={submitting}
+                    className="group relative inline-flex items-center gap-3 rounded-xl bg-navy px-10 py-4 font-serif text-lg text-white transition-all duration-500 hover:bg-navy/90 hover:shadow-xl hover:shadow-navy/20 disabled:opacity-60"
                   >
-                    <span>Begin My Financial Kundali</span>
+                    <span>{submitting ? "Submitting…" : "Begin My Financial Kundali"}</span>
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gold/20 transition-all duration-500 group-hover:bg-gold/30 group-hover:translate-x-0.5">
                       <svg
                         width="14"
@@ -730,6 +755,9 @@ export default function ContactForm() {
                       </svg>
                     </span>
                   </button>
+                  {submitError && (
+                    <p className="mt-3 text-sm text-red-500">{submitError}</p>
+                  )}
                   <p className="mt-5 text-xs text-stone/50">
                     Your information is kept confidential. We respect your privacy.
                   </p>

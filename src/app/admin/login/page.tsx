@@ -19,31 +19,31 @@ export default function AdminLoginPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSubmitting(true);
 
-    const ok = login(email, password);
+    const ok = await login(email, password);
     if (ok) {
       router.push("/admin");
     } else {
-      setError("Incorrect email or password. Please try again.");
+      setError("Incorrect email or password, or this account is not an admin.");
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-navy px-6 py-16">
-      <div className="absolute inset-0 bg-gradient-to-b from-navy-light/50 to-transparent pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-gold/5 blur-3xl" />
-      <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-white/[0.02] blur-3xl" />
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-cream px-6 py-16">
+      <div className="absolute inset-0 bg-gradient-to-b from-ivory/60 to-transparent pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-gold/10 blur-3xl" />
+      <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-navy/[0.03] blur-3xl" />
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-[0_20px_60px_rgba(0,0,0,0.3)] sm:p-10"
+        className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_20px_60px_rgba(32,27,98,0.12)] sm:p-10"
       >
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-navy">
           <span className="font-serif text-2xl text-gold">K</span>
@@ -133,8 +133,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="mt-8 text-center text-[11px] text-stone/40">
-          Internal use only. This panel is not yet connected to a real
-          authentication backend.
+          Internal use only.
         </p>
       </motion.div>
     </div>

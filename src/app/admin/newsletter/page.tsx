@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAdminData } from "@/components/admin/AdminDataContext";
 import { useToast } from "@/components/admin/ToastContext";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { AdminInput, AdminTextarea } from "@/components/admin/FormControls";
 import { SearchIcon, TrashIcon, NewsletterIcon } from "@/components/icons/admin";
-import type { Subscriber } from "@/lib/admin-mock-data";
+import { createClient } from "@/lib/supabase/client";
+import type { Subscriber, NewsletterSend } from "@/types/admin";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", {
@@ -20,6 +21,7 @@ function formatDate(iso: string) {
 export default function AdminNewsletterPage() {
   const { subscribers, deleteSubscriber } = useAdminData();
   const { showToast } = useToast();
+  const supabase = useMemo(() => createClient(), []);
 
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Subscriber | null>(null);
@@ -27,6 +29,30 @@ export default function AdminNewsletterPage() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [confirmSend, setConfirmSend] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [pastSends, setPastSends] = useState<NewsletterSend[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("newsletter_sends")
+        .select("*")
+        .order("sent_at", { ascending: false });
+      if (data) {
+        setPastSends(
+          data.map((row) => ({
+            id: row.id,
+            subject: row.subject,
+            body: row.body,
+            sentAt: row.sent_at,
+            sentBy: row.sent_by,
+            recipientCount: row.recipient_count,
+          }))
+        );
+      }
+    })();
+  }, [supabase]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -42,11 +68,45 @@ export default function AdminNewsletterPage() {
     setDeleteTarget(null);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     setConfirmSend(false);
-    showToast(`Newsletter sent to ${subscribers.length} subscribers`);
-    setSubject("");
-    setBody("");
+    setSending(true);
+    setSendError("");
+
+    try {
+      const res = await fetch("/api/admin/newsletter/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject, body }),
+      });
+      const result = await res.json();
+
+      if (!res.ok) {
+        setSendError(result.error ?? "Failed to send newsletter");
+        showToast(result.error ?? "Failed to send newsletter");
+        return;
+      }
+
+      showToast(`Newsletter sent to ${result.recipientCount} subscribers`);
+      setPastSends((prev) => [
+        {
+          id: crypto.randomUUID(),
+          subject,
+          body,
+          sentAt: new Date().toISOString(),
+          sentBy: null,
+          recipientCount: result.recipientCount,
+        },
+        ...prev,
+      ]);
+      setSubject("");
+      setBody("");
+    } catch {
+      setSendError("Failed to send newsletter — please try again.");
+      showToast("Failed to send newsletter");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -125,6 +185,41 @@ export default function AdminNewsletterPage() {
               </div>
             )}
           </motion.div>
+
+          {/* Past Campaigns */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-8"
+          >
+            <h2 className="font-serif text-xl text-navy">Past Campaigns</h2>
+            <div className="mt-4 rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)]">
+              {pastSends.length === 0 ? (
+                <p className="p-10 text-center text-sm text-stone/50">
+                  No newsletters sent yet.
+                </p>
+              ) : (
+                <div className="divide-y divide-navy/6">
+                  {pastSends.map((send) => (
+                    <div key={send.id} className="p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="truncate text-sm font-medium text-navy">
+                          {send.subject}
+                        </p>
+                        <span className="shrink-0 text-xs text-stone/50">
+                          {formatDate(send.sentAt)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-stone/50">
+                        Sent to {send.recipientCount} subscribers
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
         </div>
 
         {/* Compose */}
@@ -167,15 +262,15 @@ export default function AdminNewsletterPage() {
 
             <button
               type="button"
-              disabled={!subject.trim() || !body.trim()}
+              disabled={!subject.trim() || !body.trim() || sending}
               onClick={() => setConfirmSend(true)}
               className="mt-6 w-full rounded-xl bg-navy px-6 py-3.5 text-sm font-medium text-white shadow-md transition-all duration-300 hover:bg-navy/90 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Send to All Subscribers
+              {sending ? "Sending…" : "Send to All Subscribers"}
             </button>
-            <p className="mt-3 text-center text-[11px] text-stone/40">
-              UI only for now — no email is actually sent.
-            </p>
+            {sendError && (
+              <p className="mt-3 text-center text-[12px] text-red-500">{sendError}</p>
+            )}
           </div>
         </motion.div>
       </div>

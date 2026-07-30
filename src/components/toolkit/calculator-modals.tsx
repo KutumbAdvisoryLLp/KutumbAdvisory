@@ -141,15 +141,17 @@ function SIPForm({ onResult }: { onResult: (r: Record<string, string | number>) 
   const [m, setM] = useState(10000)
   const [r, setR] = useState(12)
   const [y, setY] = useState(10)
+  const [stepUp, setStepUp] = useState(0)
   return (
     <div className="space-y-5">
       <Field label="Monthly Investment (₹)" val={m} set={setM} min={500} max={500000} step={500} prefix="₹" />
       <Field label="Expected Return (% p.a.)" val={r} set={setR} min={1} max={30} step={0.5} suffix="%" />
       <Field label="Investment Period (years)" val={y} set={setY} min={1} max={40} step={1} suffix="yrs" />
+      <Field label="Annual Step-up (%)" val={stepUp} set={setStepUp} min={0} max={50} step={1} suffix="%" />
       <button onClick={() => onResult({
-        'Total Investment': fin.sipTotalInvestment(m, y),
-        'Estimated Returns': fin.sipFutureValue(m, r, y) - fin.sipTotalInvestment(m, y),
-        'Total Value': fin.sipFutureValue(m, r, y),
+        'Total Investment': fin.sipTotalInvestment(m, y, stepUp),
+        'Estimated Returns': fin.sipFutureValue(m, r, y, stepUp) - fin.sipTotalInvestment(m, y, stepUp),
+        'Total Value': fin.sipFutureValue(m, r, y, stepUp),
       })} className="w-full py-3 bg-gold text-navy rounded-xl font-medium hover:bg-gold-dark transition-colors">
         Calculate
       </button>
@@ -240,18 +242,20 @@ function RetirementGapForm({ onResult }: { onResult: (r: Record<string, string |
   const [exp, setExp] = useState(50000)
   const [inf, setInf] = useState(6)
   const [le, setLe] = useState(85)
+  const [retAfter, setRetAfter] = useState(7)
   return (
     <div className="space-y-5">
       <Field label="Current Age" val={age} set={setAge} min={18} max={80} step={1} suffix="yrs" />
       <Field label="Retirement Age" val={ra} set={setRa} min={40} max={80} step={1} suffix="yrs" />
       <Field label="Current Retirement Corpus (₹)" val={corpus} set={setCorpus} min={0} max={100000000} step={50000} prefix="₹" />
       <Field label="Monthly SIP for Retirement (₹)" val={sip} set={setSip} min={0} max={500000} step={1000} prefix="₹" />
-      <Field label="Expected Return (% p.a.)" val={ret} set={setRet} min={1} max={30} step={0.5} suffix="%" />
+      <Field label="Expected Return Before Retirement (% p.a.)" val={ret} set={setRet} min={1} max={30} step={0.5} suffix="%" />
       <Field label="Monthly Expenses (₹)" val={exp} set={setExp} min={5000} max={5000000} step={5000} prefix="₹" />
       <Field label="Inflation Rate (%)" val={inf} set={setInf} min={1} max={15} step={0.5} suffix="%" />
+      <Field label="Return After Retirement (%)" val={retAfter} set={setRetAfter} min={1} max={20} step={0.5} suffix="%" />
       <Field label="Life Expectancy" val={le} set={setLe} min={60} max={100} step={1} suffix="yrs" />
       <button onClick={() => {
-        const g = fin.retirementGap(corpus, sip, ret, age, ra, exp, inf, le)
+        const g = fin.retirementGap(corpus, sip, ret, age, ra, exp, inf, le, retAfter)
         onResult({
           'Corpus at Retirement': g.corpusAtRetire,
           'Corpus Needed': g.needed,
@@ -315,15 +319,17 @@ function GoalPlannerForm({ onResult }: { onResult: (r: Record<string, string | n
   const [target, setTarget] = useState(5000000)
   const [y, setY] = useState(10)
   const [ret, setRet] = useState(12)
+  const [stepUp, setStepUp] = useState(0)
   return (
     <div className="space-y-5">
       <Field label="Target Amount (₹)" val={target} set={setTarget} min={10000} max={100000000} step={50000} prefix="₹" />
       <Field label="Time to Goal (years)" val={y} set={setY} min={1} max={40} step={1} suffix="yrs" />
       <Field label="Expected Return (% p.a.)" val={ret} set={setRet} min={1} max={30} step={0.5} suffix="%" />
+      <Field label="Annual Step-up (%)" val={stepUp} set={setStepUp} min={0} max={50} step={1} suffix="%" />
       <button onClick={() => {
-        const g = fin.goalPlanning(target, y, ret)
+        const g = fin.goalPlanning(target, y, ret, stepUp)
         onResult({
-          'Monthly SIP Required': g.monthlyInvestment,
+          [stepUp > 0 ? 'Starting Monthly SIP Required' : 'Monthly SIP Required']: g.monthlyInvestment,
           'Lumpsum Required Today': g.lumpsumNeeded,
         })
       }} className="w-full py-3 bg-gold text-navy rounded-xl font-medium hover:bg-gold-dark transition-colors">
@@ -357,16 +363,18 @@ function FutureValueForm({ onResult }: { onResult: (r: Record<string, string | n
 function EmergencyFundForm({ onResult }: { onResult: (r: Record<string, string | number>) => void }) {
   const [exp, setExp] = useState(50000)
   const [sav, setSav] = useState(150000)
+  const [targetMonths, setTargetMonths] = useState(6)
   return (
     <div className="space-y-5">
       <Field label="Monthly Expenses (₹)" val={exp} set={setExp} min={5000} max={5000000} step={5000} prefix="₹" />
       <Field label="Total Savings (₹)" val={sav} set={setSav} min={0} max={10000000} step={10000} prefix="₹" />
+      <Field label="Target Months of Cover" val={targetMonths} set={setTargetMonths} min={3} max={24} step={1} suffix="mo" />
       <button onClick={() => {
         const months = fin.emergencyFundMonths(exp, sav)
-        const target = fin.emergencyFundTarget(exp)
+        const target = fin.emergencyFundTarget(exp, targetMonths)
         onResult({
           'Current Emergency Fund': months.toFixed(1) + ' months',
-          'Recommended (6 months)': target,
+          [`Recommended (${targetMonths} months)`]: target,
           'Additional Savings Needed': Math.max(0, target - sav),
         })
       }} className="w-full py-3 bg-gold text-navy rounded-xl font-medium hover:bg-gold-dark transition-colors">
@@ -470,15 +478,25 @@ function HomeLoanEligibilityForm({ onResult }: { onResult: (r: Record<string, st
   const [emi, setEmi] = useState(0)
   const [rt, setRt] = useState(9)
   const [ten, setTen] = useState(20)
+  const [nri, setNri] = useState(false)
   return (
     <div className="space-y-5">
       <Field label="Monthly Income (₹)" val={inc} set={setInc} min={10000} max={5000000} step={10000} prefix="₹" />
       <Field label="Existing EMIs (₹)" val={emi} set={setEmi} min={0} max={500000} step={1000} prefix="₹" />
       <Field label="Interest Rate (%)" val={rt} set={setRt} min={1} max={20} step={0.25} suffix="%" />
       <Field label="Tenure (years)" val={ten} set={setTen} min={5} max={30} step={1} suffix="yrs" />
+      <label className="flex items-center gap-3 text-sm font-medium text-charcoal cursor-pointer">
+        <input
+          type="checkbox"
+          checked={nri}
+          onChange={(e) => setNri(e.target.checked)}
+          className="h-4 w-4 rounded border-slate-lighter text-gold focus:ring-gold/40"
+        />
+        NRI applicant (higher 50% max EMI-to-income ratio)
+      </label>
       <button onClick={() => onResult({
-        'Loan Eligibility': fin.homeLoanEligibility(inc, emi, rt, ten),
-        'Affordable EMI': fin.loanAffordability(inc, emi),
+        'Loan Eligibility': fin.homeLoanEligibility(inc, emi, rt, ten, nri),
+        'Affordable EMI': fin.loanAffordability(inc, emi, nri ? 0.5 : 0.4),
       })} className="w-full py-3 bg-gold text-navy rounded-xl font-medium hover:bg-gold-dark transition-colors">
         Calculate
       </button>
@@ -490,12 +508,14 @@ function HomeLoanEligibilityForm({ onResult }: { onResult: (r: Record<string, st
 function HomeLoanAffordabilityForm({ onResult }: { onResult: (r: Record<string, string | number>) => void }) {
   const [inc, setInc] = useState(100000)
   const [emi, setEmi] = useState(0)
+  const [maxRatio, setMaxRatio] = useState(40)
   return (
     <div className="space-y-5">
       <Field label="Monthly Income (₹)" val={inc} set={setInc} min={10000} max={5000000} step={10000} prefix="₹" />
       <Field label="Existing EMIs (₹)" val={emi} set={setEmi} min={0} max={500000} step={1000} prefix="₹" />
+      <Field label="Max EMI-to-Income Ratio (%)" val={maxRatio} set={setMaxRatio} min={20} max={60} step={5} suffix="%" />
       <button onClick={() => onResult({
-        'Maximum Affordable EMI': fin.loanAffordability(inc, emi),
+        'Maximum Affordable EMI': fin.loanAffordability(inc, emi, maxRatio / 100),
       })} className="w-full py-3 bg-gold text-navy rounded-xl font-medium hover:bg-gold-dark transition-colors">
         Calculate
       </button>
@@ -546,17 +566,30 @@ function LoanPrepaymentForm({ onResult }: { onResult: (r: Record<string, string 
   const [rt, setRt] = useState(9)
   const [rem, setRem] = useState(48)
   const [pre, setPre] = useState(500000)
+  const [strategy, setStrategy] = useState<'reduceTenure' | 'reduceEMI'>('reduceTenure')
   return (
     <div className="space-y-5">
       <Field label="Outstanding Principal (₹)" val={p} set={setP} min={10000} max={100000000} step={50000} prefix="₹" />
       <Field label="Interest Rate (%)" val={rt} set={setRt} min={1} max={20} step={0.25} suffix="%" />
       <Field label="Remaining Months" val={rem} set={setRem} min={1} max={360} step={1} suffix="mo" />
       <Field label="Prepayment Amount (₹)" val={pre} set={setPre} min={5000} max={50000000} step={10000} prefix="₹" />
+      <div>
+        <label className="block text-sm font-medium text-charcoal mb-1.5">Prepayment Strategy</label>
+        <select
+          value={strategy}
+          onChange={(e) => setStrategy(e.target.value as 'reduceTenure' | 'reduceEMI')}
+          className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors"
+        >
+          <option value="reduceTenure">Keep EMI same, reduce tenure</option>
+          <option value="reduceEMI">Keep tenure same, reduce EMI</option>
+        </select>
+      </div>
       <button onClick={() => {
-        const s = fin.loanPrepaymentSavings(p, rt, rem, pre)
+        const s = fin.loanPrepaymentSavings(p, rt, rem, pre, strategy)
         onResult({
           'Interest Saved': s.interestSaved,
           'New Tenure': `${s.newTenure} months`,
+          'New EMI': s.newEMI,
         })
       }} className="w-full py-3 bg-gold text-navy rounded-xl font-medium hover:bg-gold-dark transition-colors">
         Calculate
@@ -569,8 +602,12 @@ function LoanPrepaymentForm({ onResult }: { onResult: (r: Record<string, string 
 function IncomeTaxForm({ onResult }: { onResult: (r: Record<string, string | number>) => void }) {
   const [inc, setInc] = useState(1500000)
   return (
-    <div className="space-y-5">
-      <Field label="Annual Income (₹)" val={inc} set={setInc} min={100000} max={100000000} step={50000} prefix="₹" />
+    <div className="space-y-4">
+      <p className="text-white/60 text-sm leading-relaxed">
+        Enter your total taxable income (after standard deduction/exemptions).
+        Includes Section 87A rebate and 4% Health &amp; Education cess, FY 2024-25 slabs.
+      </p>
+      <Field label="Taxable Income (₹)" val={inc} set={setInc} min={100000} max={100000000} step={50000} prefix="₹" />
       <button onClick={() => onResult({
         'Tax Under Old Regime': fin.incomeTaxOldRegime(inc),
         'Tax Under New Regime': fin.incomeTaxNewRegime(inc),
@@ -649,6 +686,7 @@ function ChildEducationForm({ onResult }: { onResult: (r: Record<string, string 
   const [currentCost, setCurrentCost] = useState(500000)
   const [yearsToCollege, setYearsToCollege] = useState(15)
   const [inflationRate, setInflationRate] = useState(8)
+  const [expectedReturn, setExpectedReturn] = useState(10)
   return (
     <div className="space-y-4">
       <p className="text-white/60 text-sm leading-relaxed">
@@ -657,8 +695,9 @@ function ChildEducationForm({ onResult }: { onResult: (r: Record<string, string 
       <Field label="Current Cost of Education (₹)" val={currentCost} set={setCurrentCost} min={100000} max={5000000} step={50000} prefix="₹" />
       <Field label="Years to College" val={yearsToCollege} set={setYearsToCollege} min={1} max={25} step={1} suffix="yrs" />
       <Field label="Education Inflation Rate (%)" val={inflationRate} set={setInflationRate} min={1} max={20} step={0.5} suffix="%" />
+      <Field label="Expected Investment Return (% p.a.)" val={expectedReturn} set={setExpectedReturn} min={1} max={30} step={0.5} suffix="%" />
       <button onClick={() => {
-        const result = fin.childEducationCost(currentCost, yearsToCollege, inflationRate)
+        const result = fin.childEducationCost(currentCost, yearsToCollege, inflationRate, expectedReturn)
         onResult({
           'Future Cost': result.futureCost,
           'Monthly SIP Needed': result.monthlySIP,
@@ -674,6 +713,7 @@ function MarriagePlannerForm({ onResult }: { onResult: (r: Record<string, string
   const [currentCost, setCurrentCost] = useState(2500000)
   const [yearsToMarriage, setYearsToMarriage] = useState(10)
   const [inflationRate, setInflationRate] = useState(8)
+  const [expectedReturn, setExpectedReturn] = useState(10)
   return (
     <div className="space-y-4">
       <p className="text-white/60 text-sm leading-relaxed">
@@ -682,8 +722,9 @@ function MarriagePlannerForm({ onResult }: { onResult: (r: Record<string, string
       <Field label="Current Cost of Wedding (₹)" val={currentCost} set={setCurrentCost} min={500000} max={50000000} step={100000} prefix="₹" />
       <Field label="Years to Wedding" val={yearsToMarriage} set={setYearsToMarriage} min={1} max={30} step={1} suffix="yrs" />
       <Field label="Wedding Inflation Rate (%)" val={inflationRate} set={setInflationRate} min={1} max={20} step={0.5} suffix="%" />
+      <Field label="Expected Investment Return (% p.a.)" val={expectedReturn} set={setExpectedReturn} min={1} max={30} step={0.5} suffix="%" />
       <button onClick={() => {
-        const result = fin.marriageCost(currentCost, yearsToMarriage, inflationRate)
+        const result = fin.marriageCost(currentCost, yearsToMarriage, inflationRate, expectedReturn)
         onResult({
           'Future Cost': result.futureCost,
           'Monthly SIP Needed': result.monthlySIP,

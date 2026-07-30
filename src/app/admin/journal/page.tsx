@@ -13,7 +13,15 @@ import {
   StarFilledIcon,
   ImageIcon,
 } from "@/components/icons/admin";
-import type { AdminArticle } from "@/lib/admin-mock-data";
+import type { AdminArticle } from "@/types/admin";
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default function AdminJournalPage() {
   const { articles, deleteArticle, toggleArticlePublished } = useAdminData();
@@ -107,7 +115,7 @@ export default function AdminJournalPage() {
                 {article.title}
               </h3>
               <p className="mt-2 text-xs text-stone/50">
-                {article.author} &middot; {article.date}
+                {article.author} &middot; {formatDate(article.date)}
               </p>
 
               <div className="mt-auto flex items-center justify-between pt-5">

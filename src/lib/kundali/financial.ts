@@ -36,16 +36,47 @@ export function compoundInterest(
 export function sipFutureValue(
   monthlyInvestment: number,
   annualReturn: number,
-  years: number
+  years: number,
+  stepUpPercent: number = 0
 ): number {
-  const months = years * 12
   const monthlyRate = annualReturn / 100 / 12
-  if (monthlyRate === 0) return monthlyInvestment * months
-  return monthlyInvestment * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate)
+
+  if (stepUpPercent === 0) {
+    const months = years * 12
+    if (monthlyRate === 0) return monthlyInvestment * months
+    return monthlyInvestment * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate)
+  }
+
+  // Step-up SIP: the monthly contribution rises by stepUpPercent every 12
+  // months, so there's no closed form — simulate month by month instead.
+  // Annuity-due: each month's contribution is invested first, then grows
+  // for that same month (matches the plain-SIP closed form above when
+  // stepUpPercent is 0).
+  let balance = 0
+  let currentMonthly = monthlyInvestment
+  for (let year = 0; year < years; year++) {
+    for (let m = 0; m < 12; m++) {
+      balance = (balance + currentMonthly) * (1 + monthlyRate)
+    }
+    currentMonthly *= 1 + stepUpPercent / 100
+  }
+  return balance
 }
 
-export function sipTotalInvestment(monthlyInvestment: number, years: number): number {
-  return monthlyInvestment * years * 12
+export function sipTotalInvestment(
+  monthlyInvestment: number,
+  years: number,
+  stepUpPercent: number = 0
+): number {
+  if (stepUpPercent === 0) return monthlyInvestment * years * 12
+
+  let total = 0
+  let currentMonthly = monthlyInvestment
+  for (let year = 0; year < years; year++) {
+    total += currentMonthly * 12
+    currentMonthly *= 1 + stepUpPercent / 100
+  }
+  return total
 }
 
 export function lumpsumFutureValue(
@@ -174,34 +205,84 @@ export function loanPrepaymentSavings(
   outstandingPrincipal: number,
   annualRate: number,
   remainingMonths: number,
-  prepaymentAmount: number
-): { newTenure: number; interestSaved: number } {
+  prepaymentAmount: number,
+  strategy: 'reduceTenure' | 'reduceEMI' = 'reduceTenure'
+): { newTenure: number; newEMI: number; interestSaved: number } {
   const r = annualRate / 100 / 12
   const originalEMI = emi(outstandingPrincipal, annualRate, remainingMonths)
   const totalOriginal = originalEMI * remainingMonths
   const newPrincipal = outstandingPrincipal - prepaymentAmount
+
+  if (newPrincipal <= 0) {
+    return { newTenure: 0, newEMI: 0, interestSaved: totalOriginal - prepaymentAmount }
+  }
+
+  if (strategy === 'reduceTenure') {
+    // Keep the EMI the same, solve for the new (shorter) tenure:
+    // n = -ln(1 - r·P/EMI) / ln(1+r), the inverse of the EMI formula.
+    const newTenure = r === 0
+      ? newPrincipal / originalEMI
+      : -Math.log(1 - (r * newPrincipal) / originalEMI) / Math.log(1 + r)
+    const newTotal = originalEMI * newTenure
+    return {
+      newTenure: Math.max(0, Math.round(newTenure)),
+      newEMI: originalEMI,
+      interestSaved: totalOriginal - newTotal - prepaymentAmount,
+    }
+  }
+
+  // reduceEMI: keep the original tenure, lower the monthly payment instead.
   const newEMI = emi(newPrincipal, annualRate, remainingMonths)
   const newTotal = newEMI * remainingMonths
   return {
     newTenure: remainingMonths,
+    newEMI,
     interestSaved: totalOriginal - newTotal - prepaymentAmount,
   }
 }
 
-export function incomeTaxOldRegime(annualIncome: number): number {
-  if (annualIncome <= 250000) return 0
-  if (annualIncome <= 500000) return (annualIncome - 250000) * 0.05
-  if (annualIncome <= 1000000) return 12500 + (annualIncome - 500000) * 0.2
-  return 12500 + 100000 + (annualIncome - 1000000) * 0.3
+// Section 87A "marginal relief": just above the rebate threshold, tax
+// payable is capped at (income − threshold) so a ₹1 raise can never cost
+// more than ₹1 in extra tax — without this the rebate creates a cliff
+// where crossing the threshold suddenly owes the full slab tax.
+function applyRebateAndCess(tax: number, taxableIncome: number, threshold: number): number {
+  if (taxableIncome <= threshold) return 0
+  const relieved = Math.min(tax, taxableIncome - threshold)
+  return relieved * 1.04
 }
 
-export function incomeTaxNewRegime(annualIncome: number): number {
-  if (annualIncome <= 300000) return 0
-  if (annualIncome <= 600000) return (annualIncome - 300000) * 0.05
-  if (annualIncome <= 900000) return 15000 + (annualIncome - 600000) * 0.1
-  if (annualIncome <= 1200000) return 45000 + (annualIncome - 900000) * 0.15
-  if (annualIncome <= 1500000) return 90000 + (annualIncome - 1200000) * 0.2
-  return 150000 + (annualIncome - 1500000) * 0.3
+// Old regime slabs (FY 2024-25) + Section 87A rebate (nil tax up to ₹5L
+// taxable income — the old regime's rebate has no marginal-relief taper,
+// unlike the new regime's) + 4% cess.
+export function incomeTaxOldRegime(taxableIncome: number): number {
+  if (taxableIncome <= 500000) return 0
+  let tax = 0
+  if (taxableIncome > 1000000) {
+    tax = 112500 + (taxableIncome - 1000000) * 0.3
+  } else if (taxableIncome > 500000) {
+    tax = 12500 + (taxableIncome - 500000) * 0.2
+  } else if (taxableIncome > 250000) {
+    tax = (taxableIncome - 250000) * 0.05
+  }
+  return tax * 1.04
+}
+
+// New regime slabs (FY 2024-25, post Budget 2024) + Section 87A rebate (nil
+// tax up to ₹7L taxable income, with marginal relief just above) + 4% cess.
+export function incomeTaxNewRegime(taxableIncome: number): number {
+  let tax = 0
+  if (taxableIncome > 1500000) {
+    tax = 140000 + (taxableIncome - 1500000) * 0.3
+  } else if (taxableIncome > 1200000) {
+    tax = 80000 + (taxableIncome - 1200000) * 0.2
+  } else if (taxableIncome > 1000000) {
+    tax = 50000 + (taxableIncome - 1000000) * 0.15
+  } else if (taxableIncome > 700000) {
+    tax = 20000 + (taxableIncome - 700000) * 0.1
+  } else if (taxableIncome > 300000) {
+    tax = (taxableIncome - 300000) * 0.05
+  }
+  return applyRebateAndCess(tax, taxableIncome, 700000)
 }
 
 export function assetAllocation(
@@ -217,13 +298,15 @@ export function assetAllocation(
 export function goalPlanning(
   targetAmount: number,
   yearsToGoal: number,
-  expectedReturn: number
+  expectedReturn: number,
+  stepUpPercent: number = 0
 ): { monthlyInvestment: number; lumpsumNeeded: number } {
-  const r = expectedReturn / 100 / 12
-  const months = yearsToGoal * 12
-  const monthlySIP = r === 0
-    ? targetAmount / months
-    : targetAmount / ((Math.pow(1 + r, months) - 1) / r * (1 + r))
+  // Solve for the base monthly SIP by dividing the target by the future
+  // value a ₹1/month step-up SIP would produce over the same period —
+  // sipFutureValue is linear in the contribution amount, so this scales
+  // correctly whether or not a step-up is in play.
+  const unitFutureValue = sipFutureValue(1, expectedReturn, yearsToGoal, stepUpPercent)
+  const monthlySIP = targetAmount / unitFutureValue
   const lumpsumNeeded = targetAmount / Math.pow(1 + expectedReturn / 100, yearsToGoal)
   return { monthlyInvestment: monthlySIP, lumpsumNeeded }
 }
@@ -236,11 +319,12 @@ export function retirementGap(
   retirementAge: number,
   monthlyExpenses: number,
   inflationRate: number,
-  lifeExpectancy: number
+  lifeExpectancy: number,
+  returnAfterRetirement: number = annualReturn
 ): { gap: number; corpusAtRetire: number; needed: number } {
   const corpusAtRetire = sipFutureValue(monthlySIP, annualReturn, retirementAge - currentAge) +
     lumpsumFutureValue(currentCorpus, annualReturn, retirementAge - currentAge)
-  const needed = retirementCorpus(currentAge, retirementAge, monthlyExpenses, inflationRate, annualReturn, lifeExpectancy)
+  const needed = retirementCorpus(currentAge, retirementAge, monthlyExpenses, inflationRate, returnAfterRetirement, lifeExpectancy)
   return { gap: needed - corpusAtRetire, corpusAtRetire, needed }
 }
 
@@ -374,25 +458,26 @@ export function legacyReadinessScore(
 export function childEducationCost(
   currentCost: number,
   yearsToCollege: number,
-  inflationRate: number
+  inflationRate: number,
+  expectedReturn: number = 10
 ): { futureCost: number; monthlySIP: number } {
   const futureCost = currentCost * Math.pow(1 + inflationRate / 100, yearsToCollege)
-  const monthlySIP = futureCost / (Math.pow(1 + 0.10 / 12, yearsToCollege * 12) * 12 * yearsToCollege) * (0.10 / 12)
   return {
     futureCost,
-    monthlySIP: futureCost / ((Math.pow(1 + 0.10 / 12, yearsToCollege * 12) - 1) / (0.10 / 12) * (1 + 0.10 / 12)),
+    monthlySIP: futureCost / sipFutureValue(1, expectedReturn, yearsToCollege),
   }
 }
 
 export function marriageCost(
   currentCost: number,
   yearsToMarriage: number,
-  inflationRate: number
+  inflationRate: number,
+  expectedReturn: number = 10
 ): { futureCost: number; monthlySIP: number } {
   const futureCost = currentCost * Math.pow(1 + inflationRate / 100, yearsToMarriage)
   return {
     futureCost,
-    monthlySIP: futureCost / ((Math.pow(1 + 0.10 / 12, yearsToMarriage * 12) - 1) / (0.10 / 12) * (1 + 0.10 / 12)),
+    monthlySIP: futureCost / sipFutureValue(1, expectedReturn, yearsToMarriage),
   }
 }
 

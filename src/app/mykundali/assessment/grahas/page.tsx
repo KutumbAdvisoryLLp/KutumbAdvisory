@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'framer-motion'
 import Button from '@/components/Button'
@@ -8,13 +8,38 @@ import { ProgressBar } from '@/components/mykundali/progress-bar'
 import { QuestionCard } from '@/components/mykundali/question-card'
 import { GRAHAS, GRAHA_COLORS, GRAHA_EMOJIS } from '@/lib/kundali/grahas'
 import { calculateProgress } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
+import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 import type { GrahaId, Answer } from '@/types'
 
 export default function GrahaAssessmentPage() {
   const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+  const { userId } = useMykundaliAuth()
   const [currentGrahaIdx, setCurrentGrahaIdx] = useState(0)
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string | number | string[]>>({})
+
+  // Resume: pre-fill any answers already saved for this customer.
+  useEffect(() => {
+    if (!userId) return
+    ;(async () => {
+      const { data } = await supabase
+        .from('assessment_answers')
+        .select('question_id, value')
+        .eq('customer_id', userId)
+
+      if (data && data.length) {
+        setAnswers((prev) => {
+          const next = { ...prev }
+          for (const row of data) {
+            next[row.question_id] = row.value as unknown as string | number | string[]
+          }
+          return next
+        })
+      }
+    })()
+  }, [userId, supabase])
 
   const graha = GRAHAS[currentGrahaIdx]
   const question = graha.questions[currentQuestionIdx]
@@ -32,7 +57,18 @@ export default function GrahaAssessmentPage() {
 
   const handleAnswer = useCallback((value: string | number | string[]) => {
     setAnswers((prev) => ({ ...prev, [question.id]: value }))
-  }, [question.id])
+    if (userId) {
+      supabase.from('assessment_answers').upsert(
+        {
+          customer_id: userId,
+          graha_id: graha.id,
+          question_id: question.id,
+          value,
+        },
+        { onConflict: 'customer_id,graha_id,question_id' }
+      ).then()
+    }
+  }, [question.id, graha.id, userId, supabase])
 
   const handleNext = () => {
     if (isLastQuestion) {

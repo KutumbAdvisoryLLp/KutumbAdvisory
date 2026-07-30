@@ -14,7 +14,7 @@ import {
 } from "@/components/admin/FormControls";
 import { ImageIcon } from "@/components/icons/admin";
 import JournalArticleCard from "@/components/JournalArticleCard";
-import { journalCategories, slugify } from "@/lib/admin-mock-data";
+import { journalCategories, slugify } from "@/lib/articles-utils";
 import type { JournalArticle } from "@/lib/journal-data";
 
 interface ArticleFormState {
@@ -121,12 +121,12 @@ export default function ArticleForm({
     setForm((prev) => ({ ...prev, slug: e.target.value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return;
 
     if (mode === "create") {
-      createArticle({
+      const created = await createArticle({
         title: form.title,
         slug: displaySlug || slugify(form.title),
         coverImage: form.coverImage,
@@ -135,13 +135,14 @@ export default function ArticleForm({
         excerpt: form.excerpt,
         content: form.content,
         readTime: form.readTime,
-        date: new Date().toLocaleDateString("en-IN", {
-          month: "long",
-          year: "numeric",
-        }),
+        date: new Date().toISOString().slice(0, 10),
         featured: form.featured,
         published: form.published,
       });
+      if (!created) {
+        showToast("Could not create article — please try again");
+        return;
+      }
       showToast("Article created");
     } else if (articleId) {
       updateArticle(articleId, { ...form });

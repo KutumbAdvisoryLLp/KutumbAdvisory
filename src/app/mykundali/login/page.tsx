@@ -74,12 +74,12 @@ function FloatingInput({
 
 export default function MykundaliLoginPage() {
   const router = useRouter();
-  const { login } = useMykundaliAuth();
+  const { signUp, login } = useMykundaliAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [form, setForm] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [skipToDashboard, setSkipToDashboard] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,17 +114,30 @@ export default function MykundaliLoginPage() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
     if (!validate()) return;
 
     setSubmitting(true);
-    login({
-      fullName: form.fullName || form.email.split("@")[0],
-      email: form.email,
-    });
 
-    router.push(skipToDashboard ? "/mykundali/dashboard" : "/mykundali/assessment/landing");
+    const result =
+      mode === "signup"
+        ? await signUp({
+            fullName: form.fullName,
+            email: form.email,
+            phone: form.phone,
+            password: form.password,
+          })
+        : await login({ email: form.email, password: form.password });
+
+    if (!result.ok) {
+      setFormError(result.error ?? "Something went wrong. Please try again.");
+      setSubmitting(false);
+      return;
+    }
+
+    router.push(mode === "signup" ? "/mykundali/assessment/landing" : "/mykundali/dashboard");
   };
 
   return (
@@ -229,6 +242,10 @@ export default function MykundaliLoginPage() {
               onChange={handleChange}
             />
 
+            {formError && (
+              <p className="text-center text-[13px] text-red-500">{formError}</p>
+            )}
+
             <Button
               type="submit"
               variant="gold"
@@ -239,24 +256,8 @@ export default function MykundaliLoginPage() {
             >
               {mode === "signin" ? "Sign In" : "Create Account"}
             </Button>
-
-            <label className="flex items-center gap-2.5 pt-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={skipToDashboard}
-                onChange={(e) => setSkipToDashboard(e.target.checked)}
-                className="w-4 h-4 accent-gold"
-              />
-              <span className="text-xs text-stone/50">
-                Skip to dashboard (testing only)
-              </span>
-            </label>
           </form>
         </div>
-
-        <p className="mt-8 text-center text-xs text-stone/40">
-          This is a demo sign-in — no real account is created.
-        </p>
       </div>
     </div>
   );

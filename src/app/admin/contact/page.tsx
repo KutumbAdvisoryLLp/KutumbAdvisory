@@ -7,7 +7,7 @@ import { useToast } from "@/components/admin/ToastContext";
 import StatusPill from "@/components/admin/StatusPill";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import LeadDetailModal from "@/components/admin/LeadDetailModal";
-import type { Lead, LeadStatus } from "@/lib/admin-mock-data";
+import type { Lead, LeadStatus } from "@/types/admin";
 import {
   SearchIcon,
   EyeIcon,

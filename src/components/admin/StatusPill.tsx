@@ -1,4 +1,4 @@
-import type { LeadStatus } from "@/lib/admin-mock-data";
+import type { LeadStatus } from "@/types/admin";
 
 const statusStyles: Record<LeadStatus, string> = {
   new: "bg-gold/10 text-gold-dark",
