@@ -26,7 +26,7 @@ export default async function ArticlePage({
 
   if (!article) notFound();
 
-  const paragraphs = article.content.split(/\n\s*\n/).filter((p) => p.trim());
+  const paragraphs: string[] = (article.content as string).split(/\n\s*\n/).filter((p: string) => p.trim());
 
   return (
     <article className="bg-white py-28 sm:py-36">

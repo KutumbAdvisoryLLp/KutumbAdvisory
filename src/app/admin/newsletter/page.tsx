@@ -41,7 +41,7 @@ export default function AdminNewsletterPage() {
         .order("sent_at", { ascending: false });
       if (data) {
         setPastSends(
-          data.map((row) => ({
+          data.map((row: any) => ({
             id: row.id,
             subject: row.subject,
             body: row.body,
