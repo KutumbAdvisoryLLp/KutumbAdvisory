@@ -13,6 +13,8 @@ interface ButtonProps {
   onClick?: () => void;
   type?: "button" | "submit";
   showArrow?: boolean;
+  loading?: boolean;
+  disabled?: boolean;
 }
 
 export default function Button({
@@ -24,6 +26,8 @@ export default function Button({
   onClick,
   type = "button",
   showArrow = true,
+  loading = false,
+  disabled = false,
 }: ButtonProps) {
   const base =
     "group relative inline-flex items-center justify-center gap-3 font-medium transition-all duration-500 tracking-wide leading-none overflow-hidden";
@@ -45,14 +49,28 @@ export default function Button({
     lg: "px-8 py-4 text-lg",
   };
 
-  const classes = cn(base, variants[variant], sizes[size], className);
+  const isDisabled = disabled || loading;
+
+  const classes = cn(
+    base,
+    variants[variant],
+    sizes[size],
+    isDisabled && "opacity-50 pointer-events-none",
+    className
+  );
 
   const inner = (
     <>
       <span className="absolute inset-0 rounded-[14px] bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       <span className="relative z-10 flex items-center gap-3">
+        {loading && (
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        )}
         <span>{children}</span>
-        {showArrow && (
+        {showArrow && !loading && (
           <ArrowRight size={16} className="transition-all duration-500 group-hover:translate-x-1 group-hover:opacity-100" />
         )}
       </span>
@@ -75,7 +93,7 @@ export default function Button({
   }
 
   return (
-    <button type={type} onClick={onClick} className={classes}>
+    <button type={type} onClick={onClick} disabled={isDisabled} className={classes}>
       {inner}
     </button>
   );

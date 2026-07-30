@@ -1,0 +1,247 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+import { Star } from 'lucide-react'
+import { ScoreRing } from '@/components/mykundali/score-ring'
+import { getGreeting } from '@/lib/utils'
+import { GRAHAS, GRAHA_COLORS, GRAHA_EMOJIS } from '@/lib/kundali/grahas'
+
+const scores: Record<string, number> = {
+  surya: 8, chandra: 6, mangal: 7, budh: 5, guru: 6,
+  shukra: 7, shani: 5, rahu: 4, ketu: 6,
+}
+const overallScore = 54
+const overallMax = 90
+const overallPercent = overallScore / overallMax
+const overallStars = Math.max(1, Math.round(overallPercent * 5))
+const overallStatus =
+  overallPercent >= 0.8 ? 'Excellent' : overallPercent >= 0.6 ? 'Good' : overallPercent >= 0.4 ? 'Fair' : 'Needs Attention'
+
+const priorities = [
+  { graha: 'Rahu', title: 'Reduce debt exposure', target: 'DTI < 30%', current: '45%', color: '#8B5CF6', priority: 'high' },
+  { graha: 'Surya', title: 'Diversify income streams', target: '3+ streams', current: '1', color: '#E89F3C', priority: 'medium' },
+  { graha: 'Budh', title: 'Build financial discipline', target: '20% savings', current: '10%', color: '#4CAF7D', priority: 'medium' },
+]
+
+export default function DashboardPage() {
+  return (
+    <div>
+      {/* Greeting */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <h1 className="font-serif text-3xl md:text-4xl text-navy">
+          {getGreeting()}, Rahul
+        </h1>
+        <p className="text-slate mt-1">Here&apos;s your financial health overview.</p>
+      </motion.div>
+
+      {/* Score + Status */}
+      <div className="grid md:grid-cols-2 gap-6 mt-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="p-6 bg-white rounded-2xl shadow-card flex flex-col items-center border border-slate-lighter/20"
+        >
+          <ScoreRing score={overallScore} maxScore={overallMax} size="lg" className="relative" />
+          <p className="mt-3 text-sm text-gold-dark">
+            ↑ 8% improvement since last month
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="p-6 bg-white rounded-2xl shadow-card flex flex-col justify-center border border-slate-lighter/20"
+        >
+          <div className="flex items-center gap-1 mb-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star
+                key={i}
+                size={20}
+                className={i < overallStars ? 'text-gold fill-gold' : 'text-slate-lighter'}
+                strokeWidth={1.5}
+              />
+            ))}
+          </div>
+          <span className="inline-flex w-fit items-center rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold">
+            {overallStatus}
+          </span>
+          <p className="text-sm text-slate mt-3 leading-relaxed">
+            Your financial health is strong with room for improvement in
+            protection and risk management.
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Nine Graha Grid */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mt-10"
+      >
+        <h2 className="font-serif text-2xl text-navy mb-4">Nine Graha</h2>
+        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
+          {GRAHAS.map((g, i) => (
+            <Link
+              key={g.id}
+              href={`/mykundali/dashboard/grahas/${g.id}`}
+              className="p-4 bg-white rounded-xl border border-slate-lighter/20 shadow-card hover:shadow-card-hover transition-all text-center group"
+            >
+              <div
+                className="text-2xl mb-2 group-hover:scale-110 transition-transform"
+              >
+                {GRAHA_EMOJIS[g.id]}
+              </div>
+              <p className="text-xs font-medium text-charcoal truncate">{g.name}</p>
+              <div className="mt-2 flex justify-center gap-0.5">
+                {Array.from({ length: 10 }).map((_, j) => (
+                  <div
+                    key={j}
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      j < scores[g.id] ? 'bg-gold' : 'bg-slate-lighter'
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-xs font-mono text-slate mt-1">
+                {scores[g.id]}/10
+              </p>
+            </Link>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Financial Wheel + Advisor Notes */}
+      <div className="grid md:grid-cols-2 gap-6 mt-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="p-6 bg-white rounded-2xl border border-slate-lighter/20 shadow-card"
+        >
+          <h3 className="font-serif text-xl text-navy mb-4">Financial Wheel</h3>
+          <div className="grid grid-cols-3 gap-4">
+            {GRAHAS.slice(0, 9).map((g) => (
+              <div key={g.id} className="flex flex-col items-center gap-1">
+                <span className="text-lg">{GRAHA_EMOJIS[g.id]}</span>
+                <div
+                  className="w-2 h-8 rounded-full bg-slate-lighter overflow-hidden"
+                >
+                  <div
+                    className="w-full rounded-full transition-all duration-1000"
+                    style={{
+                      height: `${(scores[g.id] / 10) * 100}%`,
+                      backgroundColor: GRAHA_COLORS[g.id],
+                      marginTop: 'auto',
+                    }}
+                  />
+                </div>
+                <span className="text-xs font-mono text-slate">{scores[g.id]}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+          className="p-6 bg-white rounded-2xl border border-slate-lighter/20 shadow-card"
+        >
+          <h3 className="font-serif text-xl text-navy mb-4">Advisor Notes</h3>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-gold-light/30 flex items-center justify-center flex-shrink-0">
+              <span className="text-gold-dark font-serif font-semibold">PS</span>
+            </div>
+            <div>
+              <p className="font-medium text-charcoal">Priya Sharma, CFP</p>
+              <p className="text-sm text-slate mt-2 leading-relaxed">
+                Rahul, your strongest area is protection, but your risk exposure
+                needs attention. Let&apos;s focus on reducing debt and diversifying
+                income this quarter.
+              </p>
+              <Link
+                href="/mykundali/dashboard/grahas"
+                className="text-sm text-gold hover:text-gold-dark mt-3 inline-block transition-colors"
+              >
+                See all notes →
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Top Priorities */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="mt-10"
+      >
+        <h2 className="font-serif text-2xl text-navy mb-4">Top Priorities</h2>
+        <div className="space-y-3">
+          {priorities.map((p, i) => (
+            <motion.div
+              key={p.title}
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="p-5 bg-white rounded-xl border border-slate-lighter/20 shadow-card flex items-center gap-4"
+            >
+              <div
+                className="w-3 h-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: p.color }}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-charcoal">{p.title}</p>
+                <p className="text-sm text-slate">
+                  Target: {p.target} · Current: {p.current}
+                </p>
+              </div>
+              <Link
+                href="/mykundali/dashboard/action-plan"
+                className="text-sm text-gold hover:text-gold-dark transition-colors flex-shrink-0"
+              >
+                View →
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Recent Improvements */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="mt-10 mb-10"
+      >
+        <h2 className="font-serif text-2xl text-navy mb-4">Recent Improvements</h2>
+        <div className="p-6 bg-white rounded-2xl border border-slate-lighter/20 shadow-card">
+          <div className="space-y-4">
+            {[
+              'Emergency fund built up 40% → 60% of target',
+              'Life insurance reviewed and updated',
+              'Started monthly SIP of ₹15,000',
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D9B6E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+                <span className="text-sm text-charcoal">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}

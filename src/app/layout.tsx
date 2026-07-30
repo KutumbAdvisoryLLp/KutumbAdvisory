@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import { Playfair_Display, Inter, JetBrains_Mono } from "next/font/google";
 import SiteChrome from "@/components/SiteChrome";
 import "./globals.css";
 
@@ -11,6 +11,12 @@ const playfair = Playfair_Display({
 
 const inter = Inter({
   variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
   subsets: ["latin"],
   display: "swap",
 });
@@ -42,7 +48,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${inter.variable} scroll-smooth`}
+      className={`${playfair.variable} ${inter.variable} ${jetbrains.variable} scroll-smooth`}
       data-scroll-behavior="smooth"
     >
       <body className="min-h-dvh flex flex-col bg-white">
