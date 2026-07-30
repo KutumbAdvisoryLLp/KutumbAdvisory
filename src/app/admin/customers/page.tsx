@@ -39,12 +39,12 @@ export default function AdminCustomersPage() {
         supabase.from("assessment_results").select("customer_id, overall_score"),
       ]);
 
-      const profileIds = new Set((profilesRes.data ?? []).map((p) => p.customer_id));
+      const profileIds = new Set((profilesRes.data ?? []).map((p: any) => p.customer_id));
       const resultsById = new Map(
-        (resultsRes.data ?? []).map((r) => [r.customer_id, r.overall_score])
+        (resultsRes.data ?? []).map((r: any) => [r.customer_id, r.overall_score])
       );
 
-      const rows: CustomerListItem[] = (customersRes.data ?? []).map((c) => {
+      const rows: CustomerListItem[] = (customersRes.data ?? []).map((c: any) => {
         const overallScore = resultsById.get(c.id) ?? null;
         const status: CustomerListItem["status"] =
           overallScore !== null ? "completed" : profileIds.has(c.id) ? "in-progress" : "not-started";

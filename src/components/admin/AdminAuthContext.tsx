@@ -45,7 +45,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       if (active) setIsLoading(false);
     })();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
       if (!session?.user) {
         setIsAuthenticated(false);
         setAdminEmail(null);

@@ -72,7 +72,7 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
       if (active) setHydrated(true);
     })();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
       if (!session?.user) {
         setUser(null);
         setUserId(null);
