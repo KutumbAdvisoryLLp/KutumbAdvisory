@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import AnimatedSection from "./AnimatedSection";
 
 const team = [
@@ -10,6 +11,8 @@ const team = [
     bio: "Leads technology strategy and digital transformation at Kutumb, building platforms that make family wealth management accessible and intuitive.",
     expertise: "Digital Innovation",
     initials: "R",
+    image:
+      "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301027/raunak_ftpboc.png",
   },
   {
     name: "Tanishq",
@@ -17,6 +20,8 @@ const team = [
     bio: "Ensures every family receives the highest standard of care and attention. Specialises in building long-term relationships rooted in trust.",
     expertise: "Family Engagement",
     initials: "T",
+    image:
+      "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780394568/tanishq_i9einp.png",
   },
   {
     name: "Harsh",
@@ -24,6 +29,8 @@ const team = [
     bio: "Manages the systems and processes that power Kutumb's advisory framework, ensuring seamless service delivery for every family.",
     expertise: "Operational Excellence",
     initials: "H",
+    image:
+      "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780394568/harsh_ftie7y.png",
   },
   {
     name: "Atri Ganguly",
@@ -31,6 +38,8 @@ const team = [
     bio: "Oversees regulatory compliance, legal frameworks, and governance structures that protect both Kutumb and the families we serve.",
     expertise: "Regulatory Advisory",
     initials: "AG",
+    image:
+      "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301670/attri_rcnc0p.png",
   },
   {
     name: "Tejpal Singh Bagga",
@@ -38,6 +47,8 @@ const team = [
     bio: "Leads investment strategy and portfolio construction, bringing deep expertise in asset allocation and wealth preservation.",
     expertise: "Investment Strategy",
     initials: "TB",
+    image:
+      "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301742/tejpal_bzcxev.png",
   },
   {
     name: "Soumik Saha",
@@ -45,6 +56,8 @@ const team = [
     bio: "Manages day-to-day portfolio operations, performance monitoring, and rebalancing to ensure every family's portfolio stays aligned with their goals.",
     expertise: "Portfolio Operations",
     initials: "SS",
+    image:
+      "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301742/soumik_qfrcte.png",
   },
 ];
 
@@ -78,10 +91,21 @@ export default function AboutTeam() {
             >
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#B8862B]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-              <div className="relative mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-ivory shadow-inner ring-2 ring-gold/10 ring-offset-2 ring-offset-white transition-all duration-500 group-hover:ring-gold/30 group-hover:shadow-lg">
-                <span className="font-serif text-3xl font-semibold text-navy/30">
-                  {member.initials}
-                </span>
+              <div className="relative mx-auto mb-6 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-ivory shadow-inner ring-2 ring-gold/10 ring-offset-2 ring-offset-white transition-all duration-500 group-hover:ring-gold/30 group-hover:shadow-lg">
+                {member.image ? (
+                  <Image
+                    src={member.image}
+                    alt={member.name}
+                    fill
+                    sizes="112px"
+                    priority={member.name === "Soumik Saha"}
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="font-serif text-3xl font-semibold text-navy/30">
+                    {member.initials}
+                  </span>
+                )}
               </div>
 
               <h3 className="font-serif text-2xl text-navy">{member.name}</h3>

@@ -30,7 +30,7 @@ export default function EmotionalMoment() {
 
           <p className="mt-8 mx-auto max-w-2xl text-lg leading-relaxed text-stone/70 sm:text-xl">
             Every family&apos;s wealth is a unique structure. Financial Kundali
-            provides the blueprint \u2014 revealing how each part supports the whole.
+            provides the blueprint — revealing how each part supports the whole.
           </p>
         </motion.div>
       </div>

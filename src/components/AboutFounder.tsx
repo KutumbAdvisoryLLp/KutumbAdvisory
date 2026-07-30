@@ -1,7 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import AnimatedSection from "./AnimatedSection";
+
+const FOUNDER_IMAGE_URL =
+  "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780300586/deepika-founder_u8eiuz.jpg";
 
 export default function AboutFounder() {
   return (
@@ -18,19 +22,14 @@ export default function AboutFounder() {
             >
               <div className="relative">
                 <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-ivory shadow-xl shadow-navy/5">
+                  <Image
+                    src={FOUNDER_IMAGE_URL}
+                    alt="Deepika, Founder, Kutumb Advisory"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 450px"
+                    className="object-cover"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-navy/20" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center px-8">
-                      <div className="mx-auto mb-5 flex h-28 w-28 items-center justify-center rounded-full bg-navy/5 ring-1 ring-gold/10">
-                        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#201B62" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
-                      </div>
-                      <p className="font-serif text-lg text-navy/30">Deepika</p>
-                      <p className="text-sm text-stone/40">Founder, Kutumb Advisory</p>
-                    </div>
-                  </div>
                   <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-navy/5 to-transparent" />
                 </div>
                 <div className="absolute -bottom-6 -right-6 h-40 w-40 rounded-full bg-gold/5 blur-3xl" />

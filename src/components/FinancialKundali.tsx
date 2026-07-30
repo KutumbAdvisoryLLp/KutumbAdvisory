@@ -50,12 +50,12 @@ export default function FinancialKundali() {
             </p>
             <p className="mt-6 text-lg leading-relaxed text-stone sm:text-xl">
               Unlike a spreadsheet or a dashboard, it reveals the relationships
-              between each area \u2014 where one affects another, where gaps hide,
+              between each area — where one affects another, where gaps hide,
               and where your family&apos;s true financial strength lies.
             </p>
 
             <div className="mt-12">
-              <Button variant="gold" size="lg" href="#">
+              <Button variant="gold" size="lg" href="/mykundali">
                 Start Your Financial Kundali
               </Button>
             </div>

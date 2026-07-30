@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "./icons";
 
@@ -59,10 +60,17 @@ export default function Button({
   );
 
   if (href) {
+    if (href.startsWith("#")) {
+      return (
+        <a href={href} className={classes}>
+          {inner}
+        </a>
+      );
+    }
     return (
-      <a href={href} className={classes}>
+      <Link href={href} className={classes}>
         {inner}
-      </a>
+      </Link>
     );
   }
 

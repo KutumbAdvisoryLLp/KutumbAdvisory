@@ -45,7 +45,7 @@ export default function AboutFinalCTA() {
             <Button
               variant="gold"
               size="lg"
-              href="/#financial-kundali"
+              href="/mykundali"
               className="min-w-[220px]"
               showArrow={false}
             >
@@ -54,7 +54,7 @@ export default function AboutFinalCTA() {
             <Button
               variant="secondary"
               size="lg"
-              href="/#toolkit"
+              href="/toolkit"
               className="!border-white/20 !bg-transparent !text-white hover:!border-gold/40 hover:!bg-gold hover:!text-white"
             >
               Explore Financial Toolkit

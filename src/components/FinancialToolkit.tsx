@@ -145,7 +145,7 @@ export default function FinancialToolkit() {
         </div>
 
         <div className="mt-16 text-center">
-          <Button variant="secondary" size="lg" href="#">
+          <Button variant="secondary" size="lg" href="/toolkit">
             Explore Full Toolkit
           </Button>
         </div>

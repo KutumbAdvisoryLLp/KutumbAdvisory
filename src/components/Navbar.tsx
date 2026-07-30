@@ -3,11 +3,17 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+const KUTUMB_LOGO_URL =
+  "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780312133/tree_qw9bji.png";
+
+const MotionLink = motion.create(Link);
+
 const navLinks = [
-  { label: "Home", href: "#" },
-  { label: "Financial Kundali", href: "#financial-kundali" },
+  { label: "Home", href: "/" },
+  { label: "Financial Kundali", href: "/#financial-kundali" },
   { label: "About", href: "/about" },
   { label: "Family Wealth Journal", href: "/journal" },
   { label: "Contact", href: "/contact" },
@@ -49,25 +55,27 @@ export default function Navbar() {
           scrolled
             ? "bg-ivory/80 backdrop-blur-2xl shadow-[0_8px_32px_rgba(32,27,98,0.06),0_0_0_1px_rgba(168,121,31,0.12)] px-5 py-2 lg:px-7 lg:py-2.5"
             : "bg-transparent px-6 py-4 lg:px-8 lg:py-5"
-        )}
+      )}
       >
-        <a href="#" className="flex items-center gap-3 shrink-0 group">
+        <Link href="/" className="flex items-center gap-3 shrink-0 group">
           <Image
-            src="/logoV2.png"
+            src={KUTUMB_LOGO_URL}
             alt="Kutumb Advisory"
             width={62}
             height={62}
+            priority
+            style={{ width: "auto" }}
             className="h-[62px] w-auto object-contain transition-all duration-500 group-hover:scale-[1.03]"
           />
           <span className="hidden sm:inline font-serif text-2xl tracking-wide text-navy transition-all duration-300 group-hover:text-gold">
             Kutumb
           </span>
-        </a>
+        </Link>
 
         {/* -- Navigation Capsule -- */}
         <div className="hidden lg:flex items-center rounded-[16px] bg-white/70 backdrop-blur-sm shadow-[0_2px_12px_rgba(32,27,98,0.04),0_0_0_1px_rgba(168,121,31,0.08),inset_0_1px_0_rgba(255,255,255,0.8)] px-4 py-1">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.label}
               href={link.href}
               className="group relative px-4 py-3 text-[15px] font-medium text-stone/60 hover:text-navy transition-all duration-400 tracking-wide whitespace-nowrap"
@@ -78,14 +86,14 @@ export default function Navbar() {
               <span className="absolute inset-0 left-2 right-2 rounded-[10px] bg-gold/5 opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
               <span className="absolute bottom-1.5 left-4 right-4 h-[1.5px] origin-center scale-x-0 rounded-full bg-gradient-to-r from-gold/80 to-gold transition-transform duration-400 group-hover:scale-x-100" />
               <span className="absolute right-0 top-1/2 -translate-y-1/2 h-5 w-px bg-navy/6 last:hidden" />
-            </a>
+            </Link>
           ))}
         </div>
 
         {/* -- CTA -- */}
         <div className="hidden lg:block">
-          <a
-            href="#my-kutumb"
+          <Link
+            href="/mykundali"
             className="group relative inline-flex items-center gap-2.5 rounded-[14px] bg-white px-5 py-2.5 text-[15px] font-medium text-navy shadow-[0_2px_8px_rgba(32,27,98,0.04),0_0_0_1px_rgba(168,121,31,0.1)] transition-all duration-400 hover:bg-gold hover:text-white hover:shadow-[0_8px_24px_rgba(168,121,31,0.2),0_0_0_1px_rgba(168,121,31,0.2)] hover:-translate-y-0.5"
           >
             <span className="relative z-10">My Kutumb</span>
@@ -103,7 +111,7 @@ export default function Navbar() {
               <path d="M5 12h14" />
               <path d="m12 5 7 7-7 7" />
             </svg>
-          </a>
+          </Link>
         </div>
 
         {/* -- Hamburger -- */}
@@ -144,7 +152,7 @@ export default function Navbar() {
           >
             <div className="flex-1 flex flex-col items-center justify-center gap-8 px-8">
               {navLinks.map((link, i) => (
-                <motion.a
+                <MotionLink
                   key={link.label}
                   href={link.href}
                   initial={{ opacity: 0, y: 20 }}
@@ -157,10 +165,10 @@ export default function Navbar() {
                   {i < navLinks.length - 1 && (
                     <span className="block mx-auto mt-4 h-px w-6 bg-gold/15" />
                   )}
-                </motion.a>
+                </MotionLink>
               ))}
-              <motion.a
-                href="#my-kutumb"
+              <MotionLink
+                href="/mykundali"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: navLinks.length * 0.08 + 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
@@ -181,7 +189,7 @@ export default function Navbar() {
                   <path d="M5 12h14" />
                   <path d="m12 5 7 7-7 7" />
                 </svg>
-              </motion.a>
+              </MotionLink>
             </div>
           </motion.div>
         )}
