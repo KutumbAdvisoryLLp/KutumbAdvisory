@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { Json } from '@/lib/supabase/types'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 import { computeAssessmentResult, type GrahaAnswerMap } from '@/lib/kundali/assessment'
-import type { FamilyProfile, GrahaId, Member } from '@/types'
+import type { FamilyProfile, GrahaId, Member, InvestmentEntry, InsuranceEntry } from '@/types'
 
 const messages = [
   'Analyzing Wealth Architecture...',
@@ -49,8 +49,8 @@ export default function LoadingPage() {
         totalLiabilities: profileRow?.total_liabilities ?? 0,
         riskProfile: profileRow?.risk_profile ?? 'moderate',
         goals: profileRow?.goals ?? [],
-        existingInvestments: profileRow?.existing_investments ?? [],
-        existingInsurance: profileRow?.existing_insurance ?? [],
+        existingInvestments: (profileRow?.existing_investments as unknown as InvestmentEntry[]) ?? [],
+        existingInsurance: (profileRow?.existing_insurance as unknown as InsuranceEntry[]) ?? [],
       }
 
       const answerMap: GrahaAnswerMap = {}

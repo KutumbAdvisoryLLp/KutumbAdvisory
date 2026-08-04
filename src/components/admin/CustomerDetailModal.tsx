@@ -11,11 +11,168 @@ import { CloseIcon } from "@/components/icons/admin";
 import { GRAHA_IDS } from "@/types";
 import { familyProfileQuestionCount } from "@/lib/kundali/assessment";
 import type { CustomerListItem } from "@/app/admin/customers/page";
-import type { FamilyProfile, Member, ActionItem, GrahaId } from "@/types";
+import type { FamilyProfile, Member, ActionItem, GrahaId, InvestmentEntry, InsuranceEntry } from "@/types";
 
 const TOTAL_QUESTIONS = familyProfileQuestionCount();
 
 const emptyMember: Member = { name: "", age: 0, relation: "spouse", occupation: "", income: 0 };
+const emptyInvestment: InvestmentEntry = { type: "Mutual Fund", amount: 0 };
+const emptyInsurance: InsuranceEntry = { type: "Term Life", sumInsured: 0, premium: 0, paymentMode: "Annual" };
+const investmentTypes = ["Mutual Fund", "Stocks", "FD", "PPF", "Real Estate", "Gold", "Other"];
+const insuranceTypes = ["Term Life", "Health", "Critical Illness", "Accident", "Other"];
+const paymentModes: InsuranceEntry["paymentMode"][] = ["Monthly", "Quarterly", "Half-Yearly", "Annual"];
+
+const rowInputClass =
+  "w-full rounded-lg border border-navy/10 bg-white px-3 py-2 text-sm text-navy outline-none transition-all duration-300 focus:border-gold/30";
+
+function InvestmentRows({
+  entries,
+  onChange,
+}: {
+  entries: InvestmentEntry[];
+  onChange: (entries: InvestmentEntry[]) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-stone/40">Existing Investments</p>
+        <button
+          type="button"
+          onClick={() => onChange([...entries, { ...emptyInvestment }])}
+          className="text-xs text-gold hover:text-gold/70"
+        >
+          + Add Investment
+        </button>
+      </div>
+      <div className="space-y-2">
+        {entries.map((inv, i) => (
+          <div key={i} className="grid grid-cols-[1.3fr_1fr_1fr_auto] gap-2">
+            <select
+              value={inv.type}
+              onChange={(e) => {
+                const c = [...entries];
+                c[i] = { ...c[i], type: e.target.value };
+                onChange(c);
+              }}
+              className={rowInputClass}
+            >
+              {investmentTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <input
+              type="number"
+              value={inv.amount || ""}
+              placeholder="Amount"
+              onChange={(e) => {
+                const c = [...entries];
+                c[i] = { ...c[i], amount: Number(e.target.value) };
+                onChange(c);
+              }}
+              className={rowInputClass}
+            />
+            <input
+              type="number"
+              value={inv.currentValue || ""}
+              placeholder="Current value"
+              onChange={(e) => {
+                const c = [...entries];
+                c[i] = { ...c[i], currentValue: Number(e.target.value) };
+                onChange(c);
+              }}
+              className={rowInputClass}
+            />
+            <button type="button" onClick={() => onChange(entries.filter((_, j) => j !== i))} className="text-stone/40 hover:text-error">
+              <CloseIcon size={14} />
+            </button>
+          </div>
+        ))}
+        {entries.length === 0 && <p className="text-sm text-stone/40">No investments on file.</p>}
+      </div>
+    </div>
+  );
+}
+
+function InsuranceRows({
+  entries,
+  onChange,
+}: {
+  entries: InsuranceEntry[];
+  onChange: (entries: InsuranceEntry[]) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-stone/40">Existing Insurance</p>
+        <button
+          type="button"
+          onClick={() => onChange([...entries, { ...emptyInsurance }])}
+          className="text-xs text-gold hover:text-gold/70"
+        >
+          + Add Insurance
+        </button>
+      </div>
+      <div className="space-y-2">
+        {entries.map((ins, i) => (
+          <div key={i} className="grid grid-cols-[1.2fr_1fr_1fr_1fr_auto] gap-2">
+            <select
+              value={ins.type}
+              onChange={(e) => {
+                const c = [...entries];
+                c[i] = { ...c[i], type: e.target.value };
+                onChange(c);
+              }}
+              className={rowInputClass}
+            >
+              {insuranceTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <input
+              type="number"
+              value={ins.sumInsured || ""}
+              placeholder="Sum insured"
+              onChange={(e) => {
+                const c = [...entries];
+                c[i] = { ...c[i], sumInsured: Number(e.target.value) };
+                onChange(c);
+              }}
+              className={rowInputClass}
+            />
+            <input
+              type="number"
+              value={ins.premium || ""}
+              placeholder="Premium"
+              onChange={(e) => {
+                const c = [...entries];
+                c[i] = { ...c[i], premium: Number(e.target.value) };
+                onChange(c);
+              }}
+              className={rowInputClass}
+            />
+            <select
+              value={ins.paymentMode}
+              onChange={(e) => {
+                const c = [...entries];
+                c[i] = { ...c[i], paymentMode: e.target.value as InsuranceEntry["paymentMode"] };
+                onChange(c);
+              }}
+              className={rowInputClass}
+            >
+              {paymentModes.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+            <button type="button" onClick={() => onChange(entries.filter((_, j) => j !== i))} className="text-stone/40 hover:text-error">
+              <CloseIcon size={14} />
+            </button>
+          </div>
+        ))}
+        {entries.length === 0 && <p className="text-sm text-stone/40">No insurance on file.</p>}
+      </div>
+    </div>
+  );
+}
 
 function MemberFields({
   label,
@@ -117,8 +274,8 @@ function ModalContent({
           totalLiabilities: d.total_liabilities ?? 0,
           riskProfile: d.risk_profile ?? "moderate",
           goals: d.goals ?? [],
-          existingInvestments: d.existing_investments ?? [],
-          existingInsurance: d.existing_insurance ?? [],
+          existingInvestments: (d.existing_investments as unknown as InvestmentEntry[]) ?? [],
+          existingInsurance: (d.existing_insurance as unknown as InsuranceEntry[]) ?? [],
         });
       }
 
@@ -150,8 +307,8 @@ function ModalContent({
       total_liabilities: profile.totalLiabilities,
       risk_profile: profile.riskProfile,
       goals: profile.goals,
-      existing_investments: profile.existingInvestments,
-      existing_insurance: profile.existingInsurance,
+      existing_investments: profile.existingInvestments as unknown as Json,
+      existing_insurance: profile.existingInsurance as unknown as Json,
     });
     showToast(error ? "Could not save family profile" : "Family profile saved");
   };
@@ -280,29 +437,13 @@ function ModalContent({
                     }
                     rows={2}
                   />
-                  <AdminTextarea
-                    label="Existing Investments (comma separated)"
-                    name="existingInvestments"
-                    value={profile.existingInvestments.join(", ")}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        existingInvestments: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-                      })
-                    }
-                    rows={2}
+                  <InvestmentRows
+                    entries={profile.existingInvestments}
+                    onChange={(existingInvestments) => setProfile({ ...profile, existingInvestments })}
                   />
-                  <AdminTextarea
-                    label="Existing Insurance (comma separated)"
-                    name="existingInsurance"
-                    value={profile.existingInsurance.join(", ")}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        existingInsurance: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-                      })
-                    }
-                    rows={2}
+                  <InsuranceRows
+                    entries={profile.existingInsurance}
+                    onChange={(existingInsurance) => setProfile({ ...profile, existingInsurance })}
                   />
                   <button
                     type="button"

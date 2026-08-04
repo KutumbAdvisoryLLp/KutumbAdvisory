@@ -14,18 +14,27 @@ import {
   VyayaIcon,
   DayaIcon,
 } from "./icons";
+import { GRAHAS } from "@/lib/kundali/grahas";
 
-const grahas = [
-  { name: "Dhana Graha", desc: "Wealth & Assets", icon: DhanaIcon },
-  { name: "Vidya Graha", desc: "Financial Knowledge", icon: VidyaIcon },
-  { name: "Karma Graha", desc: "Income & Profession", icon: KarmaIcon },
-  { name: "Raksha Graha", desc: "Insurance & Protection", icon: RakshaIcon },
-  { name: "Sampatti Graha", desc: "Estate & Property", icon: SampattiIcon },
-  { name: "Vishrama Graha", desc: "Retirement", icon: VishramaIcon },
-  { name: "Karza Graha", desc: "Liabilities & Debt", icon: KarzaIcon },
-  { name: "Vyaya Graha", desc: "Spending & Cashflow", icon: VyayaIcon },
-  { name: "Daya Graha", desc: "Legacy & Inheritance", icon: DayaIcon },
-];
+// Icons kept from the original design, remapped by theme to the real
+// product's 9 grahas (source of truth: GRAHAS in lib/kundali/grahas.ts).
+const grahaIcons: Record<string, typeof DhanaIcon> = {
+  surya: KarmaIcon, // was "Income & Profession"
+  chandra: SampattiIcon, // leftover pairing — weakest thematic fit of the nine
+  mangal: RakshaIcon, // was "Insurance & Protection"
+  budh: VidyaIcon, // was "Financial Knowledge"
+  guru: DhanaIcon, // was "Wealth & Assets"
+  shukra: VyayaIcon, // was "Spending & Cashflow"
+  shani: VishramaIcon, // was "Retirement"
+  rahu: KarzaIcon, // was "Liabilities & Debt"
+  ketu: DayaIcon, // was "Legacy & Inheritance"
+};
+
+const grahas = GRAHAS.map((g) => ({
+  name: g.name,
+  desc: g.subtitle,
+  icon: grahaIcons[g.id],
+}));
 
 export default function FinancialKundali() {
   return (

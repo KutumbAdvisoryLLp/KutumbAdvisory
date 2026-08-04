@@ -135,8 +135,8 @@ export interface Database {
           total_liabilities: number | null;
           risk_profile: "conservative" | "moderate" | "aggressive" | null;
           goals: string[];
-          existing_investments: string[];
-          existing_insurance: string[];
+          existing_investments: Json;
+          existing_insurance: Json;
           updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["family_profiles"]["Row"]> & {

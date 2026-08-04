@@ -79,7 +79,7 @@ export default function Footer() {
             </h4>
             <ul className="space-y-4">
               <li className="text-sm text-stone/70">hello@kutumbadvisory.com</li>
-              <li className="text-sm text-stone/70">+91 98765 43210</li>
+              <li className="text-sm text-stone/70">+91 98316 10210</li>
             </ul>
           </div>
 

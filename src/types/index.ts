@@ -13,6 +13,19 @@ export interface Member {
   income?: number
 }
 
+export interface InvestmentEntry {
+  type: string
+  amount: number
+  currentValue?: number
+}
+
+export interface InsuranceEntry {
+  type: string
+  sumInsured: number
+  premium: number
+  paymentMode: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Annual'
+}
+
 export interface FamilyProfile {
   primaryMember: Member
   spouse?: Member
@@ -22,8 +35,8 @@ export interface FamilyProfile {
   totalLiabilities: number
   riskProfile: 'conservative' | 'moderate' | 'aggressive'
   goals: string[]
-  existingInvestments: string[]
-  existingInsurance: string[]
+  existingInvestments: InvestmentEntry[]
+  existingInsurance: InsuranceEntry[]
 }
 
 export interface Answer {
@@ -83,7 +96,6 @@ export interface AssessmentResult {
   recommendations: string[]
   advisorNotes: string
   actionPlan: ActionItem[]
-  pdfReport: string
   strongestGraha: GrahaId
   weakestGraha: GrahaId
 }
@@ -95,6 +107,9 @@ export interface Question {
   options?: string[]
   min?: number
   max?: number
+  // Set when `options` is listed worst-to-best instead of the default
+  // best-to-worst — scoring treats the last option as healthiest.
+  reverseScore?: boolean
 }
 
 export interface GrahaConfig {

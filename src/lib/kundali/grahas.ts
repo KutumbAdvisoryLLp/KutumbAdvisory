@@ -10,8 +10,8 @@ export const GRAHAS: GrahaConfig[] = [
     color: '#E89F3C',
     questions: [
       { id: 's1', type: 'radio', text: 'How stable is your primary income source?', options: ['Very stable', 'Moderately stable', 'Somewhat variable', 'Highly variable', 'Unstable'] },
-      { id: 's2', type: 'radio', text: 'How many income streams does your family have?', options: ['1', '2', '3', '4', '5+'] },
-      { id: 's3', type: 'radio', text: 'What percentage of your income is passive?', options: ['0%', '1–10%', '11–25%', '26–50%', '50%+'] },
+      { id: 's2', type: 'radio', text: 'How many income streams does your family have?', options: ['1', '2', '3', '4', '5+'], reverseScore: true },
+      { id: 's3', type: 'radio', text: 'What percentage of your income is passive?', options: ['0%', '1–10%', '11–25%', '26–50%', '50%+'], reverseScore: true },
       { id: 's4', type: 'radio', text: 'How has your income trended over the last 3 years?', options: ['Steadily increasing', 'Stable with growth', 'Flat', 'Slightly declining', 'Declining'] },
       { id: 's5', type: 'radio', text: 'How confident are you about income stability in the next 5 years?', options: ['Very confident', 'Confident', 'Neutral', 'Concerned', 'Very concerned'] },
     ],
@@ -24,8 +24,8 @@ export const GRAHAS: GrahaConfig[] = [
     icon: '☾',
     color: '#8AB4D6',
     questions: [
-      { id: 'c1', type: 'radio', text: 'How many months of expenses can you cover from savings?', options: ['None', '1–3 months', '3–6 months', '6–12 months', '12+ months'] },
-      { id: 'c2', type: 'radio', text: 'Where is your emergency fund held?', options: ['Not created', 'Savings account', 'Fixed deposit', 'Liquid fund', 'Multiple instruments'] },
+      { id: 'c1', type: 'radio', text: 'How many months of expenses can you cover from savings?', options: ['None', '1–3 months', '3–6 months', '6–12 months', '12+ months'], reverseScore: true },
+      { id: 'c2', type: 'radio', text: 'Where is your emergency fund held?', options: ['Not created', 'Savings account', 'Fixed deposit', 'Liquid fund', 'Multiple instruments'], reverseScore: true },
       { id: 'c3', type: 'radio', text: 'Have you faced an emergency expense in the last 2 years?', options: ['Yes, fully covered', 'Yes, partially covered', 'Yes, struggled', 'No emergencies', 'Prefer not to say'] },
       { id: 'c4', type: 'radio', text: 'How would you handle a sudden ₹5 lakh expense?', options: ['From savings', 'From investments', 'From credit card', 'From loan', 'Would struggle'] },
       { id: 'c5', type: 'radio', text: 'How often do you worry about unexpected expenses?', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Constantly'] },

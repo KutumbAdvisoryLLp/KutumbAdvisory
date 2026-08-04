@@ -8,9 +8,16 @@ import { ProgressBar } from '@/components/mykundali/progress-bar'
 import { createClient } from '@/lib/supabase/client'
 import type { Json } from '@/lib/supabase/types'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
-import type { FamilyProfile, Member } from '@/types'
+import type { FamilyProfile, Member, InvestmentEntry, InsuranceEntry } from '@/types'
 
 const emptyMember: Member = { name: '', age: 30, relation: 'child', occupation: '', income: 0 }
+
+const emptyInvestment: InvestmentEntry = { type: 'Mutual Fund', amount: 0 }
+const emptyInsurance: InsuranceEntry = { type: 'Term Life', sumInsured: 0, premium: 0, paymentMode: 'Annual' }
+
+const investmentTypes = ['Mutual Fund', 'Stocks', 'FD', 'PPF', 'Real Estate', 'Gold', 'Other']
+const insuranceTypes = ['Term Life', 'Health', 'Critical Illness', 'Accident', 'Other']
+const paymentModes: InsuranceEntry['paymentMode'][] = ['Monthly', 'Quarterly', 'Half-Yearly', 'Annual']
 
 const goals = [
   'Buy a home', 'Children education', 'Marriage', 'Retirement',
@@ -67,8 +74,8 @@ export default function FamilyProfilePage() {
           totalLiabilities: data.total_liabilities ?? 0,
           riskProfile: data.risk_profile ?? 'moderate',
           goals: data.goals ?? [],
-          existingInvestments: data.existing_investments ?? [],
-          existingInsurance: data.existing_insurance ?? [],
+          existingInvestments: (data.existing_investments as unknown as InvestmentEntry[]) ?? [],
+          existingInsurance: (data.existing_insurance as unknown as InsuranceEntry[]) ?? [],
         })
       }
       setLoaded(true)
@@ -88,8 +95,8 @@ export default function FamilyProfilePage() {
         total_liabilities: current.totalLiabilities,
         risk_profile: current.riskProfile,
         goals: current.goals,
-        existing_investments: current.existingInvestments,
-        existing_insurance: current.existingInsurance,
+        existing_investments: current.existingInvestments as unknown as Json,
+        existing_insurance: current.existingInsurance as unknown as Json,
       })
     },
     [userId, supabase]
@@ -115,7 +122,7 @@ export default function FamilyProfilePage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-charcoal mb-1.5">Age</label>
-          <input type="number" value={profile.primaryMember.age} onChange={(e) => update('primaryMember', { ...profile.primaryMember, age: Number(e.target.value) })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" />
+          <input type="number" value={profile.primaryMember.age || ''} onChange={(e) => update('primaryMember', { ...profile.primaryMember, age: Number(e.target.value) })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" />
         </div>
         <div>
           <label className="block text-sm font-medium text-charcoal mb-1.5">Occupation</label>
@@ -146,7 +153,7 @@ export default function FamilyProfilePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-charcoal mb-1.5">Age</label>
-                <input type="number" value={profile.spouse.age} onChange={(e) => update('spouse', { ...profile.spouse!, age: Number(e.target.value) })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" />
+                <input type="number" value={profile.spouse.age || ''} onChange={(e) => update('spouse', { ...profile.spouse!, age: Number(e.target.value) })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" />
               </div>
             </motion.div>
           )}
@@ -162,7 +169,7 @@ export default function FamilyProfilePage() {
           {profile.children.map((child, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex gap-3 items-start mb-3">
               <input type="text" value={child.name} onChange={(e) => { const c = [...profile.children]; c[i] = { ...c[i], name: e.target.value }; update('children', c) }} className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Name" />
-              <input type="number" value={child.age} onChange={(e) => { const c = [...profile.children]; c[i] = { ...c[i], age: Number(e.target.value) }; update('children', c) }} className="w-20 px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Age" />
+              <input type="number" value={child.age || ''} onChange={(e) => { const c = [...profile.children]; c[i] = { ...c[i], age: Number(e.target.value) }; update('children', c) }} className="w-20 px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Age" />
               <button onClick={() => setProfile(p => ({ ...p, children: p.children.filter((_, j) => j !== i) }))} className="text-slate-light hover:text-error transition-colors p-1">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
@@ -218,13 +225,52 @@ export default function FamilyProfilePage() {
     <motion.div key="coverage" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
       <h2 className="font-serif text-3xl text-navy">Existing Coverage</h2>
       <p className="text-slate">What you already have in place.</p>
-      <div>
-        <label className="block text-sm font-medium text-charcoal mb-2">Existing Investments</label>
-        <textarea value={profile.existingInvestments.join(', ')} onChange={(e) => update('existingInvestments', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="e.g. Mutual Funds, Fixed Deposits, Stocks (comma separated)" rows={3} />
+
+      <div className="p-5 bg-white rounded-2xl border border-slate-lighter/30">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-medium text-charcoal">Investments</span>
+          <button onClick={() => setProfile(p => ({ ...p, existingInvestments: [...p.existingInvestments, { ...emptyInvestment }] }))} className="text-sm text-gold hover:text-gold-dark transition-colors">+ Add Investment</button>
+        </div>
+        <AnimatePresence>
+          {profile.existingInvestments.map((inv, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-[1.3fr_1fr_1fr_auto] gap-3 items-start mb-3">
+              <select value={inv.type} onChange={(e) => { const c = [...profile.existingInvestments]; c[i] = { ...c[i], type: e.target.value }; update('existingInvestments', c) }} className="px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm">
+                {investmentTypes.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <input type="number" value={inv.amount || ''} onChange={(e) => { const c = [...profile.existingInvestments]; c[i] = { ...c[i], amount: Number(e.target.value) }; update('existingInvestments', c) }} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Amount invested" />
+              <input type="number" value={inv.currentValue || ''} onChange={(e) => { const c = [...profile.existingInvestments]; c[i] = { ...c[i], currentValue: Number(e.target.value) }; update('existingInvestments', c) }} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Current value" />
+              <button onClick={() => setProfile(p => ({ ...p, existingInvestments: p.existingInvestments.filter((_, j) => j !== i) }))} className="text-slate-light hover:text-error transition-colors p-1 mt-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {profile.existingInvestments.length === 0 && <p className="text-sm text-slate-light">No investments added yet.</p>}
       </div>
-      <div>
-        <label className="block text-sm font-medium text-charcoal mb-2">Existing Insurance</label>
-        <textarea value={profile.existingInsurance.join(', ')} onChange={(e) => update('existingInsurance', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="e.g. Term Life, Health Insurance (comma separated)" rows={3} />
+
+      <div className="p-5 bg-white rounded-2xl border border-slate-lighter/30">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-medium text-charcoal">Insurance</span>
+          <button onClick={() => setProfile(p => ({ ...p, existingInsurance: [...p.existingInsurance, { ...emptyInsurance }] }))} className="text-sm text-gold hover:text-gold-dark transition-colors">+ Add Insurance</button>
+        </div>
+        <AnimatePresence>
+          {profile.existingInsurance.map((ins, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-[1.2fr_1fr_1fr_1fr_auto] gap-3 items-start mb-3">
+              <select value={ins.type} onChange={(e) => { const c = [...profile.existingInsurance]; c[i] = { ...c[i], type: e.target.value }; update('existingInsurance', c) }} className="px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm">
+                {insuranceTypes.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <input type="number" value={ins.sumInsured || ''} onChange={(e) => { const c = [...profile.existingInsurance]; c[i] = { ...c[i], sumInsured: Number(e.target.value) }; update('existingInsurance', c) }} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Sum insured" />
+              <input type="number" value={ins.premium || ''} onChange={(e) => { const c = [...profile.existingInsurance]; c[i] = { ...c[i], premium: Number(e.target.value) }; update('existingInsurance', c) }} className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Premium" />
+              <select value={ins.paymentMode} onChange={(e) => { const c = [...profile.existingInsurance]; c[i] = { ...c[i], paymentMode: e.target.value as InsuranceEntry['paymentMode'] }; update('existingInsurance', c) }} className="px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm">
+                {paymentModes.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <button onClick={() => setProfile(p => ({ ...p, existingInsurance: p.existingInsurance.filter((_, j) => j !== i) }))} className="text-slate-light hover:text-error transition-colors p-1 mt-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {profile.existingInsurance.length === 0 && <p className="text-sm text-slate-light">No insurance policies added yet.</p>}
       </div>
     </motion.div>,
 

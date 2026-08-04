@@ -39,19 +39,25 @@ function calculatorsFor(grahaId: GrahaId): Calculator[] {
     .map((c) => ({ name: c.title, description: c.description, grahaId }));
 }
 
-function optionScore(value: Answer["value"] | undefined, options: string[] | undefined): number {
+function optionScore(
+  value: Answer["value"] | undefined,
+  options: string[] | undefined,
+  reverseScore?: boolean
+): number {
   if (value === undefined || !options || options.length <= 1) return 5;
   const idx = typeof value === "string" ? options.indexOf(value) : -1;
   if (idx === -1) return 5;
-  // First option is always the healthiest answer in this question bank —
-  // idx 0 -> 10, last option -> 0.
-  return Math.round((1 - idx / (options.length - 1)) * 10);
+  // First option is the healthiest answer by default (idx 0 -> 10, last -> 0).
+  // reverseScore flips this for questions whose options are listed
+  // worst-to-best instead (e.g. "None" -> "12+ months").
+  const healthyIdx = reverseScore ? options.length - 1 - idx : idx;
+  return Math.round((1 - healthyIdx / (options.length - 1)) * 10);
 }
 
 function scoreGraha(grahaId: GrahaId, answers: Record<string, Answer["value"]> | undefined): number {
   const graha = GRAHAS.find((g) => g.id === grahaId);
   if (!graha) return 0;
-  const perQuestion = graha.questions.map((q) => optionScore(answers?.[q.id], q.options));
+  const perQuestion = graha.questions.map((q) => optionScore(answers?.[q.id], q.options, q.reverseScore));
   const avg = perQuestion.reduce((sum, s) => sum + s, 0) / perQuestion.length;
   return Math.round(avg * 10) / 10;
 }
@@ -63,7 +69,7 @@ function buildGrahaDetail(grahaId: GrahaId, answers: Record<string, Answer["valu
 
   const perQuestionScores = graha.questions.map((q) => ({
     question: q,
-    score: optionScore(answers?.[q.id], q.options),
+    score: optionScore(answers?.[q.id], q.options, q.reverseScore),
     answer: answers?.[q.id],
   }));
 
@@ -143,7 +149,6 @@ export function computeAssessmentResult(
     recommendations,
     advisorNotes: `Overall financial health score: ${overallScore}/90 (${profile.riskProfile} risk profile). Strongest area: ${strongestGraha}. Focus area: ${weakestGraha}.`,
     actionPlan,
-    pdfReport: "",
     strongestGraha,
     weakestGraha,
   };

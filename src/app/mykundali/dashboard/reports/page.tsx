@@ -7,7 +7,10 @@ import Button from '@/components/Button'
 import { createClient } from '@/lib/supabase/client'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 import { GRAHAS } from '@/lib/kundali/grahas'
+import { getScoreColor, getScoreStatus } from '@/types'
 import type { ActionItem, GrahaId } from '@/types'
+
+const PRIORITY_LABELS = ['First', 'Second', 'Third']
 
 type ReportFormat = 'full' | 'summary' | 'actions'
 
@@ -160,20 +163,69 @@ export default function ReportsPage() {
           className="p-8 bg-white rounded-3xl border border-slate-lighter/20 shadow-card"
         >
           {/* Preview */}
-          <div className="mb-8 p-6 bg-cream rounded-2xl border border-slate-lighter/20">
-            <div className="flex items-center justify-center h-48">
-              <div className="text-center">
-                <span className="text-5xl block mb-3">✦</span>
-                <p className="font-serif text-xl text-navy">Financial Kundali Report</p>
-                <p className="text-sm text-slate mt-2">
-                  {user?.fullName ?? 'Your Report'}
-                  {report && ` · ${report.completedAt} · Score: ${report.overallScore}/90`}
-                </p>
-                <p className="text-xs text-slate-light mt-1">
-                  Kutumb Advisory
-                </p>
-              </div>
+          <div className="mb-8 p-6 sm:p-8 bg-cream print:bg-white rounded-2xl border border-slate-lighter/20 print:border-navy/20">
+            <div className="text-center pb-6 border-b border-slate-lighter/30 print:border-navy/20">
+              <span className="text-4xl block mb-2">✦</span>
+              <p className="font-serif text-2xl text-navy">Financial Kundali Report</p>
+              <p className="text-sm text-slate mt-1">
+                {user?.fullName ?? 'Your Report'}
+                {report && ` · ${report.completedAt}`}
+              </p>
+              <p className="text-xs text-slate-light mt-1">Kutumb Advisory</p>
             </div>
+
+            {!report ? (
+              <p className="text-sm text-slate text-center py-10">Your report will appear here once your assessment is complete.</p>
+            ) : (
+              <>
+                <div className="text-center py-6 border-b border-slate-lighter/30 print:border-navy/20">
+                  <p className="text-xs uppercase tracking-wide text-slate-light">Overall Score</p>
+                  <p className="font-serif text-4xl text-navy mt-1">
+                    {report.overallScore}<span className="text-lg text-slate">/90</span>
+                  </p>
+                  <span
+                    className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium border"
+                    style={{ color: getScoreColor(getScoreStatus(report.overallScore / 9)), borderColor: 'currentColor' }}
+                  >
+                    {report.overallStatus}
+                  </span>
+                </div>
+
+                <div className="py-6 border-b border-slate-lighter/30 print:border-navy/20">
+                  <p className="text-xs uppercase tracking-wide text-slate-light mb-3">9 Graha Breakdown</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {GRAHAS.map((g) => {
+                      const score = report.grahaScores[g.id]
+                      return (
+                        <div key={g.id} className="flex items-center justify-between px-3 py-2 rounded-xl border border-slate-lighter/40 print:border-navy/10">
+                          <span className="text-sm text-charcoal">{g.name}</span>
+                          <span className="text-sm font-medium text-navy">{score ?? '—'}/10</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-6">
+                  <p className="text-xs uppercase tracking-wide text-slate-light mb-3">Priority Actions</p>
+                  {report.actionPlan.length === 0 ? (
+                    <p className="text-sm text-slate">No action items yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {report.actionPlan.slice(0, 3).map((item, i) => (
+                        <div key={item.id} className="p-4 rounded-xl border border-slate-lighter/40 print:border-navy/10 text-left">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-gold-dark">
+                            {PRIORITY_LABELS[i] ?? `#${i + 1}`} · {grahaName(item.grahaId)}
+                          </p>
+                          <p className="text-sm font-medium text-charcoal mt-1">{item.title}</p>
+                          <p className="text-xs text-slate mt-1">{item.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Format Selection */}

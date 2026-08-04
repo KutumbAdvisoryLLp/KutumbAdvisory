@@ -8,6 +8,16 @@ import { ToolIcon } from './tool-icons'
 import * as fin from '@/lib/kundali/financial'
 import type { CalculatorDef } from '@/lib/kundali/toolkit'
 
+const NUMERIC_PATTERN = /^\d*\.?\d*$/
+
+// Returns the parsed number, 0 for an empty field, or null if `raw`
+// contains anything other than digits/a decimal point (letters, symbols).
+function parseNumericInput(raw: string): number | null {
+  if (raw === '') return 0
+  if (!NUMERIC_PATTERN.test(raw)) return null
+  return Number(raw)
+}
+
 interface CalculatorModalProps {
   calc: CalculatorDef
   onClose: () => void
@@ -628,17 +638,40 @@ function AssetAllocationForm({ onResult }: { onResult: (r: Record<string, string
     { name: 'Gold', pct: 10 },
     { name: 'Cash', pct: 10 },
   ])
+  const [allocRaw, setAllocRaw] = useState(alloc.map((a) => String(a.pct)))
+  const [allocErrors, setAllocErrors] = useState(alloc.map(() => false))
+
   return (
     <div className="space-y-5">
       <Field label="Total Corpus (₹)" val={corpus} set={setCorpus} min={100000} max={100000000} step={50000} prefix="₹" />
       {alloc.map((a, i) => (
         <div key={a.name}>
           <label className="block text-sm font-medium text-charcoal mb-1.5">{a.name} (%)</label>
-          <input type="number" value={a.pct} onChange={(e) => {
-            const n = [...alloc]
-            n[i] = { ...n[i], pct: Number(e.target.value) }
-            setAlloc(n)
-          }} min={0} max={100} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" />
+          <input
+            type="text"
+            inputMode="decimal"
+            value={allocRaw[i]}
+            onChange={(e) => {
+              const next = e.target.value
+              const rawCopy = [...allocRaw]
+              rawCopy[i] = next
+              setAllocRaw(rawCopy)
+
+              const parsed = parseNumericInput(next)
+              const errCopy = [...allocErrors]
+              errCopy[i] = parsed === null
+              setAllocErrors(errCopy)
+
+              if (parsed !== null) {
+                const n = [...alloc]
+                n[i] = { ...n[i], pct: parsed }
+                setAlloc(n)
+              }
+            }}
+            aria-invalid={allocErrors[i]}
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white focus:outline-none transition-colors ${allocErrors[i] ? 'border-error focus:border-error' : 'border-slate-lighter focus:border-gold'}`}
+          />
+          {allocErrors[i] && <p className="mt-1.5 text-xs text-error">Enter only numbers</p>}
         </div>
       ))}
       <button onClick={() => {
@@ -738,7 +771,7 @@ function MarriagePlannerForm({ onResult }: { onResult: (r: Record<string, string
 
 /* Field component */
 function Field({
-  label, val, set, min, max, step, prefix, suffix
+  label, val, set, prefix, suffix
 }: {
   label: string
   val: number
@@ -749,22 +782,33 @@ function Field({
   prefix?: string
   suffix?: string
 }) {
+  const [raw, setRaw] = useState(String(val))
+  const [error, setError] = useState(false)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value
+    setRaw(next)
+    const parsed = parseNumericInput(next)
+    setError(parsed === null)
+    if (parsed !== null) set(parsed)
+  }
+
   return (
     <div>
       <label className="block text-xs font-medium text-charcoal/70 mb-1.5 tracking-wide">{label}</label>
       <div className="relative">
         {prefix && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate text-sm font-medium">{prefix}</span>}
         <input
-          type="number"
-          value={val}
-          onChange={(e) => set(Number(e.target.value))}
-          min={min}
-          max={max}
-          step={step}
-          className={`w-full px-4 py-3 rounded-xl border border-slate-lighter/40 bg-white text-charcoal focus:border-gold/60 focus:ring-1 focus:ring-gold/20 focus:outline-none transition-all text-sm ${prefix ? 'pl-9' : ''} ${suffix ? 'pr-9' : ''}`}
+          type="text"
+          inputMode="decimal"
+          value={raw}
+          onChange={handleChange}
+          aria-invalid={error}
+          className={`w-full px-4 py-3 rounded-xl border bg-white text-charcoal focus:ring-1 focus:outline-none transition-all text-sm ${error ? 'border-error focus:border-error focus:ring-error/20' : 'border-slate-lighter/40 focus:border-gold/60 focus:ring-gold/20'} ${prefix ? 'pl-9' : ''} ${suffix ? 'pr-9' : ''}`}
         />
         {suffix && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate text-sm font-medium">{suffix}</span>}
       </div>
+      {error && <p className="mt-1.5 text-xs text-error">Enter only numbers</p>}
     </div>
   )
 }

@@ -145,6 +145,7 @@ export function swpWithdrawal(
 }
 
 export function emergencyFundMonths(monthlyExpenses: number, savings: number): number {
+  if (monthlyExpenses <= 0) return 0
   return savings / monthlyExpenses
 }
 
@@ -189,6 +190,7 @@ export function homeLoanEligibility(
   if (availableForEMI <= 0) return 0
   const r = interestRate / 100 / 12
   const months = tenureYears * 12
+  if (r === 0) return availableForEMI * months
   const loanAmount = availableForEMI * (Math.pow(1 + r, months) - 1) / (r * Math.pow(1 + r, months))
   return loanAmount
 }
@@ -306,7 +308,7 @@ export function goalPlanning(
   // sipFutureValue is linear in the contribution amount, so this scales
   // correctly whether or not a step-up is in play.
   const unitFutureValue = sipFutureValue(1, expectedReturn, yearsToGoal, stepUpPercent)
-  const monthlySIP = targetAmount / unitFutureValue
+  const monthlySIP = unitFutureValue <= 0 ? 0 : targetAmount / unitFutureValue
   const lumpsumNeeded = targetAmount / Math.pow(1 + expectedReturn / 100, yearsToGoal)
   return { monthlyInvestment: monthlySIP, lumpsumNeeded }
 }
@@ -329,6 +331,7 @@ export function retirementGap(
 }
 
 export function dtiRatio(totalDebt: number, annualIncome: number): number {
+  if (annualIncome <= 0) return 0
   return (totalDebt / annualIncome) * 100
 }
 
@@ -462,9 +465,10 @@ export function childEducationCost(
   expectedReturn: number = 10
 ): { futureCost: number; monthlySIP: number } {
   const futureCost = currentCost * Math.pow(1 + inflationRate / 100, yearsToCollege)
+  const unitFutureValue = sipFutureValue(1, expectedReturn, yearsToCollege)
   return {
     futureCost,
-    monthlySIP: futureCost / sipFutureValue(1, expectedReturn, yearsToCollege),
+    monthlySIP: unitFutureValue <= 0 ? 0 : futureCost / unitFutureValue,
   }
 }
 
@@ -475,9 +479,10 @@ export function marriageCost(
   expectedReturn: number = 10
 ): { futureCost: number; monthlySIP: number } {
   const futureCost = currentCost * Math.pow(1 + inflationRate / 100, yearsToMarriage)
+  const unitFutureValue = sipFutureValue(1, expectedReturn, yearsToMarriage)
   return {
     futureCost,
-    monthlySIP: futureCost / sipFutureValue(1, expectedReturn, yearsToMarriage),
+    monthlySIP: unitFutureValue <= 0 ? 0 : futureCost / unitFutureValue,
   }
 }
 
