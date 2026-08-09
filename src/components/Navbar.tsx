@@ -64,7 +64,7 @@ export default function Navbar() {
             width={62}
             height={62}
             priority
-            style={{ width: "auto" }}
+            style={{ width: "auto", height: "auto" }}
             className="h-[62px] w-auto object-contain transition-all duration-500 group-hover:scale-[1.03]"
           />
           <span className="hidden sm:inline font-serif text-2xl tracking-wide text-navy transition-all duration-300 group-hover:text-gold">

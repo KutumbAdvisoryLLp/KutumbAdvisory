@@ -15,10 +15,10 @@ import type { ActionItem, GrahaId } from '@/types'
 const overallMax = 90
 
 const statusLabels: Record<string, string> = {
-  excellent: 'Excellent',
-  good: 'Good',
-  fair: 'Fair',
-  poor: 'Needs Attention',
+  excellent: 'Strong (81–90)',
+  good: 'Mild Dosha (63–80)',
+  fair: 'Moderate (36–62)',
+  poor: 'Severe Dosha (0–35)',
 }
 
 export default function DashboardPage() {
@@ -72,7 +72,7 @@ export default function DashboardPage() {
         <h1 className="font-serif text-3xl md:text-4xl text-navy">
           {getGreeting()}, {displayName}
         </h1>
-        <p className="text-slate mt-1">Here&apos;s your financial health overview.</p>
+        <p className="text-slate mt-1">Here&apos;s your Financial Kundali overview.</p>
       </motion.div>
 
       {/* Score + Status */}
@@ -81,7 +81,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="p-6 bg-white rounded-2xl shadow-card flex flex-col items-center border border-slate-lighter/20"
+          className="p-6 bg-white rounded-2xl shadow-card flex flex-col items-center justify-center border border-slate-lighter/20"
         >
           <ScoreRing score={overallScore} maxScore={overallMax} size="lg" className="relative" />
         </motion.div>
@@ -98,16 +98,16 @@ export default function DashboardPage() {
                 key={i}
                 size={20}
                 className={i < overallStars ? 'text-gold fill-gold' : 'text-slate-lighter'}
-                strokeWidth={1.5}
               />
             ))}
           </div>
-          <span className="inline-flex w-fit items-center rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold">
-            {statusLabels[overallStatus] ?? overallStatus}
+          <span className="text-xs uppercase tracking-wider text-slate-light font-semibold">
+            Kundali Rating Band
           </span>
-          <p className="text-sm text-slate mt-3 leading-relaxed">
-            {advisorNotes || 'Your financial health overview will appear here once your assessment is complete.'}
+          <p className="font-serif text-2xl text-navy mt-1">
+            {statusLabels[overallStatus] || 'Financial Health Assessment'}
           </p>
+          <p className="text-sm text-slate mt-2 leading-relaxed">{advisorNotes}</p>
         </motion.div>
       </div>
 

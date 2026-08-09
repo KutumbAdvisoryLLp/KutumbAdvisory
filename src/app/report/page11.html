@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Shani — Retirement &amp; Dignity</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #eeeeee;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 210mm;
+            height: 297mm;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+            color: #111111;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ===== SECTION HEADER BANNER ===== */
+        .section-header {
+            position: absolute;
+            top: 6%;
+            left: 6%;
+            width: 88%;
+            height: 31mm;
+            background: #293D99;
+            border-radius: 3px 16px 16px 3px;
+            padding: 20px 0 0 10%;
+            color: #ffffff;
+        }
+
+        .section-header::before {
+            content: "";
+            position: absolute;
+            top: -2mm;
+            left: -2mm;
+            width: 3.5px;
+            height: calc(100% + 4mm);
+            background: #E2A518;
+            border-radius: 2px;
+        }
+
+        .section-header h1 {
+            font-size: 19px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .section-header p {
+            margin-top: 7px;
+            font-size: 13.5px;
+            font-weight: 400;
+            color: #ffffff;
+            opacity: 0.88;
+            line-height: 1.3;
+            max-width: 85%;
+        }
+
+        /* ===== QUESTIONNAIRE TABLE ===== */
+        .questionnaire {
+            position: absolute;
+            top: 19%;
+            left: 3%;
+            width: 94%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #dedede;
+        }
+
+        thead th {
+            background: #fbfbfa;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #172A4A;
+            padding: 8mm 10px;
+            height: 18mm;
+            border-bottom: 1px solid #dedede;
+            border-right: 1px solid #dddddd;
+        }
+
+        thead th:last-child {
+            border-right: none;
+        }
+
+        th.col-question,
+        td.col-question {
+            width: 51%;
+            text-align: left;
+        }
+
+        th.col-yesno,
+        td.col-yesno {
+            width: 14%;
+            text-align: center;
+        }
+
+        th.col-remarks,
+        td.col-remarks {
+            width: 35%;
+            text-align: left;
+        }
+
+        tbody td {
+            border-bottom: 1px solid #e6e6e6;
+            border-right: 1px solid #dddddd;
+            height: 26.5mm;
+            vertical-align: middle;
+            padding: 0 12px;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 1px solid #dedede;
+        }
+
+        tbody td:last-child {
+            border-right: none;
+        }
+
+        td.col-question {
+            font-size: 13.5px;
+            font-weight: 400;
+            color: #111111;
+            padding-left: 12px;
+        }
+
+        /* ===== SCORE / DOSHA AREA ===== */
+        .assessment-footer {
+            position: absolute;
+            top: 79%;
+            left: 3%;
+            width: 94%;
+        }
+
+        .score-dosha-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .score {
+            font-size: 13.5px;
+            font-weight: 400;
+            color: #111111;
+            line-height: 1.9;
+        }
+
+        .score .score-line {
+            display: inline-block;
+            border-bottom: 1px solid #111111;
+            width: 42mm;
+            height: 1px;
+            margin: 0 4px -2px 4px;
+        }
+
+        .dosha {
+            font-size: 13.5px;
+            font-weight: 400;
+            color: #111111;
+            margin-top: 2px;
+        }
+
+        /* ===== ADVISOR OBSERVATION ===== */
+        .observation {
+            margin-top: 9mm;
+            font-size: 13.5px;
+            font-weight: 400;
+            color: #111111;
+        }
+
+        .observation-line {
+            margin-top: 7mm;
+            width: 75%;
+            border-bottom: 1px solid #111111;
+            height: 1px;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            position: absolute;
+            bottom: 4%;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        footer .brand {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: #111111;
+        }
+
+        .emblem {
+            position: absolute;
+            bottom: 3%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 26px;
+            height: 22px;
+        }
+
+        .emblem svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .emblem text {
+            font-size: 7px;
+            font-weight: 600;
+            fill: #333333;
+            font-family: Arial, sans-serif;
+        }
+
+        @media print {
+
+            html,
+            body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background: #ffffff;
+            }
+
+            .page {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="page">
+
+        <header class="section-header">
+            <h1>Shani — Retirement &amp; Dignity</h1>
+            <p>The discipline that ensures a dignified sunset</p>
+        </header>
+
+        <section class="questionnaire">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-question">Question</th>
+                        <th class="col-yesno">Yes / No</th>
+                        <th class="col-remarks">Advisor Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="col-question">Retirement corpus calculated?</td>
+                        <td class="col-yesno"></td>
+                        <td class="col-remarks"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-question">Investing regularly toward retirement?</td>
+                        <td class="col-yesno"></td>
+                        <td class="col-remarks"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-question">Retirement gap identified?</td>
+                        <td class="col-yesno"></td>
+                        <td class="col-remarks"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-question">Projected retirement income sufficient?</td>
+                        <td class="col-yesno"></td>
+                        <td class="col-remarks"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-question">Post-retirement healthcare costs planned?</td>
+                        <td class="col-yesno"></td>
+                        <td class="col-remarks"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="assessment-footer">
+            <div class="score-dosha-row">
+                <div class="score">
+                    Score (0-10): <span class="score-line"></span><br>
+                    / Severe
+                </div>
+                <div class="dosha">Dosha: None / Mild / Moderate</div>
+            </div>
+
+            <div class="observation">
+                Advisor Observation:
+                <div class="observation-line"></div>
+            </div>
+        </section>
+
+        <footer>
+            <span class="brand">Kutumb Advisory LLP</span>
+        </footer>
+
+        <div class="emblem">
+            <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" stroke="#333333" stroke-width="0.8">
+                    <rect x="9" y="6" width="28" height="28" transform="rotate(45 23 20)" />
+                    <rect x="13" y="10" width="20" height="20" />
+                </g>
+                <text x="23" y="23" text-anchor="middle" font-size="7">11</text>
+            </svg>
+        </div>
+
+    </main>
+
+</body>
+
+</html>

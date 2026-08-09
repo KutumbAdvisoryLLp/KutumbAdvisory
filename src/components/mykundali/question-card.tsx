@@ -85,6 +85,34 @@ export function QuestionCard({
             )
           })}
 
+        {question.type === 'yesno' && (
+          <div className="flex gap-4 mt-2">
+            {['Yes', 'No'].map((opt) => {
+              const isSelected = value === opt
+              const isYes = opt === 'Yes'
+              return (
+                <button
+                  key={opt}
+                  onClick={() => onChange(opt)}
+                  className={cn(
+                    'flex-1 py-5 rounded-2xl border-2 text-lg font-semibold transition-all duration-300',
+                    isSelected && isYes
+                      ? 'border-emerald-400 bg-emerald-50 text-emerald-700 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
+                      : isSelected && !isYes
+                        ? 'border-rose-400 bg-rose-50 text-rose-700 shadow-[0_0_20px_rgba(244,63,94,0.15)]'
+                        : 'border-slate-lighter bg-white text-slate hover:border-slate-light hover:shadow-card'
+                  )}
+                >
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span className="text-2xl">{isYes ? '✓' : '✗'}</span>
+                    <span>{opt}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {question.type === 'input' && (
           <input
             type="text"

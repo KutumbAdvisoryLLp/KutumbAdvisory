@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Kutumb Advisory Kundali — Cover</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #eeeeee;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 210mm;
+            height: 297mm;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+            color: #111111;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ===== TITLE BLOCK ===== */
+        .cover-header {
+            position: absolute;
+            top: 28mm;
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        .cover-header h1 {
+            font-size: 23px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            color: #1a1a2e;
+            text-transform: uppercase;
+        }
+
+        .cover-header h2 {
+            margin-top: 11mm;
+            font-size: 17px;
+            font-weight: 400;
+            color: #1a1a2e;
+        }
+
+        .cover-header p {
+            margin-top: 6mm;
+            font-size: 12.5px;
+            font-weight: 400;
+            color: #1a1a2e;
+        }
+
+        /* ===== EMBLEM ===== */
+        .brand-emblem {
+            position: absolute;
+            top: 78mm;
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        .brand-emblem img {
+            width: 88mm;
+            height: 88mm;
+        }
+
+        /* ===== CLIENT INFORMATION ===== */
+        .client-information {
+            position: absolute;
+            top: 190mm;
+            left: 5%;
+            width: 90%;
+        }
+
+        .client-information .field {
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 11mm;
+        }
+
+        .client-information .label {
+            font-size: 16px;
+            font-weight: 400;
+            color: #1a1a2e;
+            text-transform: uppercase;
+            white-space: nowrap;
+            margin-right: 8px;
+            padding-bottom: 2px;
+        }
+
+        .client-information .field-line {
+            flex: 1;
+            border-bottom: 1px solid #1a1a2e;
+            height: 0;
+            align-self: flex-end;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            position: absolute;
+            bottom: 4%;
+            left: 5%;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: #111111;
+        }
+
+        .emblem {
+            position: absolute;
+            bottom: 3%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 22px;
+        }
+
+        .emblem svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .emblem text {
+            font-size: 7px;
+            font-weight: 600;
+            fill: #333333;
+            font-family: Arial, sans-serif;
+        }
+
+        @media print {
+
+            html,
+            body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background: #ffffff;
+            }
+
+            .page {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="page">
+
+        <header class="cover-header">
+            <h1>Kutumb Advisory Kundali™</h1>
+            <h2>Family Financial Wealth Assessment</h2>
+            <p>The Financial Blueprint for Multi-Generational Wealth Creation</p>
+        </header>
+
+        <section class="brand-emblem">
+            <img src="assets/kutumb_logo.png" alt="Kutumb Advisory LLP emblem">
+        </section>
+
+        <section class="client-information">
+            <div class="field">
+                <span class="label">Client Name:</span>
+                <span class="field-line"></span>
+            </div>
+            <div class="field">
+                <span class="label">Assessment Date:</span>
+                <span class="field-line"></span>
+            </div>
+            <div class="field">
+                <span class="label">Advisor Name:</span>
+                <span class="field-line"></span>
+            </div>
+        </section>
+
+        <footer>Kutumb Advisory LLP</footer>
+
+        <div class="emblem">
+            <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" stroke="#333333" stroke-width="0.8">
+                    <rect x="9" y="6" width="28" height="28" transform="rotate(45 23 20)" />
+                    <rect x="13" y="10" width="20" height="20" />
+                </g>
+                <text x="23" y="23" text-anchor="middle" font-size="7">2</text>
+            </svg>
+        </div>
+
+    </main>
+
+</body>
+
+</html>

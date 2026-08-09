@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Download, Printer, Check } from 'lucide-react'
+import Image from 'next/image'
+import { Download, Printer, Check, TrendingUp, PhoneCall } from 'lucide-react'
 import Button from '@/components/Button'
 import { createClient } from '@/lib/supabase/client'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 import { GRAHAS } from '@/lib/kundali/grahas'
 import { getScoreColor, getScoreStatus } from '@/types'
-import type { ActionItem, GrahaId } from '@/types'
+import type { ActionItem, GrahaId, FamilyProfile, Member, InvestmentEntry, InsuranceEntry } from '@/types'
 
 const PRIORITY_LABELS = ['First', 'Second', 'Third']
 
@@ -41,16 +42,22 @@ export default function ReportsPage() {
   }
   const [sent, setSent] = useState(false)
   const [report, setReport] = useState<ReportData | null>(null)
+  const [profile, setProfile] = useState<FamilyProfile | null>(null)
+  const [grahaAnswers, setGrahaAnswers] = useState<Record<string, Record<string, string>> | undefined>(undefined)
 
   useEffect(() => {
     if (!userId) return
     ;(async () => {
-      const { data } = await supabase
-        .from('assessment_results')
-        .select('*')
-        .eq('customer_id', userId)
-        .maybeSingle()
-      if (data) {
+      const [resultRes, profileRes] = await Promise.all([
+        supabase.from('assessment_results').select('*').eq('customer_id', userId).maybeSingle(),
+        supabase.from('family_profiles').select('*').eq('customer_id', userId).maybeSingle(),
+      ])
+
+      if (resultRes.data) {
+        const data = resultRes.data
+        if (data.graha_answers) {
+          setGrahaAnswers(data.graha_answers as Record<string, Record<string, string>>)
+        }
         setReport({
           overallScore: data.overall_score,
           overallStatus: data.overall_status,
@@ -65,85 +72,69 @@ export default function ReportsPage() {
           actionPlan: (data.action_plan as unknown as ActionItem[]) ?? [],
         })
       }
+
+      if (profileRes.data) {
+        const d = profileRes.data
+        const pm = d.primary_member as any
+        setProfile({
+          primaryMember: {
+            name: pm?.name ?? '',
+            age: pm?.age ?? 35,
+            relation: pm?.relation ?? 'self',
+            occupation: pm?.occupation ?? '',
+            income: pm?.income ?? 0,
+          },
+          spouse: (d.spouse as unknown as Member) ?? undefined,
+          children: (d.children as unknown as Member[]) ?? [],
+          monthlyExpenses: d.monthly_expenses ?? 0,
+          totalAssets: d.total_assets ?? 0,
+          totalLiabilities: d.total_liabilities ?? 0,
+          riskProfile: d.risk_profile ?? 'moderate',
+          goals: d.goals ?? [],
+          existingInvestments: (d.existing_investments as unknown as InvestmentEntry[]) ?? [],
+          existingInsurance: (d.existing_insurance as unknown as InsuranceEntry[]) ?? [],
+          familyName: pm?.familyName ?? '',
+          timeHorizon: pm?.timeHorizon ?? '',
+          netWorthWorksheet: pm?.netWorthWorksheet ?? {
+            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+            liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
+          },
+        })
+      }
     })()
   }, [userId, supabase])
 
   const handleDownload = async () => {
     if (!report) return
     setDownloading(true)
-
-    const { jsPDF } = await import('jspdf')
-    const doc = new jsPDF()
-    const marginX = 20
-    let y = 26
-
-    const heading = (text: string, size = 20) => {
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(size)
-      doc.setTextColor(32, 27, 98)
-      doc.text(text, marginX, y)
-      y += size * 0.6
+    try {
+      const { downloadFullReportPdf } = await import('@/lib/kundali/pdf-generator')
+      await downloadFullReportPdf({
+        user,
+        profile,
+        report,
+        grahaAnswers,
+      })
+    } catch (err) {
+      console.error('Failed to generate PDF report:', err)
+    } finally {
+      setDownloading(false)
     }
-    const body = (text: string, size = 11) => {
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(size)
-      doc.setTextColor(60, 60, 60)
-      const lines = doc.splitTextToSize(text, 170)
-      for (const line of lines) {
-        if (y > 280) {
-          doc.addPage()
-          y = 26
-        }
-        doc.text(line, marginX, y)
-        y += size * 0.55
-      }
-    }
-    const section = (title: string) => {
-      y += 6
-      if (y > 270) {
-        doc.addPage()
-        y = 26
-      }
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(14)
-      doc.setTextColor(168, 121, 31)
-      doc.text(title, marginX, y)
-      y += 8
-    }
+  }
 
-    heading('Financial Kundali Report')
-    y += 2
-    body(`${user?.fullName ?? 'Kutumb Client'}  ·  Completed ${report.completedAt}`)
-    body(`Overall Score: ${report.overallScore}/90  ·  Status: ${report.overallStatus}`)
-
-    if (format !== 'actions') {
-      section('9 Graha Breakdown')
-      for (const [id, score] of Object.entries(report.grahaScores)) {
-        body(`${grahaName(id)}: ${score}/10`)
-      }
+  const handlePrint = async () => {
+    if (!report) return
+    try {
+      const { printFullReportHtml } = await import('@/lib/kundali/pdf-generator')
+      printFullReportHtml({
+        user,
+        profile,
+        report,
+        grahaAnswers,
+      })
+    } catch (err) {
+      console.error('Failed to print full report:', err)
     }
-
-    if (format !== 'actions') {
-      section('Recommendations')
-      for (const rec of report.recommendations) {
-        body(`•  ${rec}`)
-      }
-    }
-
-    if (format === 'full') {
-      section('Advisor Notes')
-      body(report.advisorNotes)
-    }
-
-    if (format !== 'summary') {
-      section('90-Day Action Plan')
-      for (const item of report.actionPlan) {
-        body(`${item.title} (${item.priority} priority) — ${item.description}`)
-      }
-    }
-
-    doc.save(`Financial-Kundali-Report-${(user?.fullName ?? 'report').replace(/\s+/g, '-')}.pdf`)
-    setDownloading(false)
   }
 
   const handleSendEmail = () => {
@@ -178,51 +169,17 @@ export default function ReportsPage() {
               <p className="text-sm text-slate text-center py-10">Your report will appear here once your assessment is complete.</p>
             ) : (
               <>
-                <div className="text-center py-6 border-b border-slate-lighter/30 print:border-navy/20">
-                  <p className="text-xs uppercase tracking-wide text-slate-light">Overall Score</p>
-                  <p className="font-serif text-4xl text-navy mt-1">
-                    {report.overallScore}<span className="text-lg text-slate">/90</span>
+                <div className="text-center py-8">
+                  <p className="text-xs uppercase tracking-wide text-slate-light font-semibold">Overall Financial Kundali Score</p>
+                  <p className="font-serif text-5xl text-navy mt-2">
+                    {report.overallScore}<span className="text-2xl text-slate">/90</span>
                   </p>
                   <span
-                    className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium border"
-                    style={{ color: getScoreColor(getScoreStatus(report.overallScore / 9)), borderColor: 'currentColor' }}
+                    className="inline-block mt-3 px-4 py-1.5 rounded-full text-xs font-semibold border"
+                    style={{ color: getScoreColor(getScoreStatus(report.overallScore, 90)), borderColor: 'currentColor' }}
                   >
                     {report.overallStatus}
                   </span>
-                </div>
-
-                <div className="py-6 border-b border-slate-lighter/30 print:border-navy/20">
-                  <p className="text-xs uppercase tracking-wide text-slate-light mb-3">9 Graha Breakdown</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {GRAHAS.map((g) => {
-                      const score = report.grahaScores[g.id]
-                      return (
-                        <div key={g.id} className="flex items-center justify-between px-3 py-2 rounded-xl border border-slate-lighter/40 print:border-navy/10">
-                          <span className="text-sm text-charcoal">{g.name}</span>
-                          <span className="text-sm font-medium text-navy">{score ?? '—'}/10</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="pt-6">
-                  <p className="text-xs uppercase tracking-wide text-slate-light mb-3">Priority Actions</p>
-                  {report.actionPlan.length === 0 ? (
-                    <p className="text-sm text-slate">No action items yet.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {report.actionPlan.slice(0, 3).map((item, i) => (
-                        <div key={item.id} className="p-4 rounded-xl border border-slate-lighter/40 print:border-navy/10 text-left">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-gold-dark">
-                            {PRIORITY_LABELS[i] ?? `#${i + 1}`} · {grahaName(item.grahaId)}
-                          </p>
-                          <p className="text-sm font-medium text-charcoal mt-1">{item.title}</p>
-                          <p className="text-xs text-slate mt-1">{item.description}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </>
             )}
@@ -271,7 +228,8 @@ export default function ReportsPage() {
               showArrow={false}
               variant="secondary"
               size="lg"
-              onClick={() => window.print()}
+              onClick={handlePrint}
+              disabled={!report}
               className="flex-1 gap-2"
             >
               <Printer size={16} strokeWidth={1.75} />
@@ -301,6 +259,25 @@ export default function ReportsPage() {
                 )}
               </Button>
             </div>
+          </div>
+
+          {/* Expert Advice & SIP Purchase Actions */}
+          <div className="mt-8 pt-6 border-t border-slate-lighter/30 grid sm:grid-cols-2 gap-3 print:hidden">
+            <a
+              href="#"
+              className="p-4 bg-navy text-white rounded-2xl flex items-center justify-center gap-3 font-medium hover:bg-navy/90 transition-all shadow-md"
+            >
+              <PhoneCall size={18} strokeWidth={2} />
+              <span>Talk to Expert</span>
+            </a>
+
+            <a
+              href="#"
+              className="p-4 bg-gold text-navy font-semibold rounded-2xl flex items-center justify-center gap-2 hover:bg-gold-dark hover:text-white transition-all shadow-md"
+            >
+              <TrendingUp size={18} strokeWidth={2} />
+              <span>SIP Purchase</span>
+            </a>
           </div>
         </motion.div>
       </div>

@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     email: email.trim(),
     password,
     email_confirm: true,
+    user_metadata: { full_name: fullName.trim(), phone: phone.trim() },
   });
 
   if (createError || !created.user) {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error: insertError } = await admin.from("customers").insert({
+  const { error: insertError } = await admin.from("customers").upsert({
     id: created.user.id,
     full_name: fullName.trim(),
     email: email.trim(),

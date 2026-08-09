@@ -265,8 +265,15 @@ function ModalContent({
 
       if (profileRes.data) {
         const d = profileRes.data;
+        const pm = d.primary_member as any;
         setProfile({
-          primaryMember: d.primary_member as unknown as Member,
+          primaryMember: {
+            name: pm?.name ?? '',
+            age: pm?.age ?? 0,
+            relation: pm?.relation ?? 'self',
+            occupation: pm?.occupation ?? '',
+            income: pm?.income ?? 0,
+          },
           spouse: (d.spouse as unknown as Member) ?? undefined,
           children: (d.children as unknown as Member[]) ?? [],
           monthlyExpenses: d.monthly_expenses ?? 0,
@@ -276,6 +283,12 @@ function ModalContent({
           goals: d.goals ?? [],
           existingInvestments: (d.existing_investments as unknown as InvestmentEntry[]) ?? [],
           existingInsurance: (d.existing_insurance as unknown as InsuranceEntry[]) ?? [],
+          familyName: pm?.familyName ?? '',
+          timeHorizon: pm?.timeHorizon ?? '',
+          netWorthWorksheet: pm?.netWorthWorksheet ?? {
+            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+            liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
+          },
         });
       }
 
@@ -299,7 +312,12 @@ function ModalContent({
     if (!profile) return;
     const { error } = await supabase.from("family_profiles").upsert({
       customer_id: customer.id,
-      primary_member: profile.primaryMember as unknown as Json,
+      primary_member: {
+        ...profile.primaryMember,
+        familyName: profile.familyName,
+        timeHorizon: profile.timeHorizon,
+        netWorthWorksheet: profile.netWorthWorksheet,
+      } as unknown as Json,
       spouse: (profile.spouse ?? null) as unknown as Json | null,
       children: profile.children as unknown as Json,
       monthly_expenses: profile.monthlyExpenses,
@@ -377,6 +395,24 @@ function ModalContent({
                 </p>
               ) : (
                 <div className="mt-4 space-y-5 rounded-xl border border-navy/8 p-5">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <AdminInput
+                      label="Family Name"
+                      name="familyName"
+                      value={profile.familyName ?? ""}
+                      onChange={(e) =>
+                        setProfile({ ...profile, familyName: e.target.value })
+                      }
+                    />
+                    <AdminInput
+                      label="Time Horizon"
+                      name="timeHorizon"
+                      value={profile.timeHorizon ?? ""}
+                      onChange={(e) =>
+                        setProfile({ ...profile, timeHorizon: e.target.value })
+                      }
+                    />
+                  </div>
                   <MemberFields
                     label="Primary Member"
                     member={profile.primaryMember}
@@ -387,7 +423,7 @@ function ModalContent({
                     member={profile.spouse ?? emptyMember}
                     onChange={(m) => setProfile({ ...profile, spouse: m })}
                   />
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <AdminInput
                       label="Monthly Expenses (₹)"
                       name="monthlyExpenses"
@@ -397,34 +433,120 @@ function ModalContent({
                         setProfile({ ...profile, monthlyExpenses: Number(e.target.value) })
                       }
                     />
-                    <AdminInput
-                      label="Total Assets (₹)"
-                      name="totalAssets"
-                      type="number"
-                      value={String(profile.totalAssets)}
+                    <AdminSelect
+                      label="Risk Profile"
+                      name="riskProfile"
+                      value={profile.riskProfile}
+                      options={["conservative", "moderate", "aggressive"]}
                       onChange={(e) =>
-                        setProfile({ ...profile, totalAssets: Number(e.target.value) })
-                      }
-                    />
-                    <AdminInput
-                      label="Total Liabilities (₹)"
-                      name="totalLiabilities"
-                      type="number"
-                      value={String(profile.totalLiabilities)}
-                      onChange={(e) =>
-                        setProfile({ ...profile, totalLiabilities: Number(e.target.value) })
+                        setProfile({ ...profile, riskProfile: e.target.value as FamilyProfile["riskProfile"] })
                       }
                     />
                   </div>
-                  <AdminSelect
-                    label="Risk Profile"
-                    name="riskProfile"
-                    value={profile.riskProfile}
-                    options={["conservative", "moderate", "aggressive"]}
-                    onChange={(e) =>
-                      setProfile({ ...profile, riskProfile: e.target.value as FamilyProfile["riskProfile"] })
-                    }
-                  />
+
+                  {/* Net Worth Worksheet section in Admin Panel */}
+                  <div className="rounded-lg border border-navy/10 p-4 space-y-4">
+                    <h5 className="font-serif text-md text-navy font-semibold">Net Worth Worksheet</h5>
+                    
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      {/* Assets */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-stone/40">Assets</p>
+                        {[
+                          { key: 'bankFD', label: 'Bank & FD' },
+                          { key: 'mutualFunds', label: 'Mutual Funds' },
+                          { key: 'shares', label: 'Shares' },
+                          { key: 'property', label: 'Property' },
+                          { key: 'gold', label: 'Gold' },
+                          { key: 'epfPpfNps', label: 'EPF / PPF / NPS' }
+                        ].map(({ key, label }) => {
+                          const worksheet = profile.netWorthWorksheet || {
+                            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+                            liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
+                          }
+                          const val = (worksheet.assets as any)[key] || 0
+                          return (
+                            <div key={key} className="flex items-center justify-between gap-3 text-sm">
+                              <span className="text-stone">{label}</span>
+                              <input
+                                type="number"
+                                value={val || ""}
+                                onChange={(e) => {
+                                  const nextVal = Number(e.target.value)
+                                  const nextAssets = { ...worksheet.assets, [key]: nextVal }
+                                  const totalAssets = Object.values(nextAssets).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0) as number
+                                  setProfile({
+                                    ...profile,
+                                    totalAssets,
+                                    netWorthWorksheet: {
+                                      assets: nextAssets as any,
+                                      liabilities: worksheet.liabilities
+                                    }
+                                  })
+                                }}
+                                className="w-40 rounded-lg border border-navy/10 bg-white px-2 py-1 text-sm text-navy outline-none"
+                              />
+                            </div>
+                          )
+                        })}
+                        <div className="pt-2 border-t flex justify-between font-semibold text-sm">
+                          <span>Total Assets</span>
+                          <span>₹{profile.totalAssets.toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+
+                      {/* Liabilities */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-stone/40">Liabilities</p>
+                        {[
+                          { key: 'homeLoan', label: 'Home Loan' },
+                          { key: 'personalLoan', label: 'Personal Loan' },
+                          { key: 'vehicleLoan', label: 'Vehicle Loan' },
+                          { key: 'creditCard', label: 'Credit Card' },
+                          { key: 'otherLoans', label: 'Other Loans' }
+                        ].map(({ key, label }) => {
+                          const worksheet = profile.netWorthWorksheet || {
+                            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+                            liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
+                          }
+                          const val = (worksheet.liabilities as any)[key] || 0
+                          return (
+                            <div key={key} className="flex items-center justify-between gap-3 text-sm">
+                              <span className="text-stone">{label}</span>
+                              <input
+                                type="number"
+                                value={val || ""}
+                                onChange={(e) => {
+                                  const nextVal = Number(e.target.value)
+                                  const nextLiabilities = { ...worksheet.liabilities, [key]: nextVal }
+                                  const totalLiabilities = Object.values(nextLiabilities).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0) as number
+                                  setProfile({
+                                    ...profile,
+                                    totalLiabilities,
+                                    netWorthWorksheet: {
+                                      assets: worksheet.assets,
+                                      liabilities: nextLiabilities as any
+                                    }
+                                  })
+                                }}
+                                className="w-40 rounded-lg border border-navy/10 bg-white px-2 py-1 text-sm text-navy outline-none"
+                              />
+                            </div>
+                          )
+                        })}
+                        <div className="pt-2 border-t flex justify-between font-semibold text-sm">
+                          <span>Total Liabilities</span>
+                          <span>₹{profile.totalLiabilities.toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t flex justify-between font-bold text-navy text-sm bg-stone/5 p-2 rounded-lg">
+                      <span>Net Worth (Assets — Liabilities)</span>
+                      <span>₹{(profile.totalAssets - profile.totalLiabilities).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+
                   <AdminTextarea
                     label="Goals (comma separated)"
                     name="goals"

@@ -37,6 +37,25 @@ export interface FamilyProfile {
   goals: string[]
   existingInvestments: InvestmentEntry[]
   existingInsurance: InsuranceEntry[]
+  familyName?: string
+  timeHorizon?: string
+  netWorthWorksheet?: {
+    assets: {
+      bankFD: number
+      mutualFunds: number
+      shares: number
+      property: number
+      gold: number
+      epfPpfNps: number
+    }
+    liabilities: {
+      homeLoan: number
+      personalLoan: number
+      vehicleLoan: number
+      creditCard: number
+      otherLoans: number
+    }
+  }
 }
 
 export interface Answer {
@@ -88,9 +107,22 @@ export interface ActionItem {
   category: string
 }
 
+export interface FoundationBreakdown {
+  goals: number
+  timeHorizon: number
+  monthlyExpenses: number
+  insurance: number
+  investments: number
+  assets: number
+  liabilities: number
+}
+
 export interface AssessmentResult {
   overallScore: number
   overallStatus: 'excellent' | 'good' | 'fair' | 'poor'
+  grahaTotal?: number
+  foundationScore?: number
+  foundationBreakdown?: FoundationBreakdown
   grahaScores: Record<GrahaId, number>
   grahaDetails: Record<GrahaId, GrahaDetail>
   recommendations: string[]
@@ -102,13 +134,11 @@ export interface AssessmentResult {
 
 export interface Question {
   id: string
-  type: 'radio' | 'slider' | 'multi' | 'input' | 'currency'
+  type: 'radio' | 'slider' | 'multi' | 'input' | 'currency' | 'yesno'
   text: string
   options?: string[]
   min?: number
   max?: number
-  // Set when `options` is listed worst-to-best instead of the default
-  // best-to-worst — scoring treats the last option as healthiest.
   reverseScore?: boolean
 }
 
@@ -124,11 +154,26 @@ export interface GrahaConfig {
 
 export type ScoreStatus = 'excellent' | 'good' | 'fair' | 'poor'
 
-export function getScoreStatus(score: number): ScoreStatus {
-  if (score >= 8) return 'excellent'
-  if (score >= 6) return 'good'
+export function getScoreStatus(score: number, maxScore: number = 90): ScoreStatus {
+  if (maxScore === 90) {
+    if (score >= 81) return 'excellent'
+    if (score >= 63) return 'good'
+    if (score >= 36) return 'fair'
+    return 'poor'
+  }
+  if (score >= 9) return 'excellent'
+  if (score >= 7) return 'good'
   if (score >= 4) return 'fair'
   return 'poor'
+}
+
+export function getScoreLabel(status: ScoreStatus): string {
+  switch (status) {
+    case 'excellent': return 'Strong'
+    case 'good':      return 'Mild Dosha'
+    case 'fair':      return 'Moderate'
+    case 'poor':      return 'Severe Dosha'
+  }
 }
 
 export function getScoreColor(status: ScoreStatus): string {
@@ -141,9 +186,9 @@ export function getScoreColor(status: ScoreStatus): string {
 }
 
 export function getScoreStars(score: number): number {
-  if (score >= 8) return 5
-  if (score >= 6) return 4
-  if (score >= 4) return 3
-  if (score >= 2) return 2
+  if (score >= 81 || (score >= 9 && score <= 10)) return 5
+  if (score >= 63 || (score >= 7 && score <= 10)) return 4
+  if (score >= 36 || (score >= 4 && score <= 10)) return 3
+  if (score >= 18 || (score >= 2 && score <= 10)) return 2
   return 1
 }

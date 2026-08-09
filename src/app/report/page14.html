@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Financial Kundali Scorecard</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #eeeeee;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 210mm;
+            height: 297mm;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+            color: #111111;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ===== SECTION HEADER BANNER ===== */
+        .section-header {
+            position: absolute;
+            top: 4%;
+            left: 6%;
+            width: 88%;
+            height: 30mm;
+            background: #3B414B;
+            border-radius: 3px 16px 16px 3px;
+            padding: 20px 0 0 10%;
+            color: #ffffff;
+        }
+
+        .section-header::before {
+            content: "";
+            position: absolute;
+            top: -2mm;
+            left: -2mm;
+            width: 3.5px;
+            height: calc(100% + 4mm);
+            background: #E3A519;
+            border-radius: 2px;
+        }
+
+        .section-header h1 {
+            font-size: 19px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .section-header p {
+            margin-top: 7px;
+            font-size: 13.5px;
+            font-weight: 400;
+            color: #ffffff;
+            opacity: 0.88;
+            line-height: 1.3;
+            max-width: 85%;
+        }
+
+        /* ===== SCORE GRID ===== */
+        .score-grid {
+            position: absolute;
+            top: 17%;
+            left: 4%;
+            width: 92%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px 5px;
+        }
+
+        .score-card {
+            border: 1px solid #e2e2e2;
+            padding: 6px 10px;
+            min-height: 15mm;
+        }
+
+        .score-card .g-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #111111;
+        }
+
+        .score-card .g-score {
+            margin-top: 5px;
+            font-size: 19px;
+            font-weight: 700;
+            color: #111111;
+        }
+
+        .score-card .g-score .dash {
+            display: inline-block;
+            width: 9mm;
+            border-bottom: 1.6px solid #111111;
+            margin-right: 4px;
+            height: 1px;
+            vertical-align: middle;
+        }
+
+        .score-card .g-dosha {
+            margin-top: 3px;
+            font-size: 11.5px;
+            font-weight: 400;
+            color: #333333;
+        }
+
+        .c-surya {
+            background: #FFF9E9;
+        }
+
+        .c-chandra {
+            background: #EEF3FB;
+        }
+
+        .c-mangal {
+            background: #FBECEC;
+        }
+
+        .c-budh {
+            background: #F3F8EC;
+        }
+
+        .c-guru {
+            background: #EAF6F1;
+        }
+
+        .c-shukra {
+            background: #FBEDF1;
+        }
+
+        .c-shani {
+            background: #F1EEF7;
+        }
+
+        .c-rahu {
+            background: #FBF0E5;
+        }
+
+        .c-ketu {
+            background: #F1F0EE;
+        }
+
+        /* ===== TOTAL SCORE BAR ===== */
+        .total-bar {
+            position: absolute;
+            top: 37%;
+            left: 4%;
+            width: 92%;
+            height: 10mm;
+            background: #3B414B;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            color: #ffffff;
+        }
+
+        .total-bar .total-label {
+            font-size: 15.5px;
+            font-weight: 700;
+        }
+
+        .total-bar .total-score {
+            font-size: 15.5px;
+            font-weight: 700;
+            color: #E3A519;
+            display: flex;
+            align-items: center;
+        }
+
+        .total-bar .total-score .dash {
+            display: inline-block;
+            width: 12mm;
+            border-bottom: 2px solid #E3A519;
+            height: 1px;
+            margin-right: 6px;
+        }
+
+        /* ===== WHEEL HEADING ===== */
+        .wheel-heading {
+            position: absolute;
+            top: 42%;
+            left: 6%;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #111111;
+        }
+
+        /* ===== RADAR CHART ===== */
+        .radar-wrap {
+            position: absolute;
+            top: 44%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 78mm;
+        }
+
+        .radar-wrap svg {
+            width: 100%;
+            height: auto;
+            overflow: visible;
+        }
+
+        .radar-label {
+            font-size: 11px;
+            font-weight: 700;
+            fill: #111111;
+            font-family: Arial, sans-serif;
+        }
+
+        /* ===== REMEDY TABLE ===== */
+        .remedy-table {
+            position: absolute;
+            top: 76%;
+            left: 6%;
+            width: 90%;
+        }
+
+        .remedy-table table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #dddddd;
+        }
+
+        .remedy-table th {
+            background: #f7f6f4;
+            font-size: 12px;
+            font-weight: 700;
+            color: #111111;
+            text-align: left;
+            padding: 5px 8px;
+            height: 9mm;
+            border-bottom: 1px solid #dddddd;
+            border-right: 1px solid #dddddd;
+        }
+
+        .remedy-table th:last-child,
+        .remedy-table td:last-child {
+            border-right: none;
+        }
+
+        .remedy-table td {
+            font-size: 11px;
+            font-weight: 400;
+            padding: 5px 8px;
+            height: 8mm;
+            border-bottom: 1px solid #e6e6e6;
+            border-right: 1px solid #dddddd;
+            vertical-align: middle;
+        }
+
+        .remedy-table tr:last-child td {
+            border-bottom: 1px solid #dddddd;
+        }
+
+        .col-num {
+            width: 7%;
+        }
+
+        .col-graha {
+            width: 16%;
+        }
+
+        .col-issue {
+            width: 35%;
+        }
+
+        .col-remedy {
+            width: 42%;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            position: absolute;
+            bottom: 3.5%;
+            left: 5%;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: #111111;
+        }
+
+        .emblem {
+            position: absolute;
+            bottom: 3%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 26px;
+            height: 22px;
+        }
+
+        .emblem svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .emblem text {
+            font-size: 7px;
+            font-weight: 600;
+            fill: #333333;
+            font-family: Arial, sans-serif;
+        }
+
+        @media print {
+
+            html,
+            body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                background: #ffffff;
+            }
+
+            .page {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="page">
+
+        <header class="section-header">
+            <h1>Financial Kundali Scorecard</h1>
+            <p>Your family's nine-graha health summary</p>
+        </header>
+
+        <section class="score-grid">
+            <div class="score-card c-surya">
+                <div class="g-name">Surya</div>
+                <div class="g-score"><span class="dash"></span>/ 10</div>
+                <div class="g-dosha">Mild</div>
+            </div>
+            <div class="score-card c-chandra">
+                <div class="g-name">Chandra</div>
+                <div class="g-score"><span class="dash"></span>/ 10</div>
+                <div class="g-dosha">None</div>
+            </div>
+            <div class="score-card c-mangal">
+                <div class="g-name">Mangal</div>
+                <div class="g-score"><span class="dash"></span>/ 10</div>
+                <div class="g-dosha">Severe</div>
+            </div>
+            <div class="score-card c-budh">
+                <div class="g-name">Budh</div>
+                <div class="g-score"><span class="dash"></span>/ 10</div>
+                <div class="g-dosha">Moderate</div>
+            </div>
+            <div class="score-card c-guru">
+                <div class="g-name">Guru</div>
+                <div class="g-score"><span class="dash"></span>/ 10</div>
+                <div class="g-dosha">None</div>
+            </div>
+            <div class="score-card c-shukra">
+                <div class="g-name">Shukra</div>
+                <div class="g-score"><span class="dash"></span>/ 10</div>
+                <div class="g-dosha">Mild</div>
+            </div>
+            <div class="score-card c-shani">
+                <div class="g-name">Shani</div>
+                <div class="g-score"><span class="dash"></span>/ 10</div>
+                <div class="g-dosha">Severe</div>
+            </div>
+            <div class="score-card c-rahu">
+                <div class="g-name">Rahu</div>
+                <div class="g-score"><span class="dash"></span>/ 10</div>
+                <div class="g-dosha">Moderate</div>
+            </div>
+            <div class="score-card c-ketu">
+                <div class="g-name">Ketu</div>
+                <div class="g-score"><span class="dash"></span>/ 10</div>
+                <div class="g-dosha">None</div>
+            </div>
+        </section>
+
+        <div class="total-bar">
+            <span class="total-label">Total Financial Kundali Score</span>
+            <span class="total-score"><span class="dash"></span>/ 90</span>
+        </div>
+
+        <div class="wheel-heading">Financial Kandali Wheel</div>
+
+        <div class="radar-wrap">
+            <svg viewBox="0 0 350 290" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" stroke="#B8A5A0" stroke-width="0.8">
+                    <polygon
+                        points="175.0,125.0 187.9,129.7 194.7,141.5 192.3,155.0 181.8,163.8 168.2,163.8 157.7,155.0 155.3,141.5 162.1,129.7" />
+                    <polygon
+                        points="175.0,105.0 200.7,114.4 214.4,138.1 209.6,165.0 188.7,182.6 161.3,182.6 140.4,165.0 135.6,138.1 149.3,114.4" />
+                    <polygon
+                        points="175.0,85.0 213.6,99.0 234.1,134.6 227.0,175.0 195.5,201.4 154.5,201.4 123.0,175.0 115.9,134.6 136.4,99.0" />
+                    <polygon
+                        points="175.0,65.0 226.4,83.7 253.8,131.1 244.3,185.0 202.4,220.2 147.6,220.2 105.7,185.0 96.2,131.1 123.6,83.7" />
+                    <polygon
+                        points="175.0,45.0 239.3,68.4 273.5,127.6 261.6,195.0 209.2,239.0 140.8,239.0 88.4,195.0 76.5,127.6 110.7,68.4" />
+                </g>
+                <g stroke="#B8A5A0" stroke-width="0.8">
+                    <line x1="175" y1="145" x2="175.0" y2="45.0" />
+                    <line x1="175" y1="145" x2="239.3" y2="68.4" />
+                    <line x1="175" y1="145" x2="273.5" y2="127.6" />
+                    <line x1="175" y1="145" x2="261.6" y2="195.0" />
+                    <line x1="175" y1="145" x2="209.2" y2="239.0" />
+                    <line x1="175" y1="145" x2="140.8" y2="239.0" />
+                    <line x1="175" y1="145" x2="88.4" y2="195.0" />
+                    <line x1="175" y1="145" x2="76.5" y2="127.6" />
+                    <line x1="175" y1="145" x2="110.7" y2="68.4" />
+                </g>
+                <g class="radar-label">
+                    <text x="175.0" y="24" text-anchor="middle">Surya</text>
+                    <text x="256" y="52" text-anchor="middle">Ketu</text>
+                    <text x="298" y="128" text-anchor="middle">Rahu</text>
+                    <text x="282" y="209" text-anchor="middle">Shani</text>
+                    <text x="215" y="262" text-anchor="middle">Shukra</text>
+                    <text x="135" y="262" text-anchor="middle">Guru</text>
+                    <text x="66" y="209" text-anchor="middle">Budh</text>
+                    <text x="46" y="128" text-anchor="middle">Mangal</text>
+                    <text x="94" y="52" text-anchor="middle">Chandra</text>
+                </g>
+            </svg>
+        </div>
+
+        <section class="remedy-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-num">#</th>
+                        <th class="col-graha">Graha</th>
+                        <th class="col-issue">Primary Dosha / Issue</th>
+                        <th class="col-remedy">Suggested Remedy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="col-num">1</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="col-num">2</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="col-num">3</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="col-num">4</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="col-num">5</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <footer>Kutumb Advisory LLP</footer>
+
+        <div class="emblem">
+            <svg viewBox="0 0 46 40" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" stroke="#333333" stroke-width="0.8">
+                    <rect x="9" y="6" width="28" height="28" transform="rotate(45 23 20)" />
+                    <rect x="13" y="10" width="20" height="20" />
+                </g>
+                <text x="23" y="23" text-anchor="middle" font-size="7">14</text>
+            </svg>
+        </div>
+
+    </main>
+
+</body>
+
+</html>

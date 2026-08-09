@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Section 01 — Family Profile</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f4f2;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 210mm;
+            height: 297mm;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+            color: #111111;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ===== SECTION SPINE HEADER ===== */
+        .spine {
+            position: absolute;
+            top: 6%;
+            left: 9%;
+            width: 82%;
+            background: #D7A52E;
+            border-radius: 3px 14px 14px 3px;
+            padding: 14px 22px;
+            color: #ffffff;
+        }
+
+        .spine .spine-title {
+            font-size: 14.5pt;
+            font-weight: 700;
+        }
+
+        .spine .spine-sub {
+            margin-top: 3px;
+            font-size: 9pt;
+            font-weight: 400;
+            opacity: 0.92;
+        }
+
+        /* ===== FAMILY PROFILE TWO-COLUMN FIELDS ===== */
+        .profile-fields {
+            position: absolute;
+            top: 15.5%;
+            left: 9%;
+            width: 82%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 14mm;
+        }
+
+        .field-col .field-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 7px 0;
+            border-bottom: 0.6px solid #dddddd;
+            font-size: 9.5pt;
+        }
+
+        .field-col .field-row .flabel {
+            font-weight: 400;
+            color: #111111;
+        }
+
+        .field-col .field-row .fline {
+            flex: 1;
+            margin-left: 10px;
+            border-bottom: 0.6px solid #999999;
+            height: 1px;
+            align-self: end;
+        }
+
+        /* ===== NET WORTH SECTION ===== */
+        .networth-heading {
+            position: absolute;
+            top: 51%;
+            left: 9%;
+            font-size: 12.5pt;
+            font-weight: 700;
+            color: #172A4A;
+        }
+
+        .networth-grid {
+            position: absolute;
+            top: 55%;
+            left: 9%;
+            width: 82%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 10mm;
+        }
+
+        .nw-box {
+            background: #F7F6F3;
+            border-radius: 4px;
+            padding: 16px 18px;
+        }
+
+        .nw-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 0.6px solid #e2e0da;
+            font-size: 9.5pt;
+        }
+
+        .nw-row:last-child {
+            border-bottom: none;
+        }
+
+        .nw-row .nlabel {
+            font-weight: 400;
+            color: #111111;
+        }
+
+        .nw-row .nblank {
+            width: 26mm;
+            border-bottom: 0.7px solid #999999;
+            height: 1px;
+        }
+
+        /* ===== NET WORTH TOTAL BAR ===== */
+        .networth-total {
+            position: absolute;
+            top: 85%;
+            left: 9%;
+            width: 82%;
+            background: #172A4A;
+            color: #ffffff;
+            border-radius: 3px;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10.5pt;
+            font-weight: 700;
+        }
+
+        .networth-total .nt-blank {
+            width: 34mm;
+            border-bottom: 0.8px solid #ffffff;
+            height: 1px;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            position: absolute;
+            bottom: 3.5%;
+            left: 8%;
+            font-size: 9.5pt;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: #111111;
+        }
+
+        .emblem {
+            position: absolute;
+            bottom: 3%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 24px;
+        }
+
+        .emblem svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .emblem text {
+            font-size: 7px;
+            font-weight: 600;
+            fill: #333333;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="page">
+
+        <div class="spine">
+            <div class="spine-title">Section 01 — Family Profile</div>
+            <div class="spine-sub">Family and financial snapshot</div>
+        </div>
+
+        <section class="profile-fields">
+            <div class="field-col">
+                <div class="field-row"><span class="flabel">Family Name</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Primary Earning Member</span><span class="fline"></span>
+                </div>
+                <div class="field-row"><span class="flabel">Age</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Spouse Name</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Children</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Occupation</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Risk Profile</span><span class="fline"></span></div>
+            </div>
+            <div class="field-col">
+                <div class="field-row"><span class="flabel">Financial Goal 1</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Financial Goal 2</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Financial Goal 3</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Time Horizon</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Monthly Expenses</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Existing Insurance</span><span class="fline"></span></div>
+                <div class="field-row"><span class="flabel">Existing Investments</span><span class="fline"></span></div>
+            </div>
+        </section>
+
+        <div class="networth-heading">Net Worth Worksheet</div>
+
+        <section class="networth-grid">
+            <div class="nw-box">
+                <div class="nw-row"><span class="nlabel">Bank &amp; FD</span><span class="nblank"></span></div>
+                <div class="nw-row"><span class="nlabel">Mutual Funds</span><span class="nblank"></span></div>
+                <div class="nw-row"><span class="nlabel">Shares</span><span class="nblank"></span></div>
+                <div class="nw-row"><span class="nlabel">Property</span><span class="nblank"></span></div>
+                <div class="nw-row"><span class="nlabel">Gold</span><span class="nblank"></span></div>
+                <div class="nw-row"><span class="nlabel">EPF / PPF / NPS</span><span class="nblank"></span></div>
+            </div>
+            <div class="nw-box">
+                <div class="nw-row"><span class="nlabel">Home Loan</span><span class="nblank"></span></div>
+                <div class="nw-row"><span class="nlabel">Personal Loan</span><span class="nblank"></span></div>
+                <div class="nw-row"><span class="nlabel">Vehicle Loan</span><span class="nblank"></span></div>
+                <div class="nw-row"><span class="nlabel">Credit Card</span><span class="nblank"></span></div>
+                <div class="nw-row"><span class="nlabel">Other Loans</span><span class="nblank"></span></div>
+            </div>
+        </section>
+
+        <div class="networth-total">
+            <span>Net Worth (Assets − Liabilities)</span>
+            <span class="nt-blank"></span>
+        </div>
+
+        <footer>Kutumb Advisory LLP</footer>
+
+        <div class="emblem">
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" stroke="#333333" stroke-width="0.8">
+                    <rect x="6" y="6" width="28" height="28" transform="rotate(45 20 20)" />
+                    <rect x="10" y="10" width="20" height="20" />
+                </g>
+                <text x="20" y="23" text-anchor="middle">4</text>
+            </svg>
+        </div>
+
+    </main>
+
+</body>
+
+</html>

@@ -15,6 +15,7 @@ import {
   Home,
   Menu,
   X,
+  PhoneCall,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
@@ -78,7 +79,7 @@ export default function DashboardLayout({
             alt="Kutumb Advisory"
             width={38}
             height={38}
-            style={{ width: 'auto' }}
+            style={{ width: 'auto', height: 'auto' }}
             className="h-[38px] w-auto object-contain transition-transform duration-300 group-hover:scale-105"
           />
           <span className="font-serif text-xl tracking-wide text-white transition-colors duration-300 group-hover:text-gold">
@@ -165,6 +166,13 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <a
+              href="#"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gold/15 hover:bg-gold/25 text-gold-dark border border-gold/30 text-xs font-semibold transition-all duration-300 shadow-sm"
+            >
+              <PhoneCall size={14} strokeWidth={2} />
+              <span>Talk to Expert</span>
+            </a>
             <span className="hidden sm:inline text-sm text-navy/70">
               Hi, {displayName}
             </span>
@@ -184,7 +192,7 @@ export default function DashboardLayout({
                   alt="Kutumb Advisory"
                   width={32}
                   height={32}
-                  style={{ width: 'auto' }}
+                  style={{ width: 'auto', height: 'auto' }}
                   className="h-8 w-auto object-contain"
                 />
                 <span className="font-serif text-lg text-white">Kutumb</span>

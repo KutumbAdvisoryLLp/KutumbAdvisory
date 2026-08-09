@@ -38,9 +38,14 @@ export default function LoadingPage() {
       ])
 
       const profileRow = profileRes.data
+      const pm = profileRow?.primary_member as any
       const profile: FamilyProfile = {
-        primaryMember: (profileRow?.primary_member as unknown as Member) ?? {
-          name: '', age: 35, relation: 'self', occupation: '', income: 0,
+        primaryMember: {
+          name: pm?.name ?? '',
+          age: pm?.age ?? 35,
+          relation: pm?.relation ?? 'self',
+          occupation: pm?.occupation ?? '',
+          income: pm?.income ?? 0,
         },
         spouse: (profileRow?.spouse as unknown as Member) ?? undefined,
         children: (profileRow?.children as unknown as Member[]) ?? [],
@@ -51,6 +56,12 @@ export default function LoadingPage() {
         goals: profileRow?.goals ?? [],
         existingInvestments: (profileRow?.existing_investments as unknown as InvestmentEntry[]) ?? [],
         existingInsurance: (profileRow?.existing_insurance as unknown as InsuranceEntry[]) ?? [],
+        familyName: pm?.familyName ?? '',
+        timeHorizon: pm?.timeHorizon ?? '',
+        netWorthWorksheet: pm?.netWorthWorksheet ?? {
+          assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+          liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
+        },
       }
 
       const answerMap: GrahaAnswerMap = {}

@@ -44,8 +44,32 @@ async function fetchCustomer(userId: string): Promise<MykundaliUser | null> {
     .select("full_name, email")
     .eq("id", userId)
     .maybeSingle();
-  if (!data) return null;
-  return { fullName: data.full_name, email: data.email };
+
+  if (data) {
+    return { fullName: data.full_name, email: data.email };
+  }
+
+  // Fallback: If user is authenticated in Supabase Auth but missing from public.customers
+  // (e.g. from schema resets), auto-create the customer row so they aren't blocked.
+  const { data: authData } = await supabase.auth.getUser();
+  if (authData?.user && authData.user.id === userId) {
+    const email = authData.user.email ?? "";
+    const fullName =
+      (authData.user.user_metadata?.full_name as string) ||
+      (authData.user.user_metadata?.name as string) ||
+      email.split("@")[0] ||
+      "Customer";
+
+    await supabase.from("customers").upsert({
+      id: userId,
+      full_name: fullName,
+      email: email,
+    });
+
+    return { fullName, email };
+  }
+
+  return null;
 }
 
 export function MykundaliAuthProvider({ children }: { children: React.ReactNode }) {

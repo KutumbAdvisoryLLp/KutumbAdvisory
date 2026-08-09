@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Script from 'next/script'
+import { createClient } from '@/lib/supabase/client'
 import {
   PieChart,
   LayoutGrid,
@@ -63,10 +64,28 @@ declare global {
 
 export default function UnlockPage() {
   const router = useRouter()
-  const { user } = useMykundaliAuth()
+  const { user, userId } = useMykundaliAuth()
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
   const [scriptLoaded, setScriptLoaded] = useState(false)
+
+  // Auto-redirect if user has already unlocked/paid
+  useEffect(() => {
+    if (!userId) return
+    ;(async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('customer_id', userId)
+        .eq('status', 'paid')
+        .maybeSingle()
+
+      if (data) {
+        window.location.href = '/mykundali/dashboard'
+      }
+    })()
+  }, [userId])
 
   const handlePayment = async () => {
     setError('')
@@ -76,13 +95,18 @@ export default function UnlockPage() {
       const orderRes = await fetch('/api/mykundali/payment/create-order', { method: 'POST' })
       const orderBody = await orderRes.json()
       if (!orderRes.ok) {
+        // If Razorpay keys are not configured or account already unlocked, show error or test redirect
+        if (orderBody.error?.includes('already unlocked')) {
+          window.location.href = '/mykundali/dashboard'
+          return
+        }
         setError(orderBody.error ?? 'Could not start payment')
         setProcessing(false)
         return
       }
 
       if (!scriptLoaded || !window.Razorpay) {
-        setError('Payment is still loading — please try again in a moment.')
+        setError('Payment gateway is loading — please try again in a moment.')
         setProcessing(false)
         return
       }
@@ -97,18 +121,25 @@ export default function UnlockPage() {
         prefill: { name: user?.fullName, email: user?.email },
         theme: { color: '#A8791F' },
         handler: async (response) => {
-          const verifyRes = await fetch('/api/mykundali/payment/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(response),
-          })
-          if (!verifyRes.ok) {
-            const verifyBody = await verifyRes.json()
-            setError(verifyBody.error ?? 'Payment verification failed')
-            setProcessing(false)
-            return
+          try {
+            const verifyRes = await fetch('/api/mykundali/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(response),
+            })
+            if (!verifyRes.ok) {
+              const verifyBody = await verifyRes.json()
+              setError(verifyBody.error ?? 'Payment verification failed')
+              setProcessing(false)
+              return
+            }
+            window.location.href = '/mykundali/dashboard'
+          } catch {
+            setError('Payment succeeded but verification had an error. Redirecting...')
+            setTimeout(() => {
+              window.location.href = '/mykundali/dashboard'
+            }, 1000)
           }
-          router.push('/mykundali/dashboard')
         },
         modal: {
           ondismiss: () => setProcessing(false),

@@ -46,9 +46,15 @@ export default function FamilyProfilePage() {
     goals: [],
     existingInvestments: [],
     existingInsurance: [],
+    familyName: '',
+    timeHorizon: '',
+    netWorthWorksheet: {
+      assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+      liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
+    }
   })
 
-  const totalSteps = 5
+  const totalSteps = 6
   const progress = ((step + 1) / totalSteps) * 100
 
   const update = <K extends keyof FamilyProfile>(key: K, value: FamilyProfile[K]) =>
@@ -65,8 +71,15 @@ export default function FamilyProfilePage() {
         .maybeSingle()
 
       if (data) {
+        const pm = data.primary_member as any
         setProfile({
-          primaryMember: data.primary_member as unknown as Member,
+          primaryMember: {
+            name: pm?.name ?? '',
+            age: pm?.age ?? 35,
+            relation: pm?.relation ?? 'self',
+            occupation: pm?.occupation ?? '',
+            income: pm?.income ?? 0,
+          },
           spouse: (data.spouse as unknown as Member) ?? undefined,
           children: (data.children as unknown as Member[]) ?? [],
           monthlyExpenses: data.monthly_expenses ?? 0,
@@ -76,6 +89,12 @@ export default function FamilyProfilePage() {
           goals: data.goals ?? [],
           existingInvestments: (data.existing_investments as unknown as InvestmentEntry[]) ?? [],
           existingInsurance: (data.existing_insurance as unknown as InsuranceEntry[]) ?? [],
+          familyName: pm?.familyName ?? '',
+          timeHorizon: pm?.timeHorizon ?? '',
+          netWorthWorksheet: pm?.netWorthWorksheet ?? {
+            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+            liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
+          },
         })
       }
       setLoaded(true)
@@ -87,7 +106,12 @@ export default function FamilyProfilePage() {
       if (!userId) return
       await supabase.from('family_profiles').upsert({
         customer_id: userId,
-        primary_member: current.primaryMember as unknown as Json,
+        primary_member: {
+          ...current.primaryMember,
+          familyName: current.familyName,
+          timeHorizon: current.timeHorizon,
+          netWorthWorksheet: current.netWorthWorksheet,
+        } as unknown as Json,
         spouse: (current.spouse ?? null) as unknown as Json | null,
         children: current.children as unknown as Json,
         monthly_expenses: current.monthlyExpenses,
@@ -111,13 +135,17 @@ export default function FamilyProfilePage() {
   }, [step, loaded])
 
   const steps = [
-    // Step 0: Primary Member
+    // Step 0: Primary Member & Family Name
     <motion.div key="primary" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
       <h2 className="font-serif text-3xl text-navy">Primary Earning Member</h2>
       <p className="text-slate">Tell us about yourself to personalize your assessment.</p>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-charcoal mb-1.5">Full Name</label>
+          <label className="block text-sm font-medium text-charcoal mb-1.5">Family Name</label>
+          <input type="text" value={profile.familyName || ''} onChange={(e) => update('familyName', e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="e.g. Sharma Family" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-charcoal mb-1.5">Primary Earning Member</label>
           <input type="text" value={profile.primaryMember.name} onChange={(e) => update('primaryMember', { ...profile.primaryMember, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="Your name" />
         </div>
         <div>
@@ -128,7 +156,7 @@ export default function FamilyProfilePage() {
           <label className="block text-sm font-medium text-charcoal mb-1.5">Occupation</label>
           <input type="text" value={profile.primaryMember.occupation || ''} onChange={(e) => update('primaryMember', { ...profile.primaryMember, occupation: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="e.g. Software Engineer" />
         </div>
-        <div>
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-charcoal mb-1.5">Annual Income (₹)</label>
           <input type="number" value={profile.primaryMember.income || ''} onChange={(e) => update('primaryMember', { ...profile.primaryMember, income: Number(e.target.value) })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="0" />
         </div>
@@ -148,7 +176,7 @@ export default function FamilyProfilePage() {
           {profile.spouse && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mt-4 grid sm:grid-cols-2 gap-4 overflow-hidden">
               <div>
-                <label className="block text-sm font-medium text-charcoal mb-1.5">Name</label>
+                <label className="block text-sm font-medium text-charcoal mb-1.5">Spouse Name</label>
                 <input type="text" value={profile.spouse.name} onChange={(e) => update('spouse', { ...profile.spouse!, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" />
               </div>
               <div>
@@ -161,15 +189,22 @@ export default function FamilyProfilePage() {
       </div>
 
       <div className="p-5 bg-white rounded-2xl border border-slate-lighter/30">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <span className="font-medium text-charcoal">Children</span>
-          <button onClick={() => setProfile(p => ({ ...p, children: [...p.children, { ...emptyMember, age: 5 }] }))} className="text-sm text-gold hover:text-gold-dark transition-colors">+ Add Child</button>
+          <button onClick={() => setProfile(p => ({ ...p, children: [...p.children, { ...emptyMember, age: 5 }] }))} className="text-sm text-gold hover:text-gold-dark font-medium transition-colors">+ Add Child</button>
         </div>
+        {profile.children.length > 0 && (
+          <div className="flex gap-3 px-1 mb-2 text-xs font-semibold text-slate-light uppercase tracking-wider">
+            <span className="flex-1">Child Name</span>
+            <span className="w-24">Child Age</span>
+            <span className="w-6"></span>
+          </div>
+        )}
         <AnimatePresence>
           {profile.children.map((child, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex gap-3 items-start mb-3">
-              <input type="text" value={child.name} onChange={(e) => { const c = [...profile.children]; c[i] = { ...c[i], name: e.target.value }; update('children', c) }} className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Name" />
-              <input type="number" value={child.age || ''} onChange={(e) => { const c = [...profile.children]; c[i] = { ...c[i], age: Number(e.target.value) }; update('children', c) }} className="w-20 px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Age" />
+            <motion.div key={i} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex gap-3 items-center mb-3">
+              <input type="text" value={child.name} onChange={(e) => { const c = [...profile.children]; c[i] = { ...c[i], name: e.target.value }; update('children', c) }} className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Child Name" />
+              <input type="number" value={child.age || ''} onChange={(e) => { const c = [...profile.children]; c[i] = { ...c[i], age: Number(e.target.value) }; update('children', c) }} className="w-24 px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm" placeholder="Age" />
               <button onClick={() => setProfile(p => ({ ...p, children: p.children.filter((_, j) => j !== i) }))} className="text-slate-light hover:text-error transition-colors p-1">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
@@ -182,19 +217,106 @@ export default function FamilyProfilePage() {
     // Step 2: Financial Snapshot
     <motion.div key="finances" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
       <h2 className="font-serif text-3xl text-navy">Financial Snapshot</h2>
-      <p className="text-slate">A quick overview of your family&apos;s finances.</p>
-      <div className="grid sm:grid-cols-2 gap-4">
-        {[
-          { key: 'monthlyExpenses', label: 'Monthly Expenses (₹)', placeholder: 'e.g. 50000' },
-          { key: 'totalAssets', label: 'Total Assets (₹)', placeholder: 'e.g. 5000000' },
-          { key: 'totalLiabilities', label: 'Total Liabilities (₹)', placeholder: 'e.g. 1000000' },
-        ].map(({ key, label, placeholder }) => (
-          <div key={key}>
-            <label className="block text-sm font-medium text-charcoal mb-1.5">{label}</label>
-            <input type="number" value={(profile as any)[key] || ''} onChange={(e) => update(key as keyof FamilyProfile, Number(e.target.value))} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder={placeholder} />
+      <p className="text-slate">Select your primary financial goals and time horizon.</p>
+      
+      <div className="space-y-5">
+        <div>
+          <label className="block text-sm font-medium text-charcoal mb-2">Financial Goals (Select multiple)</label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {[
+              'Education',
+              'Marriage',
+              'Child Marriage',
+              'Start Business',
+              'Retire Early',
+              'Buy Property / Home',
+              'Emergency Cushion',
+              'Wealth Creation',
+              'International Travel',
+              'Family Legacy Fund',
+            ].map((goal) => {
+              const isSelected = profile.goals.includes(goal)
+              return (
+                <button
+                  key={goal}
+                  type="button"
+                  onClick={() => {
+                    const next = isSelected
+                      ? profile.goals.filter((g) => g !== goal)
+                      : [...profile.goals, goal]
+                    update('goals', next)
+                  }}
+                  className={`px-3.5 py-2 rounded-xl text-sm font-medium border-2 transition-all flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'border-gold bg-gold-light/20 text-charcoal shadow-sm'
+                      : 'border-slate-lighter bg-white text-slate hover:border-slate-light'
+                  }`}
+                >
+                  <span>{isSelected ? '✓' : '+'}</span>
+                  <span>{goal}</span>
+                </button>
+              )
+            })}
           </div>
-        ))}
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              id="custom-goal-input"
+              placeholder="Type custom goal and press Add..."
+              className="flex-1 px-4 py-2.5 text-sm rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  const val = (e.target as HTMLInputElement).value.trim()
+                  if (val && !profile.goals.includes(val)) {
+                    update('goals', [...profile.goals, val])
+                    ;(e.target as HTMLInputElement).value = ''
+                  }
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('custom-goal-input') as HTMLInputElement
+                const val = el?.value.trim()
+                if (val && !profile.goals.includes(val)) {
+                  update('goals', [...profile.goals, val])
+                  el.value = ''
+                }
+              }}
+              className="px-4 py-2.5 text-sm font-medium bg-navy text-white rounded-xl hover:bg-navy/90"
+            >
+              Add Goal
+            </button>
+          </div>
+
+          {profile.goals.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2 items-center text-xs text-slate">
+              <span className="font-semibold text-navy">Selected ({profile.goals.length}):</span>
+              {profile.goals.map((g) => (
+                <span key={g} className="px-2.5 py-1 rounded-full bg-gold/15 text-gold-dark font-medium flex items-center gap-1">
+                  {g}
+                  <button type="button" onClick={() => update('goals', profile.goals.filter((x) => x !== g))} className="hover:text-red-600 font-bold ml-1">×</button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-charcoal mb-1.5">Time Horizon</label>
+            <input type="text" value={profile.timeHorizon || ''} onChange={(e) => update('timeHorizon', e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="e.g. 10 Years" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-charcoal mb-1.5">Monthly Expenses (₹)</label>
+            <input type="number" value={profile.monthlyExpenses || ''} onChange={(e) => update('monthlyExpenses', Number(e.target.value))} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="e.g. 50000" />
+          </div>
+        </div>
       </div>
+
       <div>
         <label className="block text-sm font-medium text-charcoal mb-3">Risk Profile</label>
         <div className="flex gap-3">
@@ -206,22 +328,121 @@ export default function FamilyProfilePage() {
           ))}
         </div>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-charcoal mb-3">Financial Goals</label>
-        <div className="flex flex-wrap gap-2">
-          {goals.map((g) => {
-            const selected = profile.goals.includes(g)
+    </motion.div>,
+
+    // Step 3: Net Worth Worksheet
+    <motion.div key="networth" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+      <h2 className="font-serif text-3xl text-navy">Net Worth Worksheet</h2>
+      <p className="text-slate">Calculate your net worth by detailing your assets and liabilities.</p>
+      
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Assets column */}
+        <div className="p-5 bg-white rounded-2xl border border-slate-lighter/30 space-y-4">
+          <h3 className="font-serif text-xl text-navy border-b pb-2">Assets</h3>
+          {[
+            { key: 'bankFD', label: 'Bank & FD' },
+            { key: 'mutualFunds', label: 'Mutual Funds' },
+            { key: 'shares', label: 'Shares' },
+            { key: 'property', label: 'Property' },
+            { key: 'gold', label: 'Gold' },
+            { key: 'epfPpfNps', label: 'EPF / PPF / NPS' }
+          ].map(({ key, label }) => {
+            const worksheet = profile.netWorthWorksheet || {
+              assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+              liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
+            }
+            const val = (worksheet.assets as any)[key] || 0
             return (
-              <button key={g} onClick={() => update('goals', selected ? profile.goals.filter(x => x !== g) : [...profile.goals, g])} className={`px-4 py-2 rounded-full border-2 text-sm transition-all ${selected ? 'border-gold bg-gold-light/20 text-charcoal' : 'border-slate-lighter bg-white text-slate hover:border-slate-light'}`}>
-                {g}
-              </button>
+              <div key={key}>
+                <label className="block text-xs font-medium text-slate-light mb-1">{label} (₹)</label>
+                <input
+                  type="number"
+                  value={val || ''}
+                  onChange={(e) => {
+                    const nextVal = Number(e.target.value)
+                    const nextAssets = { ...worksheet.assets, [key]: nextVal }
+                    const totalAssets = Object.values(nextAssets).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0) as number
+                    setProfile(prev => ({
+                      ...prev,
+                      totalAssets,
+                      netWorthWorksheet: {
+                        assets: nextAssets as any,
+                        liabilities: worksheet.liabilities
+                      }
+                    }))
+                  }}
+                  className="w-full px-3 py-2 text-sm rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors"
+                  placeholder="0"
+                />
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Liabilities column */}
+        <div className="p-5 bg-white rounded-2xl border border-slate-lighter/30 space-y-4">
+          <h3 className="font-serif text-xl text-navy border-b pb-2">Liabilities</h3>
+          {[
+            { key: 'homeLoan', label: 'Home Loan' },
+            { key: 'personalLoan', label: 'Personal Loan' },
+            { key: 'vehicleLoan', label: 'Vehicle Loan' },
+            { key: 'creditCard', label: 'Credit Card' },
+            { key: 'otherLoans', label: 'Other Loans' }
+          ].map(({ key, label }) => {
+            const worksheet = profile.netWorthWorksheet || {
+              assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+              liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
+            }
+            const val = (worksheet.liabilities as any)[key] || 0
+            return (
+              <div key={key}>
+                <label className="block text-xs font-medium text-slate-light mb-1">{label} (₹)</label>
+                <input
+                  type="number"
+                  value={val || ''}
+                  onChange={(e) => {
+                    const nextVal = Number(e.target.value)
+                    const nextLiabilities = { ...worksheet.liabilities, [key]: nextVal }
+                    const totalLiabilities = Object.values(nextLiabilities).reduce((sum: number, v: any) => sum + (Number(v) || 0), 0) as number
+                    setProfile(prev => ({
+                      ...prev,
+                      totalLiabilities,
+                      netWorthWorksheet: {
+                        assets: worksheet.assets,
+                        liabilities: nextLiabilities as any
+                      }
+                    }))
+                  }}
+                  className="w-full px-3 py-2 text-sm rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors"
+                  placeholder="0"
+                />
+              </div>
             )
           })}
         </div>
       </div>
+
+      {/* Net worth summary box */}
+      <div className="p-6 bg-navy text-white rounded-2xl border border-gold/10 space-y-3">
+        <h4 className="font-serif text-lg text-gold">Net Worth Worksheet</h4>
+        <div className="grid grid-cols-3 gap-4 text-center border-t border-white/10 pt-4">
+          <div>
+            <p className="text-xs text-white/50 uppercase">Total Assets</p>
+            <p className="font-serif text-xl font-semibold text-white mt-1">₹{profile.totalAssets.toLocaleString('en-IN')}</p>
+          </div>
+          <div>
+            <p className="text-xs text-white/50 uppercase">Total Liabilities</p>
+            <p className="font-serif text-xl font-semibold text-white mt-1">₹{profile.totalLiabilities.toLocaleString('en-IN')}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gold/85 uppercase">Net Worth</p>
+            <p className="font-serif text-xl font-semibold text-gold mt-1">₹{(profile.totalAssets - profile.totalLiabilities).toLocaleString('en-IN')}</p>
+          </div>
+        </div>
+      </div>
     </motion.div>,
 
-    // Step 3: Investments & Insurance
+    // Step 4: Existing Coverage
     <motion.div key="coverage" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
       <h2 className="font-serif text-3xl text-navy">Existing Coverage</h2>
       <p className="text-slate">What you already have in place.</p>
@@ -274,38 +495,124 @@ export default function FamilyProfilePage() {
       </div>
     </motion.div>,
 
-    // Step 4: Summary
+    // Step 5: Summary
     <motion.div key="summary" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-      <h2 className="font-serif text-3xl text-navy">All Set!</h2>
-      <p className="text-slate">Review your family profile before starting the assessment.</p>
-      <div className="p-6 bg-white rounded-2xl border border-slate-lighter/30 space-y-4">
-        <div className="flex justify-between pb-3 border-b border-slate-lighter/20">
-          <span className="text-slate">Primary Member</span>
-          <span className="font-medium text-charcoal">{profile.primaryMember.name || 'Not provided'}</span>
-        </div>
-        {profile.spouse && (
-          <div className="flex justify-between pb-3 border-b border-slate-lighter/20">
-            <span className="text-slate">Spouse</span>
-            <span className="font-medium text-charcoal">{profile.spouse.name}</span>
+      <h2 className="font-serif text-3xl text-navy">Family Data and Financial Snapshot</h2>
+      <p className="text-slate">Review your details before starting the assessment.</p>
+      
+      <div className="p-6 bg-white rounded-2xl border border-slate-lighter/30 space-y-6 max-h-[60vh] overflow-y-auto">
+        <div>
+          <h3 className="font-serif text-xl text-navy border-b pb-2 mb-3">Family Information</h3>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <span className="text-slate">Family Name</span>
+            <span className="font-medium text-charcoal">{profile.familyName || '—'}</span>
+            
+            <span className="text-slate">Primary Earning Member</span>
+            <span className="font-medium text-charcoal">{profile.primaryMember.name || '—'}</span>
+            
+            <span className="text-slate">Age</span>
+            <span className="font-medium text-charcoal">{profile.primaryMember.age || '—'}</span>
+            
+            <span className="text-slate">Spouse Name</span>
+            <span className="font-medium text-charcoal">{profile.spouse?.name || '—'}</span>
+            
+            <span className="text-slate">Children</span>
+            <span className="font-medium text-charcoal">
+              {profile.children.map(c => `${c.name} (${c.age} yrs)`).join(', ') || 'None'}
+            </span>
+            
+            <span className="text-slate">Occupation</span>
+            <span className="font-medium text-charcoal">{profile.primaryMember.occupation || '—'}</span>
+            
+            <span className="text-slate">Risk Profile</span>
+            <span className="font-medium text-charcoal capitalize">{profile.riskProfile}</span>
           </div>
-        )}
-        <div className="flex justify-between pb-3 border-b border-slate-lighter/20">
-          <span className="text-slate">Children</span>
-          <span className="font-medium text-charcoal">{profile.children.length}</span>
         </div>
-        <div className="flex justify-between pb-3 border-b border-slate-lighter/20">
-          <span className="text-slate">Monthly Expenses</span>
-          <span className="font-medium text-charcoal">₹{profile.monthlyExpenses.toLocaleString('en-IN')}</span>
+
+        <div>
+          <h3 className="font-serif text-xl text-navy border-b pb-2 mb-3">Financial Information</h3>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <span className="text-slate">Financial Goal 1</span>
+            <span className="font-medium text-charcoal">{profile.goals[0] || '—'}</span>
+            
+            <span className="text-slate">Financial Goal 2</span>
+            <span className="font-medium text-charcoal">{profile.goals[1] || '—'}</span>
+            
+            <span className="text-slate">Financial Goal 3</span>
+            <span className="font-medium text-charcoal">{profile.goals[2] || '—'}</span>
+            
+            <span className="text-slate">Time Horizon</span>
+            <span className="font-medium text-charcoal">{profile.timeHorizon || '—'}</span>
+            
+            <span className="text-slate">Monthly Expenses</span>
+            <span className="font-medium text-charcoal">₹{(profile.monthlyExpenses || 0).toLocaleString('en-IN')}</span>
+            
+            <span className="text-slate">Existing Insurance</span>
+            <span className="font-medium text-charcoal">
+              {profile.existingInsurance.map(i => `${i.type} (Sum: ₹${i.sumInsured.toLocaleString('en-IN')})`).join(', ') || 'None'}
+            </span>
+            
+            <span className="text-slate">Existing Investments</span>
+            <span className="font-medium text-charcoal">
+              {profile.existingInvestments.map(i => `${i.type} (Value: ₹${(i.currentValue || i.amount).toLocaleString('en-IN')})`).join(', ') || 'None'}
+            </span>
+          </div>
         </div>
-        <div className="flex justify-between pb-3 border-b border-slate-lighter/20">
-          <span className="text-slate">Risk Profile</span>
-          <span className="font-medium text-charcoal capitalize">{profile.riskProfile}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate">Net Worth</span>
-          <span className="font-serif text-xl font-semibold text-gold-dark">
-            ₹{(profile.totalAssets - profile.totalLiabilities).toLocaleString('en-IN')}
-          </span>
+
+        <div>
+          <h3 className="font-serif text-xl text-navy border-b pb-2 mb-3">Net Worth Worksheet</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-serif text-md text-navy/80 mb-2">Assets</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm pl-4">
+                <span className="text-slate">Bank & FD</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.assets.bankFD || 0).toLocaleString('en-IN')}</span>
+                
+                <span className="text-slate">Mutual Funds</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.assets.mutualFunds || 0).toLocaleString('en-IN')}</span>
+                
+                <span className="text-slate">Shares</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.assets.shares || 0).toLocaleString('en-IN')}</span>
+                
+                <span className="text-slate">Property</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.assets.property || 0).toLocaleString('en-IN')}</span>
+                
+                <span className="text-slate">Gold</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.assets.gold || 0).toLocaleString('en-IN')}</span>
+                
+                <span className="text-slate">EPF / PPF / NPS</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.assets.epfPpfNps || 0).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-serif text-md text-navy/80 mb-2">Liabilities</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm pl-4">
+                <span className="text-slate">Home Loan</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.liabilities.homeLoan || 0).toLocaleString('en-IN')}</span>
+                
+                <span className="text-slate">Personal Loan</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.liabilities.personalLoan || 0).toLocaleString('en-IN')}</span>
+                
+                <span className="text-slate">Vehicle Loan</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.liabilities.vehicleLoan || 0).toLocaleString('en-IN')}</span>
+                
+                <span className="text-slate">Credit Card</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.liabilities.creditCard || 0).toLocaleString('en-IN')}</span>
+                
+                <span className="text-slate">Other Loans</span>
+                <span className="font-medium text-charcoal">₹{(profile.netWorthWorksheet?.liabilities.otherLoans || 0).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            <div className="border-t pt-3 grid grid-cols-2 text-sm">
+              <span className="font-semibold text-navy">Net Worth (Assets — Liabilities)</span>
+              <span className="font-serif font-bold text-gold-dark text-right">
+                ₹{(profile.totalAssets - profile.totalLiabilities).toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>,

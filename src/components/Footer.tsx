@@ -42,7 +42,7 @@ export default function Footer() {
                 alt="Kutumb Advisory"
                 width={41}
                 height={41}
-                style={{ width: "auto" }}
+                style={{ width: "auto", height: "auto" }}
                 className="h-[41px] w-auto object-contain"
               />
               <span className="font-serif text-xl tracking-wide text-navy">
