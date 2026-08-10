@@ -1,8 +1,13 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.NEWSLETTER_FROM_EMAIL || "hello@kutumbadvisory.com";
 const FROM_NAME = "Kutumb Advisory";
+
+// Lazily instantiated so Next.js doesn't evaluate it at build time
+// (process.env.RESEND_API_KEY would be undefined during static analysis).
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // ─── Shared HTML wrapper ───────────────────────────────────────────
 function wrap(content: string, preheader = ""): string {
@@ -176,7 +181,7 @@ export function buildPaymentConfirmationHtml(name: string, amount: number, order
 // ─── Sender utilities ────────────────────────────────────────────────
 
 export async function sendWelcomeEmail(to: string, name: string) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: `${FROM_NAME} <${FROM}>`,
     to,
     subject: "Welcome to Kutumb Advisory — Your Journey Begins ✦",
@@ -190,7 +195,7 @@ export async function sendPaymentConfirmationEmail(
   amountPaise: number,
   orderId: string
 ) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: `${FROM_NAME} <${FROM}>`,
     to,
     subject: "Payment Confirmed — Financial Kundali Unlocked ✓",
@@ -208,7 +213,7 @@ export async function sendNewsletterBatch(
 
   for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
     const batch = recipients.slice(i, i + BATCH_SIZE);
-    const { error } = await resend.batch.send(
+    const { error } = await getResend().batch.send(
       batch.map((to) => ({ from: `${FROM_NAME} <${FROM}>`, to, subject, html }))
     );
     if (error) return { sent: i, error: error.message };
