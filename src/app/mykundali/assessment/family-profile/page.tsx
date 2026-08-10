@@ -104,7 +104,7 @@ export default function FamilyProfilePage() {
   const saveProfile = useCallback(
     async (current: FamilyProfile) => {
       if (!userId) return
-      await supabase.from('family_profiles').upsert({
+      const { error } = await supabase.from('family_profiles').upsert({
         customer_id: userId,
         primary_member: {
           ...current.primaryMember,
@@ -121,7 +121,8 @@ export default function FamilyProfilePage() {
         goals: current.goals,
         existing_investments: current.existingInvestments as unknown as Json,
         existing_insurance: current.existingInsurance as unknown as Json,
-      })
+      }, { onConflict: 'customer_id' })
+      if (error) console.error('[family-profile] upsert error:', error)
     },
     [userId, supabase]
   )
@@ -620,7 +621,7 @@ export default function FamilyProfilePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-2xl mx-auto px-6 pt-28 pb-16">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-12 sm:pb-16">
         {/* Header */}
         <div className="mb-8">
           <Link href="/mykundali/assessment/landing" className="text-sm text-slate hover:text-charcoal transition-colors">
@@ -638,17 +639,17 @@ export default function FamilyProfilePage() {
         </AnimatePresence>
 
         {/* Navigation */}
-        <div className="mt-10 flex justify-between">
-          <Button showArrow={false} variant="ghost" onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}>
+        <div className="mt-10 flex flex-col-reverse sm:flex-row gap-3 sm:gap-0 justify-between items-center">
+          <Button showArrow={false} variant="ghost" onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0} className="w-full sm:w-auto">
             ← Previous
           </Button>
           {step < totalSteps - 1 ? (
-            <Button showArrow={false} onClick={() => setStep(s => Math.min(totalSteps - 1, s + 1))}>
+            <Button showArrow={false} onClick={() => setStep(s => Math.min(totalSteps - 1, s + 1))} className="w-full sm:w-auto">
               Continue →
             </Button>
           ) : (
-            <Link href="/mykundali/assessment/grahas" onClick={() => saveProfile(profile)}>
-              <Button showArrow={false}>
+            <Link href="/mykundali/assessment/grahas" onClick={() => saveProfile(profile)} className="w-full sm:w-auto">
+              <Button showArrow={false} className="w-full sm:w-auto">
                 Start Assessment →
               </Button>
             </Link>

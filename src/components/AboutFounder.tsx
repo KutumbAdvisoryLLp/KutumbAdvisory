@@ -1,13 +1,42 @@
 "use client";
 
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import AnimatedSection from "./AnimatedSection";
+import { createClient } from "@/lib/supabase/client";
 
-const FOUNDER_IMAGE_URL =
+const DEFAULT_FOUNDER_IMAGE =
   "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780300586/deepika-founder_u8eiuz.jpg";
 
 export default function AboutFounder() {
+  const supabase = useMemo(() => createClient(), []);
+  const [founder, setFounder] = useState({
+    name: "Deepika",
+    role: "Founder, Kutumb Advisory",
+    bio: "With over twelve years of experience in wealth management and financial advisory, Deepika recognized that most families approach their finances in disconnected fragments.",
+    image: DEFAULT_FOUNDER_IMAGE,
+  });
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("team_members")
+        .select("*")
+        .eq("is_founder", true)
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setFounder({
+          name: data.name,
+          role: data.role,
+          bio: data.bio,
+          image: data.image_url || DEFAULT_FOUNDER_IMAGE,
+        });
+      }
+    })();
+  }, [supabase]);
   return (
     <>
       <AnimatedSection className="bg-white py-32 sm:py-40 lg:py-48">
@@ -23,7 +52,7 @@ export default function AboutFounder() {
               <div className="relative">
                 <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-ivory shadow-xl shadow-navy/5">
                   <Image
-                    src={FOUNDER_IMAGE_URL}
+                    src={founder.image}
                     alt="Deepika, Founder, Kutumb Advisory"
                     fill
                     sizes="(max-width: 1024px) 100vw, 450px"

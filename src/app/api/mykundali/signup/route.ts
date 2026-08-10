@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   const { fullName, email, phone, password } = await request.json();
@@ -38,6 +39,11 @@ export async function POST(request: Request) {
     await admin.auth.admin.deleteUser(created.user.id);
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
+
+  // Fire-and-forget welcome email — don't block signup if it fails
+  sendWelcomeEmail(email.trim(), fullName.trim()).catch((err) =>
+    console.error("[signup] Welcome email failed:", err)
+  );
 
   return NextResponse.json({ ok: true });
 }

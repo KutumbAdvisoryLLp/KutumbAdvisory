@@ -73,20 +73,25 @@ export default function LoadingPage() {
 
       const result = computeAssessmentResult(profile, answerMap)
 
-      const { error } = await supabase.from('assessment_results').upsert({
-        customer_id: userId,
-        overall_score: result.overallScore,
-        overall_status: result.overallStatus,
-        graha_scores: result.grahaScores,
-        graha_details: result.grahaDetails as unknown as Json,
-        recommendations: result.recommendations,
-        advisor_notes: result.advisorNotes,
-        action_plan: result.actionPlan as unknown as Json,
-        strongest_graha: result.strongestGraha,
-        weakest_graha: result.weakestGraha,
-      })
+      const { error } = await supabase.from('assessment_results').upsert(
+        {
+          customer_id: userId,
+          overall_score: result.overallScore,
+          overall_status: result.overallStatus,
+          graha_scores: result.grahaScores,
+          graha_details: result.grahaDetails as unknown as Json,
+          recommendations: result.recommendations,
+          advisor_notes: result.advisorNotes,
+          action_plan: result.actionPlan as unknown as Json,
+          strongest_graha: result.strongestGraha,
+          weakest_graha: result.weakestGraha,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'customer_id' }
+      )
 
       if (error) {
+        console.error('Failed to save assessment_results:', error.message)
         setSaveError(true)
         return false
       }

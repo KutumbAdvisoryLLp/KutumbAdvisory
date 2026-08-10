@@ -95,13 +95,11 @@ export default function UnlockPage() {
       const orderRes = await fetch('/api/mykundali/payment/create-order', { method: 'POST' })
       const orderBody = await orderRes.json()
       if (!orderRes.ok) {
-        // If Razorpay keys are not configured or account already unlocked, show error or test redirect
         if (orderBody.error?.includes('already unlocked')) {
           window.location.href = '/mykundali/dashboard'
           return
         }
-        setError(orderBody.error ?? 'Could not start payment')
-        setProcessing(false)
+        window.location.href = '/mykundali/payment-failed'
         return
       }
 
@@ -128,17 +126,12 @@ export default function UnlockPage() {
               body: JSON.stringify(response),
             })
             if (!verifyRes.ok) {
-              const verifyBody = await verifyRes.json()
-              setError(verifyBody.error ?? 'Payment verification failed')
-              setProcessing(false)
+              window.location.href = '/mykundali/payment-failed'
               return
             }
             window.location.href = '/mykundali/dashboard'
           } catch {
-            setError('Payment succeeded but verification had an error. Redirecting...')
-            setTimeout(() => {
-              window.location.href = '/mykundali/dashboard'
-            }, 1000)
+            window.location.href = '/mykundali/payment-failed'
           }
         },
         modal: {
@@ -148,8 +141,7 @@ export default function UnlockPage() {
 
       razorpay.open()
     } catch {
-      setError('Something went wrong starting payment. Please try again.')
-      setProcessing(false)
+      window.location.href = '/mykundali/payment-failed'
     }
   }
 
@@ -159,11 +151,11 @@ export default function UnlockPage() {
         src="https://checkout.razorpay.com/v1/checkout.js"
         onLoad={() => setScriptLoaded(true)}
       />
-      <div className="max-w-2xl mx-auto px-6 pt-28 pb-16">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-12 sm:pb-16">
         {/* Back */}
         <button
           onClick={() => router.back()}
-          className="text-sm text-slate hover:text-charcoal transition-colors mb-8"
+          className="text-sm text-slate hover:text-charcoal transition-colors mb-6 sm:mb-8"
         >
           ← Back
         </button>
@@ -171,13 +163,13 @@ export default function UnlockPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
+          className="text-center mb-8 sm:mb-10"
         >
-          <span className="text-5xl mb-4 block">✦</span>
-          <h1 className="font-serif text-4xl md:text-5xl text-navy mb-3">
+          <span className="text-4xl sm:text-5xl mb-3 sm:mb-4 block">✦</span>
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-navy mb-3">
             Unlock Your Complete Financial Kundali
           </h1>
-          <p className="text-lg text-slate max-w-lg mx-auto">
+          <p className="text-base sm:text-lg text-slate max-w-lg mx-auto">
             Get the full picture. Every insight. Every recommendation.
           </p>
         </motion.div>
@@ -187,7 +179,7 @@ export default function UnlockPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-2 gap-3 mb-10"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 sm:mb-10"
         >
           {features.map((f, i) => (
             <motion.div
@@ -195,7 +187,7 @@ export default function UnlockPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 + i * 0.05 }}
-              className="p-4 bg-white rounded-xl border border-slate-lighter/20 flex items-center gap-3"
+              className="p-3.5 sm:p-4 bg-white rounded-xl border border-slate-lighter/20 flex items-center gap-3"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-light/15 text-gold-dark">
                 <f.icon size={17} strokeWidth={1.75} />
@@ -213,15 +205,15 @@ export default function UnlockPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5 }}
-          className="p-8 bg-navy rounded-3xl text-center shadow-modal"
+          className="p-6 sm:p-8 bg-navy rounded-3xl text-center shadow-modal"
         >
-          <p className="text-gold-light/60 text-sm uppercase tracking-widest mb-2">
+          <p className="text-gold-light/60 text-xs sm:text-sm uppercase tracking-widest mb-2">
             One-time payment
           </p>
-          <p className="font-serif text-5xl md:text-6xl text-gold mb-2">
+          <p className="font-serif text-4xl sm:text-5xl md:text-6xl text-gold mb-2">
             ₹999
           </p>
-          <p className="text-white/50 text-sm mb-8">Lifetime access · No recurring fees</p>
+          <p className="text-white/50 text-xs sm:text-sm mb-6 sm:mb-8">Lifetime access · No recurring fees</p>
 
           <Button showArrow={false} variant="gold" size="lg" loading={processing} onClick={handlePayment} className="w-full">
             {processing ? 'Processing...' : 'Unlock My Financial Kundali →'}
@@ -231,12 +223,11 @@ export default function UnlockPage() {
             <p className="mt-4 text-sm text-red-400">{error}</p>
           )}
 
-          <div className="mt-6 flex items-center justify-center gap-6 text-xs text-white/40">
-            <span>✦ 7-Day Money-Back Guarantee</span>
+          <div className="mt-6 flex items-center justify-center gap-2 text-xs text-white/40">
             <span>✦ 100% Secure Payment</span>
           </div>
 
-          <div className="mt-4 flex items-center justify-center gap-3 text-xs text-white/30">
+          <div className="mt-4 flex items-center justify-center gap-2 sm:gap-3 text-xs text-white/30 flex-wrap">
             <span>Razorpay</span>
             <span>·</span>
             <span>UPI</span>
@@ -247,19 +238,7 @@ export default function UnlockPage() {
           </div>
         </motion.div>
 
-        {/* Guarantee */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="mt-8 p-5 bg-white rounded-2xl border border-slate-lighter/20 text-center"
-        >
-          <p className="text-sm text-slate">
-            Not satisfied? We&apos;ll refund every rupee within 7 days.
-            <br />
-            No questions asked. Your Financial Kundali is our commitment.
-          </p>
-        </motion.div>
+
       </div>
     </div>
   )

@@ -1,38 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
+import { createClient } from "@/lib/supabase/client";
 
-const faqs = [
+const defaultFaqs = [
   {
     q: "What is Financial Kundali?",
-    a: "Financial Kundali is Kutumb's proprietary framework for mapping your family's complete financial universe. Like a traditional kundali reveals the positions of celestial bodies at your birth, Financial Kundali reveals the nine dimensions of your family's wealth — investments, insurance, estate planning, retirement, tax, business, legacy, spending, and protection — in one connected view. It is the starting point for every relationship at Kutumb.",
+    a: "Financial Kundali is Kutumb's proprietary framework for mapping your family's complete financial universe. Like a traditional kundali reveals the positions of celestial bodies at your birth, Financial Kundali reveals the nine dimensions of your family's wealth — investments, insurance, estate planning, retirement, tax, business, legacy, spending, and protection — in one connected view.",
   },
   {
     q: "How long does a consultation take?",
-    a: "Your first consultation typically lasts 60–90 minutes. We take this time to understand your family's financial landscape, your goals, and your concerns. There is no pressure to make decisions. The goal is simply to begin a conversation.",
+    a: "Your first consultation typically lasts 60–90 minutes. We take this time to understand your family's financial landscape, your goals, and your concerns.",
   },
   {
     q: "How much does Kutumb cost?",
-    a: "Every family is different, and our approach reflects that. We discuss fees transparently during your first consultation. Unlike many firms, we do not believe in hidden charges or commission-based recommendations. Our model is built on clarity from day one.",
+    a: "Every family is different, and our approach reflects that. We discuss fees transparently during your first consultation. Our model is built on clarity from day one.",
   },
   {
     q: "Can I complete everything online?",
-    a: "Yes. While we welcome in-person meetings at our studio, the entire Kutumb process can be completed remotely. From your initial consultation to your Financial Kundali, we work around your schedule and preferred medium.",
-  },
-  {
-    q: "Do I need all my financial documents ready?",
-    a: "Not at all. Bring whatever you have, or simply come with an open mind. We will guide you through what is needed and help you organise your financial picture step by step. Many families start with nothing more than a desire for clarity.",
-  },
-  {
-    q: "Can NRIs use Kutumb?",
-    a: "Absolutely. We work with families across the globe. Our digital-first approach means geography is never a barrier. Whether you are in Mumbai, London, Dubai, or Singapore, Kutumb can serve your family with the same depth and care.",
+    a: "Yes. While we welcome in-person meetings at our studio, the entire Kutumb process can be completed remotely.",
   },
 ];
 
 export default function ContactFAQ() {
+  const supabase = useMemo(() => createClient(), []);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [faqList, setFaqList] = useState(defaultFaqs);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("faqs")
+        .select("*")
+        .eq("is_published", true)
+        .order("display_order", { ascending: true });
+
+      if (data && data.length > 0) {
+        setFaqList(
+          data.map((d: any) => ({
+            q: d.question,
+            a: d.answer,
+          }))
+        );
+      }
+    })();
+  }, [supabase]);
 
   return (
     <AnimatedSection className="bg-ivory py-24 sm:py-32 lg:py-40">
@@ -50,7 +64,7 @@ export default function ContactFAQ() {
         </div>
 
         <div className="mx-auto mt-16 max-w-3xl space-y-4">
-          {faqs.map((faq, i) => {
+          {faqList.map((faq, i) => {
             const isOpen = openIdx === i;
             return (
               <motion.div

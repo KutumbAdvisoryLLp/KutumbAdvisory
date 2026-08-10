@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase/middleware";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const { supabase, response } = createMiddlewareClient(request);
 
   // getUser() (not getSession()) revalidates the JWT against Supabase Auth
-  // on every request — the only safe way to trust a session in middleware.
+  // on every request — the only safe way to trust a session in middleware/proxy.
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -66,5 +66,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/mykundali/dashboard/:path*", "/mykundali/assessment/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/mykundali/dashboard/:path*",
+    "/mykundali/assessment/:path*",
+  ],
 };

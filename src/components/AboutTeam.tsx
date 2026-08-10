@@ -1,16 +1,16 @@
 "use client";
 
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import AnimatedSection from "./AnimatedSection";
+import { createClient } from "@/lib/supabase/client";
 
-const team = [
+const defaultTeam = [
   {
     name: "Raunak",
     role: "Technology & Digital",
     bio: "Leads technology strategy and digital transformation at Kutumb, building platforms that make family wealth management accessible and intuitive.",
-    expertise: "Digital Innovation",
-    initials: "R",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301027/raunak_ftpboc.png",
   },
@@ -18,8 +18,6 @@ const team = [
     name: "Tanishq",
     role: "Client Relations",
     bio: "Ensures every family receives the highest standard of care and attention. Specialises in building long-term relationships rooted in trust.",
-    expertise: "Family Engagement",
-    initials: "T",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780394568/tanishq_i9einp.png",
   },
@@ -27,8 +25,6 @@ const team = [
     name: "Harsh",
     role: "CRM & Operations",
     bio: "Manages the systems and processes that power Kutumb's advisory framework, ensuring seamless service delivery for every family.",
-    expertise: "Operational Excellence",
-    initials: "H",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780394568/harsh_ftie7y.png",
   },
@@ -36,8 +32,6 @@ const team = [
     name: "Atri Ganguly",
     role: "Compliance & Legal",
     bio: "Oversees regulatory compliance, legal frameworks, and governance structures that protect both Kutumb and the families we serve.",
-    expertise: "Regulatory Advisory",
-    initials: "AG",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301670/attri_rcnc0p.png",
   },
@@ -45,8 +39,6 @@ const team = [
     name: "Tejpal Singh Bagga",
     role: "Investments & Portfolio",
     bio: "Leads investment strategy and portfolio construction, bringing deep expertise in asset allocation and wealth preservation.",
-    expertise: "Investment Strategy",
-    initials: "TB",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301742/tejpal_bzcxev.png",
   },
@@ -54,14 +46,35 @@ const team = [
     name: "Soumik Saha",
     role: "Portfolio Management",
     bio: "Manages day-to-day portfolio operations, performance monitoring, and rebalancing to ensure every family's portfolio stays aligned with their goals.",
-    expertise: "Portfolio Operations",
-    initials: "SS",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301742/soumik_qfrcte.png",
   },
 ];
 
 export default function AboutTeam() {
+  const supabase = useMemo(() => createClient(), []);
+  const [members, setMembers] = useState(defaultTeam);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("team_members")
+        .select("*")
+        .eq("is_founder", false)
+        .order("display_order", { ascending: true });
+
+      if (data && data.length > 0) {
+        setMembers(
+          data.map((d: any) => ({
+            name: d.name,
+            role: d.role,
+            bio: d.bio,
+            image: d.image_url,
+          }))
+        );
+      }
+    })();
+  }, [supabase]);
   return (
     <AnimatedSection className="bg-cream py-28 sm:py-36 lg:py-44">
       <div className="mx-auto max-w-7xl px-8 lg:px-10">
@@ -80,7 +93,7 @@ export default function AboutTeam() {
         </div>
 
         <div className="mt-20 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {team.map((member, i) => (
+          {members.map((member, i) => (
             <motion.div
               key={member.name}
               initial={{ opacity: 0, y: 24 }}
@@ -103,7 +116,7 @@ export default function AboutTeam() {
                   />
                 ) : (
                   <span className="font-serif text-3xl font-semibold text-navy/30">
-                    {member.initials}
+                    {member.name[0]}
                   </span>
                 )}
               </div>
@@ -122,7 +135,7 @@ export default function AboutTeam() {
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
-                <span className="text-[11px] font-medium text-[#B8862B]/70">{member.expertise}</span>
+                <span className="text-[11px] font-medium text-[#B8862B]/70">{member.role}</span>
               </div>
             </motion.div>
           ))}

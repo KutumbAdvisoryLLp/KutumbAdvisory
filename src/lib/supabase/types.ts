@@ -29,6 +29,82 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["admin_users"]["Insert"]>;
         Relationships: [];
       };
+      announcements: {
+        Row: {
+          id: string;
+          message: string;
+          link_text: string | null;
+          link_url: string | null;
+          bg_color: string;
+          text_color: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["announcements"]["Row"], "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["announcements"]["Insert"]>;
+        Relationships: [];
+      };
+      testimonials: {
+        Row: {
+          id: string;
+          name: string;
+          location: string;
+          role: string;
+          quote: string;
+          avatar_url: string | null;
+          rating: number;
+          is_featured: boolean;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["testimonials"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["testimonials"]["Insert"]>;
+        Relationships: [];
+      };
+      faqs: {
+        Row: {
+          id: string;
+          category: string;
+          question: string;
+          answer: string;
+          display_order: number;
+          is_published: boolean;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["faqs"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["faqs"]["Insert"]>;
+        Relationships: [];
+      };
+      team_members: {
+        Row: {
+          id: string;
+          name: string;
+          role: string;
+          bio: string;
+          image_url: string;
+          linkedin_url: string | null;
+          is_founder: boolean;
+          display_order: number;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["team_members"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["team_members"]["Insert"]>;
+        Relationships: [];
+      };
       leads: {
         Row: {
           id: string;

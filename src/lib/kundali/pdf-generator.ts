@@ -120,7 +120,17 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
   const isEmailLike = user?.fullName && (user.fullName.includes('@') || (user?.email && user.fullName === user.email.split('@')[0]))
   const clientName = enteredName || (!isEmailLike ? user?.fullName : undefined) || user?.fullName || "Valued Client"
 
-  const dateStr = report?.completedAt || new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+  const rawDate = report?.completedAt
+  let dateStr: string
+  if (!rawDate) {
+    dateStr = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+  } else {
+    // completedAt may already be a formatted string (e.g. "10 August 2026") — detect ISO format first
+    const parsed = new Date(rawDate)
+    dateStr = isNaN(parsed.getTime())
+      ? rawDate  // already a human-readable string, use as-is
+      : parsed.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+  }
   const overallScore = report?.overallScore ?? 0
 
   const worksheet = profile?.netWorthWorksheet || {

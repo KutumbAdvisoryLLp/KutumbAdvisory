@@ -20,10 +20,10 @@ const lockedGrahas = ['guru', 'shukra', 'shani', 'rahu', 'ketu']
 
 export default function PreviewPage() {
   return (
-    <div className="min-h-screen bg-white pb-40">
-      <div className="max-w-3xl mx-auto px-6 pt-28 pb-20">
+    <div className="min-h-screen bg-white pb-32 sm:pb-40">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-16 sm:pb-20">
         {/* Back */}
-        <button className="text-sm text-slate hover:text-charcoal transition-colors mb-8">
+        <button className="text-sm text-slate hover:text-charcoal transition-colors mb-6 sm:mb-8">
           ← Back
         </button>
 
@@ -31,12 +31,12 @@ export default function PreviewPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-12"
         >
-          <span className="inline-block text-xs font-semibold tracking-[0.15em] uppercase text-gold mb-4">
+          <span className="inline-block text-xs font-semibold tracking-[0.15em] uppercase text-gold mb-3 sm:mb-4">
             Financial Kundali™
           </span>
-          <h1 className="font-serif text-4xl md:text-5xl text-navy">
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-navy">
             Your Financial Kundali
           </h1>
         </motion.div>
@@ -46,14 +46,14 @@ export default function PreviewPage() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="flex flex-col items-center mb-12"
+          className="flex flex-col items-center mb-8 sm:mb-12"
         >
           <div className="relative">
             <ScoreRing score={overallScore} maxScore={90} size="xl" />
           </div>
           <div className="mt-4 text-center">
-            <div className="text-2xl text-gold-dark">★★★★☆</div>
-            <p className="text-slate mt-1">Fair · Room for improvement</p>
+            <div className="text-xl sm:text-2xl text-gold-dark">★★★★☆</div>
+            <p className="text-slate text-sm sm:text-base mt-1">Fair · Room for improvement</p>
           </div>
         </motion.div>
 
@@ -62,7 +62,7 @@ export default function PreviewPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="grid grid-cols-2 gap-4 mb-12"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 sm:mb-12"
         >
           <div className="p-5 bg-white rounded-2xl border border-slate-lighter/20 shadow-card">
             <p className="text-xs text-slate-light uppercase tracking-wider mb-1">Strongest</p>

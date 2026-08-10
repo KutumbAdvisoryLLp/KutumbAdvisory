@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
+import { createClient } from "@/lib/supabase/client";
 
-const testimonials = [
+const defaultTestimonials = [
   {
     quote: "Kutumb helped us see the complete picture of our family's finances. For the first time, we understand how everything connects — our investments, our insurance, our estate plan. It's transformed how we plan for our children's future.",
     author: "Vikram & Neha R.",
@@ -42,6 +44,30 @@ function QuoteMark({ variant = "navy" }: { variant?: string }) {
 }
 
 export default function AboutTestimonials() {
+  const supabase = useMemo(() => createClient(), []);
+  const [list, setList] = useState(defaultTestimonials);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("testimonials")
+        .select("*")
+        .eq("is_featured", true)
+        .order("display_order", { ascending: true });
+
+      if (data && data.length > 0) {
+        setList(
+          data.map((d: any, i: number) => ({
+            quote: d.quote,
+            author: d.name,
+            title: `${d.role}, ${d.location}`,
+            initials: d.name.split(" ").map((n: string) => n[0]).join(""),
+            variant: i === 0 ? "navy" : "ivory",
+          }))
+        );
+      }
+    })();
+  }, [supabase]);
   return (
     <AnimatedSection className="bg-white py-28 sm:py-36 lg:py-44">
       <div className="mx-auto max-w-7xl px-8 lg:px-10">
@@ -60,7 +86,7 @@ export default function AboutTestimonials() {
         </div>
 
         <div className="mt-20 grid gap-6 lg:grid-cols-3">
-          {testimonials.map((t, i) => (
+          {list.map((t, i) => (
             <motion.div
               key={t.author}
               initial={{ opacity: 0, y: 24 }}

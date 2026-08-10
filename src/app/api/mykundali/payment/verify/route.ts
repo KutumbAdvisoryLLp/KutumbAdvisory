@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { sendPaymentConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -58,6 +59,27 @@ export async function POST(request: Request) {
   if (updateError) {
     return NextResponse.json({ error: "Could not record payment" }, { status: 500 });
   }
+
+  // Send payment confirmation email — fire-and-forget
+  ;(async () => {
+    try {
+      const { data: customer } = await admin
+        .from("customers")
+        .select("full_name, email")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (customer?.email) {
+        await sendPaymentConfirmationEmail(
+          customer.email,
+          customer.full_name || "Valued Client",
+          99900,
+          razorpay_order_id
+        );
+      }
+    } catch (err) {
+      console.error("[verify] Payment confirmation email failed:", err);
+    }
+  })();
 
   return NextResponse.json({ ok: true });
 }

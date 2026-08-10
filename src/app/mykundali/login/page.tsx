@@ -243,7 +243,9 @@ export default function MykundaliLoginPage() {
             />
 
             {formError && (
-              <p className="text-center text-[13px] text-red-500">{formError}</p>
+              <p className="text-center text-[13px] text-red-500">
+                {typeof formError === "string" ? formError : (formError as any)?.message || "Something went wrong."}
+              </p>
             )}
 
             <Button

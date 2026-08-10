@@ -14,14 +14,20 @@ import {
   SettingsIcon,
   CloseIcon,
 } from "@/components/icons/admin";
+import { Megaphone, MessageSquareQuote, HelpCircle, UserCheck, Code2 } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: DashboardIcon },
+  { label: "Banners", href: "/admin/banners", icon: Megaphone },
+  { label: "Testimonials", href: "/admin/testimonials", icon: MessageSquareQuote },
+  { label: "FAQs", href: "/admin/faqs", icon: HelpCircle },
+  { label: "Team", href: "/admin/team", icon: UserCheck },
   { label: "Journal", href: "/admin/journal", icon: JournalAdminIcon },
   { label: "Contact", href: "/admin/contact", icon: ContactAdminIcon },
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
   { label: "Newsletter", href: "/admin/newsletter", icon: NewsletterIcon },
   { label: "Analytics", href: "/admin/analytics", icon: AnalyticsIcon },
+  { label: "Developer", href: "/admin/developer", icon: Code2 },
   { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
 ];
 
@@ -82,14 +88,6 @@ function SidebarContent({
           );
         })}
       </nav>
-
-      <div className="px-7 py-6">
-        <div className="mb-6 h-px bg-navy/8" />
-        <p className="text-[11px] leading-relaxed text-stone/40">
-          Kutumb Advisory Admin — UI preview build. Backend wiring coming
-          soon.
-        </p>
-      </div>
     </div>
   );
 }

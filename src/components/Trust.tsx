@@ -1,18 +1,17 @@
 "use client";
 
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
+import { createClient } from "@/lib/supabase/client";
 
-const testimonials = [
+const defaultTestimonials = [
   {
     quote:
       "For years, I thought our finances were in order. Financial Kundali showed me gaps I didn't know existed — and connected everything into a plan my entire family understands.",
     name: "Arun Mehta",
     title: "Business Owner",
     location: "Mumbai",
-    type: "Financial Kundali Client",
-    verified: true,
-    date: "March 2026",
   },
   {
     quote:
@@ -20,13 +19,33 @@ const testimonials = [
     name: "Priya Sundararajan",
     title: "Physician",
     location: "Chennai",
-    type: "Financial Kundali Client",
-    verified: true,
-    date: "February 2026",
   },
 ];
 
 export default function Trust() {
+  const supabase = useMemo(() => createClient(), []);
+  const [list, setList] = useState(defaultTestimonials);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("testimonials")
+        .select("*")
+        .eq("is_featured", true)
+        .order("display_order", { ascending: true });
+
+      if (data && data.length > 0) {
+        setList(
+          data.map((d: any) => ({
+            quote: d.quote,
+            name: d.name,
+            title: d.role,
+            location: d.location,
+          }))
+        );
+      }
+    })();
+  }, [supabase]);
   return (
     <AnimatedSection className="bg-white py-28 sm:py-36 lg:py-44">
       <div className="mx-auto max-w-7xl px-8 lg:px-10">
@@ -40,7 +59,7 @@ export default function Trust() {
         </div>
 
         <div className="relative mt-20 grid gap-8 md:grid-cols-2">
-          {testimonials.map((t, i) => (
+          {list.map((t, i) => (
             <motion.div
               key={t.name}
               initial={{ opacity: 0, y: 30 }}
@@ -68,17 +87,12 @@ export default function Trust() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold text-navy">{t.name}</p>
-                      {t.verified && (
-                        <span className="text-[10px] text-emerald-600/60 font-medium tracking-wide">
-                          Verified
-                        </span>
-                      )}
+                      <span className="text-[10px] text-emerald-600/70 font-medium tracking-wide">
+                        ✓ Verified Client
+                      </span>
                     </div>
                     <p className="text-xs text-stone/50">
-                      {t.title}, {t.location}
-                    </p>
-                    <p className="text-[10px] text-stone/40 mt-0.5 tracking-wide">
-                      {t.type} · {t.date}
+                      {t.title} · {t.location}
                     </p>
                   </div>
                 </div>

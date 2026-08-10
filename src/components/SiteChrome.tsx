@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import AnnouncementBar from "./AnnouncementBar";
 
 function usePageViewTracking(pathname: string | null) {
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
 
   return (
     <>
+      <AnnouncementBar />
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />

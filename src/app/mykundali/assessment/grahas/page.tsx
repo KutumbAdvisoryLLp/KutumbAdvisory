@@ -95,7 +95,7 @@ export default function GrahaAssessmentPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-3xl mx-auto px-6 pt-28 pb-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-12 sm:pb-16">
         {/* Header */}
         <div className="mb-6">
           <button
@@ -110,25 +110,25 @@ export default function GrahaAssessmentPage() {
             <div className="flex-1">
               <ProgressBar value={overallProgress} size="sm" showPercentage />
             </div>
-            <span className="text-xs font-mono text-slate-light">
+            <span className="text-xs font-mono text-slate-light shrink-0">
               {currentGrahaIdx + 1} of {GRAHAS.length} Grahas
             </span>
           </div>
         </div>
 
         {/* Graha Header */}
-        <div className="mb-10">
+        <div className="mb-8 sm:mb-10">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-3xl">{GRAHA_EMOJIS[graha.id]}</span>
             <div>
-              <h2 className="font-serif text-2xl text-navy">
+              <h2 className="font-serif text-xl sm:text-2xl text-navy">
                 {graha.name}
               </h2>
-              <p className="text-sm text-slate">{graha.subtitle}</p>
+              <p className="text-xs sm:text-sm text-slate">{graha.subtitle}</p>
             </div>
           </div>
           <p
-            className="text-lg font-serif italic pl-4 border-l-2"
+            className="text-base sm:text-lg font-serif italic pl-4 border-l-2"
             style={{ borderColor: GRAHA_COLORS[graha.id] || '#C9A84C', color: GRAHA_COLORS[graha.id] || '#C9A84C' }}
           >
             &ldquo;{graha.emotion}&rdquo;
@@ -136,7 +136,7 @@ export default function GrahaAssessmentPage() {
         </div>
 
         {/* Question */}
-        <div className="min-h-[320px]">
+        <div className="min-h-[280px] sm:min-h-[320px]">
           <AnimatePresence mode="wait">
             <QuestionCard
               key={question.id}
@@ -151,12 +151,12 @@ export default function GrahaAssessmentPage() {
         </div>
 
         {/* Navigation */}
-        <div className="mt-10 flex items-center justify-between">
-          <Button showArrow={false} variant="ghost" onClick={handlePrev} disabled={currentGrahaIdx === 0 && currentQuestionIdx === 0}>
+        <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-between gap-3">
+          <Button showArrow={false} variant="ghost" onClick={handlePrev} disabled={currentGrahaIdx === 0 && currentQuestionIdx === 0} className="w-[45%] sm:w-auto">
             ← Previous
           </Button>
 
-          <div className="flex gap-1.5">
+          <div className="hidden sm:flex gap-1.5">
             {graha.questions.map((_, i) => (
               <div
                 key={i}
@@ -168,11 +168,11 @@ export default function GrahaAssessmentPage() {
           </div>
 
           {isLastQuestion && isLastGraha ? (
-            <Button showArrow={false} onClick={handleNext} disabled={!answers[question.id]}>
-              See My Results →
+            <Button showArrow={false} onClick={handleNext} disabled={!answers[question.id]} className="w-[50%] sm:w-auto">
+              See Results →
             </Button>
           ) : (
-            <Button showArrow={false} onClick={handleNext} disabled={!answers[question.id]}>
+            <Button showArrow={false} onClick={handleNext} disabled={!answers[question.id]} className="w-[50%] sm:w-auto">
               {isLastQuestion ? 'Next Graha →' : 'Next →'}
             </Button>
           )}
