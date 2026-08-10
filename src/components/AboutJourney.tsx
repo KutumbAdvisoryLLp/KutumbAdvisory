@@ -7,13 +7,13 @@ const milestones = [
   {
     year: "12+ Years",
     title: "Advisory Experience",
-    desc: "Our founder began working with families across India, uncovering the same recurring challenge — disconnected financial advice.",
+    desc: "Our founder began working with families across India, uncovering the same recurring challenge disconnected financial advice.",
     icon: "compass",
   },
   {
     year: "Recognised",
     title: "The Gap",
-    desc: "Families had investments, insurance, estate plans and tax strategies — but no single view connecting them. The industry was solving pieces, not the whole.",
+    desc: "Families had investments, insurance, estate plans and tax strategies but no single view connecting them. The industry was solving pieces, not the whole.",
     icon: "eye",
   },
   {
@@ -25,13 +25,13 @@ const milestones = [
   {
     year: "Founded",
     title: "Kutumb Advisory",
-    desc: "Built around the belief that every family deserves financial architecture — not more financial products. A platform designed for generations, not quarters.",
+    desc: "Built around the belief that every family deserves financial architecture not more financial products. A platform designed for generations, not quarters.",
     icon: "home",
   },
   {
     year: "The Future",
     title: "India's Family Wealth Architecture",
-    desc: "Our vision is to establish Financial Kundali as the definitive framework for family wealth management across India — bringing clarity to every family's financial universe.",
+    desc: "Our vision is to establish Financial Kundali as the definitive framework for family wealth management across India bringing clarity to every family's financial universe.",
     icon: "compass",
   },
 ];

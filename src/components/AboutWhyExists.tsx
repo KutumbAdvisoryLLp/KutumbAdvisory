@@ -57,7 +57,7 @@ export default function AboutWhyExists() {
                 disconnected from everything else.
               </p>
               <p>
-                Financial Kundali was created to solve one problem — give every
+                Financial Kundali was created to solve one problem give every
                 family a single, connected view of their entire financial
                 universe. Not another dashboard. A complete architectural
                 portrait.

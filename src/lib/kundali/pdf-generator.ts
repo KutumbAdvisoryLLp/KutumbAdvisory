@@ -1,8 +1,8 @@
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
-import { GRAHAS, GRAHA_COLORS } from "./grahas"
-import { getScoreStatus, getScoreLabel, getScoreColor, type ScoreStatus, type GrahaId, type FamilyProfile } from "@/types"
-import { COVER_IMAGE_BASE64, LAST_IMAGE_BASE64 } from "./report-images"
+import { GRAHAS } from "./grahas"
+import { type GrahaId, type FamilyProfile } from "@/types"
+import { COVER_IMAGE_BASE64, LAST_IMAGE_BASE64, PAGE_LOGO_BASE64 } from "./report-images"
 import {
   PAGE_2_TEMPLATE,
   PAGE_3_TEMPLATE,
@@ -116,7 +116,10 @@ function calculateRadarPoints(scores: Record<string, number>): string {
 export function buildReportHtmlPages(data: ReportPdfData): string[] {
   const { user, profile, report, grahaAnswers } = data
 
-  const clientName = user?.fullName || profile?.primaryMember?.name || profile?.familyName || "Valued Client"
+  const enteredName = profile?.primaryMember?.name || profile?.familyName
+  const isEmailLike = user?.fullName && (user.fullName.includes('@') || (user?.email && user.fullName === user.email.split('@')[0]))
+  const clientName = enteredName || (!isEmailLike ? user?.fullName : undefined) || user?.fullName || "Valued Client"
+
   const dateStr = report?.completedAt || new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
   const overallScore = report?.overallScore ?? 0
 
@@ -132,7 +135,6 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
   const totalLiabilities = (liabilities.homeLoan || 0) + (liabilities.personalLoan || 0) + (liabilities.vehicleLoan || 0) + (liabilities.creditCard || 0) + (liabilities.otherLoans || 0)
   const netWorth = totalAssets - totalLiabilities
 
-  const goalsStr = (profile?.goals ?? []).filter(Boolean).join(", ") || "—"
   const insuranceStr = (profile?.existingInsurance ?? []).map(i => `${i.type} (₹${(i.sumInsured || (i as any).coverAmount || 0).toLocaleString("en-IN")})`).join(", ") || "None"
   const investmentsStr = (profile?.existingInvestments ?? []).map(i => `${i.type} (₹${(i.currentValue || i.amount || (i as any).value || 0).toLocaleString("en-IN")})`).join(", ") || "None"
   const childrenStr = (profile?.children ?? []).length > 0 ? profile!.children!.map(c => `${c.name || "Child"} (${c.age || "—"} yrs)`).join(", ") : "No children"
@@ -144,10 +146,11 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
 
   // Page 2: Title & Client Information
   let p2 = PAGE_2_TEMPLATE
-    .replace('src="assets/kutumb_logo.png"', 'src="https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780312133/tree_qw9bji.png"')
-    .replace('<span class="field-line"></span>', `<div class="field-line" style="flex:1; border-bottom:1px solid #1a1a2e; padding-left:12px; font-size:15px; font-weight:600; color:#172A4A; line-height:1.2; padding-bottom:3px;">${clientName}</div>`)
-    .replace('<span class="field-line"></span>', `<div class="field-line" style="flex:1; border-bottom:1px solid #1a1a2e; padding-left:12px; font-size:15px; font-weight:600; color:#172A4A; line-height:1.2; padding-bottom:3px;">${dateStr}</div>`)
-    .replace('<span class="field-line"></span>', `<div class="field-line" style="flex:1; border-bottom:1px solid #1a1a2e; padding-left:12px; font-size:15px; font-weight:600; color:#172A4A; line-height:1.2; padding-bottom:3px;">Kutumb Wealth Advisor</div>`)
+    .replace('src="assets/kutumb_logo.png"', `src="${PAGE_LOGO_BASE64}"`)
+    .replace('src="/report/pagelogo_transparent.png"', `src="${PAGE_LOGO_BASE64}"`)
+    .replace('<span class="field-val client-name-val"></span>', `<span class="field-val client-name-val">${clientName}</span>`)
+    .replace('<span class="field-val assessment-date-val"></span>', `<span class="field-val assessment-date-val">${dateStr}</span>`)
+    .replace('<span class="field-val advisor-name-val">Kutumb Wealth Advisor</span>', `<span class="field-val advisor-name-val">Kutumb Wealth Advisor</span>`)
   pages.push(p2)
 
   // Page 3: About Booklet
@@ -155,48 +158,35 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
 
   // Page 4: Family Profile & Net Worth
   let p4 = PAGE_4_TEMPLATE
-    .replace(
-      ".field-col .field-row {",
-      ".field-col .field-row { display: flex; justify-content: space-between; align-items: center; min-height: 28px; padding: 4px 0; border-bottom: 0.6px solid #dddddd; font-size: 9.5pt;"
-    )
+    .replace('<span class="fval family-name-val">—</span>', `<span class="fval family-name-val">${profile?.familyName || "—"}</span>`)
+    .replace('<span class="fval primary-member-val">—</span>', `<span class="fval primary-member-val">${profile?.primaryMember?.name || "—"}</span>`)
+    .replace('<span class="fval age-val">—</span>', `<span class="fval age-val">${profile?.primaryMember?.age || "—"}</span>`)
+    .replace('<span class="fval spouse-val">—</span>', `<span class="fval spouse-val">${profile?.spouse?.name || "—"}</span>`)
+    .replace('<span class="fval children-val">—</span>', `<span class="fval children-val">${childrenStr}</span>`)
+    .replace('<span class="fval occupation-val">—</span>', `<span class="fval occupation-val">${profile?.primaryMember?.occupation || "—"}</span>`)
+    .replace('<span class="fval risk-profile-val">—</span>', `<span class="fval risk-profile-val" style="text-transform:uppercase;">${profile?.riskProfile || "—"}</span>`)
+    .replace('<span class="fval goal1-val">—</span>', `<span class="fval goal1-val">${profile?.goals?.[0] || "—"}</span>`)
+    .replace('<span class="fval goal2-val">—</span>', `<span class="fval goal2-val">${profile?.goals?.[1] || "—"}</span>`)
+    .replace('<span class="fval goal3-val">—</span>', `<span class="fval goal3-val">${profile?.goals?.[2] || "—"}</span>`)
+    .replace('<span class="fval time-horizon-val">—</span>', `<span class="fval time-horizon-val">${profile?.timeHorizon || "—"}</span>`)
+    .replace('<span class="fval monthly-expenses-val">—</span>', `<span class="fval monthly-expenses-val">₹${(profile?.monthlyExpenses || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="fval insurance-val">—</span>', `<span class="fval insurance-val">${insuranceStr}</span>`)
+    .replace('<span class="fval investments-val">—</span>', `<span class="fval investments-val">${investmentsStr}</span>`)
+    .replace('<span class="nval bank-fd-val">₹0</span>', `<span class="nval bank-fd-val">₹${(assets.bankFD || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval mutual-funds-val">₹0</span>', `<span class="nval mutual-funds-val">₹${(assets.mutualFunds || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval shares-val">₹0</span>', `<span class="nval shares-val">₹${(assets.shares || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval property-val">₹0</span>', `<span class="nval property-val">₹${(assets.property || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval gold-val">₹0</span>', `<span class="nval gold-val">₹${(assets.gold || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval epf-val">₹0</span>', `<span class="nval epf-val">₹${(assets.epfPpfNps || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="ntotal-assets-val" style="font-weight:700; color:#172A4A;">₹0</span>', `<span class="ntotal-assets-val" style="font-weight:700; color:#172A4A;">₹${totalAssets.toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval home-loan-val">₹0</span>', `<span class="nval home-loan-val">₹${(liabilities.homeLoan || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval personal-loan-val">₹0</span>', `<span class="nval personal-loan-val">₹${(liabilities.personalLoan || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval vehicle-loan-val">₹0</span>', `<span class="nval vehicle-loan-val">₹${(liabilities.vehicleLoan || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval credit-card-val">₹0</span>', `<span class="nval credit-card-val">₹${(liabilities.creditCard || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval other-loans-val">₹0</span>', `<span class="nval other-loans-val">₹${(liabilities.otherLoans || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="ntotal-liabilities-val" style="font-weight:700; color:#172A4A;">₹0</span>', `<span class="ntotal-liabilities-val" style="font-weight:700; color:#172A4A;">₹${totalLiabilities.toLocaleString("en-IN")}</span>`)
+    .replace('<span class="networth-val">₹0</span>', `<span class="networth-val">₹${netWorth.toLocaleString("en-IN")}</span>`)
 
-  const fieldReplacements: Array<[string, string]> = [
-    ['<span class="flabel">Family Name</span><span class="fline"></span>', `<span class="flabel">Family Name</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${profile?.familyName || "—"}</span>`],
-    ['<span class="flabel">Primary Earning Member</span><span class="fline"></span>', `<span class="flabel">Primary Earning Member</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${profile?.primaryMember?.name || "—"}</span>`],
-    ['<span class="flabel">Age</span><span class="fline"></span>', `<span class="flabel">Age</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${profile?.primaryMember?.age || "—"}</span>`],
-    ['<span class="flabel">Spouse Name</span><span class="fline"></span>', `<span class="flabel">Spouse Name</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${profile?.spouse?.name || "—"}</span>`],
-    ['<span class="flabel">Children</span><span class="fline"></span>', `<span class="flabel">Children</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${childrenStr}</span>`],
-    ['<span class="flabel">Occupation</span><span class="fline"></span>', `<span class="flabel">Occupation</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${profile?.primaryMember?.occupation || "—"}</span>`],
-    ['<span class="flabel">Risk Profile</span><span class="fline"></span>', `<span class="flabel">Risk Profile</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt; text-transform:uppercase;">${profile?.riskProfile || "—"}</span>`],
-    ['<span class="flabel">Financial Goal 1</span><span class="fline"></span>', `<span class="flabel">Financial Goal 1</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${profile?.goals?.[0] || "—"}</span>`],
-    ['<span class="flabel">Financial Goal 2</span><span class="fline"></span>', `<span class="flabel">Financial Goal 2</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${profile?.goals?.[1] || "—"}</span>`],
-    ['<span class="flabel">Financial Goal 3</span><span class="fline"></span>', `<span class="flabel">Financial Goal 3</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${profile?.goals?.[2] || "—"}</span>`],
-    ['<span class="flabel">Time Horizon</span><span class="fline"></span>', `<span class="flabel">Time Horizon</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">${profile?.timeHorizon || "—"}</span>`],
-    ['<span class="flabel">Monthly Expenses</span><span class="fline"></span>', `<span class="flabel">Monthly Expenses</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(profile?.monthlyExpenses || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="flabel">Existing Insurance</span><span class="fline"></span>', `<span class="flabel">Existing Insurance</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9pt;">${insuranceStr}</span>`],
-    ['<span class="flabel">Existing Investments</span><span class="fline"></span>', `<span class="flabel">Existing Investments</span><span class="fval" style="font-weight:600; color:#172A4A; font-size:9pt;">${investmentsStr}</span>`],
-
-    ['<span class="nlabel">Bank &amp; FD</span><span class="nblank"></span>', `<span class="nlabel">Bank &amp; FD</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(assets.bankFD || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="nlabel">Mutual Funds</span><span class="nblank"></span>', `<span class="nlabel">Mutual Funds</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(assets.mutualFunds || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="nlabel">Shares</span><span class="nblank"></span>', `<span class="nlabel">Shares</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(assets.shares || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="nlabel">Property</span><span class="nblank"></span>', `<span class="nlabel">Property</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(assets.property || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="nlabel">Gold</span><span class="nblank"></span>', `<span class="nlabel">Gold</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(assets.gold || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="nlabel">EPF / PPF / NPS</span><span class="nblank"></span>', `<span class="nlabel">EPF / PPF / NPS</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(assets.epfPpfNps || 0).toLocaleString("en-IN")}</span>`],
-
-    ['<span class="nlabel">Home Loan</span><span class="nblank"></span>', `<span class="nlabel">Home Loan</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(liabilities.homeLoan || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="nlabel">Personal Loan</span><span class="nblank"></span>', `<span class="nlabel">Personal Loan</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(liabilities.personalLoan || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="nlabel">Vehicle Loan</span><span class="nblank"></span>', `<span class="nlabel">Vehicle Loan</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(liabilities.vehicleLoan || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="nlabel">Credit Card</span><span class="nblank"></span>', `<span class="nlabel">Credit Card</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(liabilities.creditCard || 0).toLocaleString("en-IN")}</span>`],
-    ['<span class="nlabel">Other Loans</span><span class="nblank"></span>', `<span class="nlabel">Other Loans</span><span class="nval" style="font-weight:600; color:#172A4A; font-size:9.5pt;">₹${(liabilities.otherLoans || 0).toLocaleString("en-IN")}</span>`],
-
-    ['<div class="nw-total"><span class="ntotal-label">Total Assets</span><span class="ntotal-val"></span></div>', `<div class="nw-total"><span class="ntotal-label">Total Assets</span><span class="ntotal-val" style="font-weight:700; color:#172A4A; font-size:10pt;">₹${totalAssets.toLocaleString("en-IN")}</span></div>`],
-    ['<div class="nw-total"><span class="ntotal-label">Total Liabilities</span><span class="ntotal-val"></span></div>', `<div class="nw-total"><span class="ntotal-label">Total Liabilities</span><span class="ntotal-val" style="font-weight:700; color:#172A4A; font-size:10pt;">₹${totalLiabilities.toLocaleString("en-IN")}</span></div>`],
-    ['<div class="networth-result"><span class="nw-label">Net Worth Worksheet</span><span class="nw-val"></span></div>', `<div class="networth-result"><span class="nw-label">Net Worth Worksheet</span><span class="nw-val" style="font-size:11pt; font-weight:700; color:#172A4A;">₹${netWorth.toLocaleString("en-IN")}</span></div>`]
-  ]
-
-  for (const [target, replacement] of fieldReplacements) {
-    p4 = p4.replace(target, replacement)
-  }
   pages.push(p4)
 
   // Pages 5 to 13: Questionnaires
@@ -220,7 +210,7 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
     guru: ["g1", "g2", "g3", "g4", "g5"],
     shukra: ["sk1", "sk2", "sk3", "sk4", "sk5"],
     shani: ["sn1", "sn2", "sn3", "sn4", "sn5"],
-    rahu: ["r1", "r2", "r3", "r4", "r5", "r6", "r7"],
+    rahu: ["r1", "r2", "r3", "r4", "r5"],
     ketu: ["k1", "k2", "k3", "k4", "k5"],
   }
 
@@ -252,20 +242,20 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
 
       tpl = tpl.replace(
         `<td class="col-yesno"></td>`,
-        `<td class="col-yesno" style="text-align:center; font-weight:700; color:${ans === "Yes" ? "#2E7D32" : "#C62828"}; font-size:10pt;">${ans}</td>`
+        `<td class="col-yesno" style="text-align:center; font-weight:700; color:${ans === "Yes" ? "#2E7D32" : "#C62828"}; font-size:13px;">${ans}</td>`
       )
       tpl = tpl.replace(
         `<td class="col-remarks"></td>`,
-        `<td class="col-remarks" style="font-size:9pt; line-height:1.35; padding:6px 10px; color:#333333;">${remark}</td>`
+        `<td class="col-remarks" style="font-size:11.5px; line-height:1.4; padding:8px 12px; color:#333333;">${remark}</td>`
       )
     }
 
     tpl = tpl
-      .replace(`<span class="score-line"></span>`, `<span class="score-line" style="font-weight:700; color:#172A4A; font-size:12pt;">${score} / 10</span>`)
-      .replace("Dosha: None / Mild / Moderate", `Dosha: <strong style="color:${doshaColor}; font-size:11pt;">${doshaText}</strong>`)
+      .replace('<span class="score-val"></span>', `<span class="score-val" style="font-weight:700; color:#172A4A; font-size:15px;">${score} / 10</span>`)
+      .replace('<span class="dosha-val">None</span>', `<span class="dosha-val" style="color:${doshaColor}; font-weight:700;">${doshaText}</span>`)
       .replace(
-        `<div class="observation-line"></div>`,
-        `<div class="observation-line" style="font-size:9.5pt; color:#333333; line-height:1.4; padding-top:4px;">${
+        '<div class="observation-text"></div>',
+        `<div class="observation-text" style="font-size:11.5px; color:#333333; line-height:1.45;">${
           score >= 8
             ? "Strong pillar. Maintain current discipline and continue routine reviews."
             : score >= 5
@@ -289,7 +279,7 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
 
     p14 = p14.replace(
       `<div class="g-score"><span class="dash"></span>/ 10</div>`,
-      `<div class="g-score"><span class="dash" style="font-weight:700;">${score}</span> / 10</div>`
+      `<div class="g-score">${score} / 10</div>`
     )
     p14 = p14.replace(
       `<div class="g-dosha">None</div>`,
@@ -299,13 +289,13 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
 
   p14 = p14.replace(
     `<span class="total-score"><span class="dash"></span>/ 90</span>`,
-    `<span class="total-score" style="font-size:18px; font-weight:700; color:#172A4A;">${overallScore} / 90</span>`
+    `<span class="total-score" style="font-size:16px; font-weight:700; color:#D7A52E;">${overallScore} / 90</span>`
   )
 
   const radarPoints = calculateRadarPoints(report?.grahaScores ?? {})
   p14 = p14.replace(
-    `</g>\n                <g class="radar-label">`,
-    `<polygon points="${radarPoints}" fill="rgba(215, 165, 46, 0.45)" stroke="#D7A52E" stroke-width="2.5" />\n                </g>\n                <g class="radar-label">`
+    `<g></g>`,
+    `<g><polygon points="${radarPoints}" fill="rgba(215, 165, 46, 0.45)" stroke="#D7A52E" stroke-width="2.5" /></g>`
   )
 
   const sortedGrahas = [...grahaOrder].sort((a, b) => (report?.grahaScores?.[a] ?? 6) - (report?.grahaScores?.[b] ?? 6))
@@ -317,33 +307,16 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
     const score = report?.grahaScores?.[gid] ?? 6
 
     p14 = p14.replace(
-      `<tr>\n                        <td class="col-num">${idx + 1}</td>\n                        <td></td>\n                        <td></td>\n                        <td></td>\n                    </tr>`,
-      `<tr><td class="col-num">${idx + 1}</td><td style="font-weight:700;">${gObj?.name || gid} (${score}/10)</td><td style="font-size:8.5pt;">${gObj?.subtitle || "Weakness in " + gid}</td><td style="font-size:8.5pt;">Consult advisor to resolve ${gObj?.name || gid} dosha</td></tr>`
+      `<tr><td class="col-num">${idx + 1}</td><td></td><td></td><td></td></tr>`,
+      `<tr><td class="col-num">${idx + 1}</td><td style="font-weight:700; color:#172A4A;">${gObj?.name || gid} (${score}/10)</td><td style="font-size:11px;">${gObj?.subtitle || "Weakness in " + gid}</td><td style="font-size:11px;">Consult advisor to resolve ${gObj?.name || gid} dosha</td></tr>`
     )
   }
   pages.push(p14)
 
   // Page 15: Advisor Observations & Recommendations
   let p15 = PAGE_15_TEMPLATE
-    .replace(`<div class="sign-line"></div>`, `<div class="sign-line" style="font-size:9.5pt; color:#172A4A; font-weight:600; padding-top:4px;">Kutumb Wealth Advisor</div>`)
-    .replace(`<div class="sign-line"></div>`, `<div class="sign-line" style="font-size:9.5pt; color:#172A4A; font-weight:600; padding-top:4px;">[Verified Digital]</div>`)
-    .replace(`<div class="sign-line"></div>`, `<div class="sign-line" style="font-size:9.5pt; color:#172A4A; font-weight:600; padding-top:4px;">${dateStr}</div>`)
-    .replace(`<div class="sign-line"></div>`, `<div class="sign-line" style="font-size:9.5pt; color:#172A4A; font-weight:600; padding-top:4px;">${clientName}</div>`)
-
-  const products = [
-    "1. Pure Term Life Cover (10-15x Annual Income)",
-    "2. Emergency Liquid Reserve (3-6 Months Expenses)",
-    "3. Goal-Based Equity SIP Portfolio",
-    "4. Family Health Floater Cover (₹10-25 Lakhs)",
-    "5. Retirement NPS / Corpus Build-up",
-    "6. Registered Will & Asset Nomination Update"
-  ]
-  for (const prod of products) {
-    p15 = p15.replace(
-      `<div class="writing-line"></div>`,
-      `<div class="writing-line" style="font-size:9.5pt; color:#172A4A; font-weight:600; padding-top:4px;">${prod}</div>`
-    )
-  }
+    .replace('<span class="sign-val sign-date-val"></span>', `<span class="sign-val sign-date-val">${dateStr}</span>`)
+    .replace('<span class="sign-val sign-client-val"></span>', `<span class="sign-val sign-client-val">${clientName}</span>`)
 
   pages.push(p15)
 
@@ -383,6 +356,7 @@ export async function downloadFullReportPdf(data: ReportPdfData, fileName = "Kut
       doc.write(pagesHtml[i])
       doc.close()
 
+      // Wait for images to load
       const imgs = Array.from(doc.querySelectorAll("img"))
       await Promise.all(
         imgs.map((img) => {
@@ -394,7 +368,14 @@ export async function downloadFullReportPdf(data: ReportPdfData, fileName = "Kut
         })
       )
 
-      await new Promise((res) => setTimeout(res, 120))
+      // Wait for fonts to load in iframe
+      if ((doc as any).fonts && (doc as any).fonts.ready) {
+        try {
+          await (doc as any).fonts.ready
+        } catch (_) {}
+      }
+
+      await new Promise((res) => setTimeout(res, 150))
 
       const targetEl = doc.body || doc.documentElement
       const canvas = await html2canvas(targetEl, {
@@ -435,12 +416,15 @@ export function printFullReportHtml(data: ReportPdfData): void {
     <html>
       <head>
         <title>Financial Kundali Report — Kutumb Advisory</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
           @media print {
             body { margin: 0; padding: 0; background: #ffffff; }
             .page-break { page-break-after: always; break-after: page; }
           }
-          body { margin: 0; padding: 0; background: #eeeeee; font-family: "Inter", sans-serif; }
+          body { margin: 0; padding: 0; background: #eeeeee; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
           .report-wrapper { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px 0; }
           @media print { .report-wrapper { padding: 0; gap: 0; } }
         </style>
@@ -453,7 +437,7 @@ export function printFullReportHtml(data: ReportPdfData): void {
           window.onload = () => {
             setTimeout(() => {
               window.print();
-            }, 300);
+            }, 500);
           };
         </script>
       </body>

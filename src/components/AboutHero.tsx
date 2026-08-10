@@ -39,7 +39,7 @@ export default function AboutHero() {
               className="mt-10 max-w-xl text-lg leading-relaxed text-stone sm:text-xl"
             >
               Kutumb exists because most families manage their finances in
-              isolation — disconnected products, scattered advice, no unified
+              isolation disconnected products, scattered advice, no unified
               view. We built Financial Kundali to change that.
             </motion.p>
 

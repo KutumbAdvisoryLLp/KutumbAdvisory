@@ -119,7 +119,7 @@ export default function DashboardPage() {
         className="mt-10"
       >
         <h2 className="font-serif text-2xl text-navy mb-4">Nine Graha</h2>
-        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
           {GRAHAS.map((g) => (
             <Link
               key={g.id}

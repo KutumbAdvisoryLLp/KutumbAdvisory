@@ -12,7 +12,7 @@ const cards = [
   },
   {
     title: "Long-Term Relationships",
-    desc: "We do not manage portfolios. We build lasting partnerships across generations. Our families stay with us because we stay with them — through every chapter.",
+    desc: "We do not manage portfolios. We build lasting partnerships across generations. Our families stay with us because we stay with them through every chapter.",
     icon: "relationship",
     navy: true,
   },

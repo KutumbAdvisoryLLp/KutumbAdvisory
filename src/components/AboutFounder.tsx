@@ -76,7 +76,7 @@ export default function AboutFounder() {
                 </svg>
                 <p className="font-serif text-xl leading-relaxed text-navy/80 sm:text-2xl">
                   Every family&apos;s wealth has a story. Our job is to help you
-                  understand it, protect it, and pass it on — with clarity,
+                  understand it, protect it, and pass it on with clarity,
                   confidence, and purpose.
                 </p>
                 <div className="mt-4 flex items-center gap-3">

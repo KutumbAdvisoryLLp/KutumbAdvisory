@@ -37,7 +37,7 @@ export default function AboutFinalCTA() {
 
           <p className="mt-8 mx-auto max-w-2xl text-lg leading-relaxed text-white/60 sm:text-xl">
             The Financial Kundali reveals the architecture of your family&apos;s
-            wealth — connecting every dimension into one clear, actionable view.
+            wealth connecting every dimension into one clear, actionable view.
             Begin your journey toward complete financial clarity.
           </p>
 

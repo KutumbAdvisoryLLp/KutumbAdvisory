@@ -30,7 +30,7 @@ export default function ContactHero() {
             <p className="mt-8 text-lg leading-relaxed text-stone sm:text-xl max-w-xl">
               Whether you are planning retirement, protecting your family&apos;s
               wealth, preparing for the next generation, or seeking complete
-              financial clarity — Kutumb is here to help.
+              financial clarity. Kutumb is here to help.
             </p>
             <p className="mt-4 text-base leading-relaxed text-stone/70 max-w-xl">
               We don&apos;t sell financial products. We build financial

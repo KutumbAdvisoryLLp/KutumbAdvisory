@@ -492,7 +492,7 @@ export default function ContactForm() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-8 sm:p-10"
+                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-5 sm:p-10"
                 >
                   <div className="flex items-start gap-6">
                     <span className="font-serif text-5xl sm:text-6xl text-gold/15 leading-none mt-1 tracking-tight">
@@ -566,7 +566,7 @@ export default function ContactForm() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-8 sm:p-10"
+                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-5 sm:p-10"
                 >
                   <div className="flex items-start gap-6">
                     <span className="font-serif text-5xl sm:text-6xl text-gold/15 leading-none mt-1 tracking-tight">
@@ -600,7 +600,7 @@ export default function ContactForm() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-8 sm:p-10"
+                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-5 sm:p-10"
                 >
                   <div className="flex items-start gap-6">
                     <span className="font-serif text-5xl sm:text-6xl text-gold/15 leading-none mt-1 tracking-tight">
@@ -634,7 +634,7 @@ export default function ContactForm() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-8 sm:p-10"
+                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-5 sm:p-10"
                 >
                   <div className="flex items-start gap-6">
                     <span className="font-serif text-5xl sm:text-6xl text-gold/15 leading-none mt-1 tracking-tight">
@@ -700,7 +700,7 @@ export default function ContactForm() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
-                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-8 sm:p-10"
+                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-5 sm:p-10"
                 >
                   <div className="flex items-start gap-6">
                     <span className="font-serif text-5xl sm:text-6xl text-gold/15 leading-none mt-1 tracking-tight">
@@ -772,7 +772,7 @@ export default function ContactForm() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-8 sm:p-10"
+                  className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_2px_12px_rgba(32,27,98,0.04)] p-5 sm:p-10"
                 >
                   <p className="text-xs font-semibold tracking-[0.12em] uppercase text-[#B8862B]">
                     What happens after you submit

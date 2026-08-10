@@ -4,329 +4,186 @@
 <head>
     <meta charset="UTF-8">
     <title>Advisor Observations &amp; Recommendations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @page {
-            size: A4 portrait;
-            margin: 0;
-        }
+        @page { size: A4 portrait; margin: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { margin: 0; padding: 0; background: #eeeeee; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .page { width: 210mm; height: 297mm; background: #ffffff; position: relative; overflow: hidden; box-sizing: border-box; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #111111; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background: #eeeeee;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        .page {
-            width: 210mm;
-            height: 297mm;
-            background: #ffffff;
-            position: relative;
-            overflow: hidden;
-            box-sizing: border-box;
-            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-            color: #111111;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        /* ===== HEADER ===== */
         .page-header {
             position: absolute;
             top: 4%;
-            left: 6%;
-            width: 88%;
-            height: 30mm;
+            left: 5%;
+            width: 90%;
+            height: 26mm;
             background: #3B414B;
-            border-radius: 3px 16px 16px 3px;
-            padding: 20px 0 0 10%;
+            border-radius: 4px 16px 16px 4px;
+            padding: 16px 24px;
             color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .page-header::before {
-            content: "";
-            position: absolute;
-            top: -2mm;
-            left: -2mm;
-            width: 3.5px;
-            height: calc(100% + 4mm);
-            background: #E3A519;
-            border-radius: 2px;
-        }
+        .page-header h1 { font-size: 18px; font-weight: 700; color: #ffffff; }
+        .page-header p { margin-top: 6px; font-size: 12.5px; font-weight: 400; color: #ffffff; opacity: 0.9; }
 
-        .page-header h1 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .page-header p {
-            margin-top: 7px;
-            font-size: 13.5px;
-            font-weight: 400;
-            color: #ffffff;
-            opacity: 0.88;
-        }
-
-        /* ===== TOP TWO-COLUMN SECTION ===== */
         .top-observations {
             position: absolute;
-            top: 17%;
-            left: 4%;
-            width: 92%;
+            top: 14.5%;
+            left: 5%;
+            width: 90%;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 4%;
         }
 
-        .strengths-box,
-        .concerns-box {
+        .strengths-box, .concerns-box {
             border: 1px solid #dddddd;
+            border-radius: 6px;
             overflow: hidden;
+            background: #FFFFFF;
         }
 
-        .strengths-box h2,
-        .concerns-box h2 {
+        .strengths-box h2, .concerns-box h2 {
             background: #f7f6f4;
-            font-size: 13.5px;
+            font-size: 12.5px;
             font-weight: 700;
-            padding: 8px 12px;
+            color: #172A4A;
+            padding: 8px 14px;
             border-bottom: 1px solid #dddddd;
         }
 
-        .strengths-box .content,
-        .concerns-box .content {
+        .strengths-box .content, .concerns-box .content {
             padding: 12px 14px;
-            min-height: 30mm;
-        }
-
-        .writing-line {
-            border-bottom: 1px solid #111111;
-            width: 58%;
-            height: 1px;
-            margin-bottom: 8mm;
-        }
-
-        .writing-line:last-child {
-            margin-bottom: 0;
-        }
-
-        .numbered-line {
+            min-height: 26mm;
             display: flex;
-            align-items: baseline;
-            gap: 6px;
-            margin-bottom: 8mm;
-            font-size: 12.5px;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .numbered-line:last-child {
-            margin-bottom: 0;
+        .point-item {
+            font-size: 11px;
+            color: #172A4A;
+            font-weight: 500;
+            line-height: 1.45;
         }
 
-        .numbered-line .writing-line {
-            flex: 1;
-            width: auto;
-            margin-bottom: 0;
-        }
-
-        /* ===== 90-DAY REMEDY PLAN ===== */
         .section-heading {
-            font-size: 14.5px;
+            font-size: 13px;
             font-weight: 700;
-            color: #111111;
-            margin-bottom: 2mm;
+            color: #172A4A;
+            margin-bottom: 14px;
         }
 
         .remedy-plan {
             position: absolute;
-            top: 39%;
-            left: 4%;
-            width: 92%;
+            top: 39.5%;
+            left: 5%;
+            width: 90%;
         }
 
         .remedy-plan table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
             border: 1px solid #dddddd;
-            margin-top: 3mm;
+            margin-top: 0;
         }
 
         .remedy-plan th {
             background: #f7f6f4;
-            font-size: 12.5px;
+            font-size: 11.5px;
             font-weight: 700;
+            color: #172A4A;
             text-align: left;
-            padding: 6px 10px;
-            height: 11mm;
+            padding: 8px 12px;
             border-bottom: 1px solid #dddddd;
             border-right: 1px solid #dddddd;
-        }
-
-        .remedy-plan th:last-child,
-        .remedy-plan td:last-child {
-            border-right: none;
         }
 
         .remedy-plan td {
-            font-size: 11.5px;
-            font-weight: 400;
-            padding: 5px 10px;
-            height: 8mm;
+            font-size: 11px;
+            padding: 8px 12px;
             border-bottom: 1px solid #e6e6e6;
             border-right: 1px solid #dddddd;
             vertical-align: middle;
+            line-height: 1.45;
         }
 
-        .remedy-plan tr:last-child td {
-            border-bottom: 1px solid #dddddd;
-        }
+        .remedy-plan tr:last-child td { border-bottom: 1px solid #dddddd; }
+        .remedy-plan th:last-child, .remedy-plan td:last-child { border-right: none; }
 
-        .remedy-plan td.priority {
-            font-weight: 700;
-        }
-
-        .col-priority {
-            width: 13%;
-            background: #faf9f7;
-        }
-
-        .col-action {
-            width: 50%;
-        }
-
-        .col-timeline {
-            width: 15%;
-        }
-
-        .col-owner {
-            width: 22%;
-        }
-
-        /* ===== RECOMMENDED PRODUCTS ===== */
         .recommended-products {
             position: absolute;
-            top: 70%;
-            left: 4%;
-            width: 92%;
+            top: 72%;
+            left: 5%;
+            width: 90%;
         }
 
         .products-box {
-            margin-top: 3mm;
+            margin-top: 0;
             border: 1px solid #dddddd;
-            padding: 10px 16px;
+            border-radius: 6px;
+            padding: 12px 16px;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            row-gap: 7mm;
-            column-gap: 6mm;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 20px;
+            background: #FFFFFF;
         }
 
         .products-box .product-field {
-            display: flex;
-            align-items: baseline;
-            gap: 5px;
-            font-size: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #172A4A;
+            line-height: 1.4;
         }
 
-        .products-box .product-field .writing-line {
-            flex: 1;
-            width: auto;
-            margin-bottom: 0;
-        }
-
-        /* ===== ADVISOR SIGN-OFF ===== */
         .advisor-signoff {
             position: absolute;
-            top: 83%;
-            left: 4%;
-            width: 92%;
+            top: 85.5%;
+            left: 5%;
+            width: 90%;
         }
 
         .signoff-grid {
-            margin-top: 7mm;
+            margin-top: 0;
             display: grid;
-            grid-template-columns: 1fr 1fr 0.7fr 1.3fr;
-            gap: 4mm;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 16px;
         }
 
-        .signoff-grid .signoff-field {
+        .signoff-field {
             display: flex;
             flex-direction: column;
+            background: #F7F8FA;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #E2E8F0;
         }
 
-        .signoff-grid .signoff-field strong {
-            font-size: 11px;
+        .signoff-field .sign-label {
+            font-size: 10px;
             font-weight: 700;
-            order: 1;
-            margin-bottom: 6mm;
-        }
-
-        .sign-line {
-            border-bottom: 1px solid #111111;
-            height: 1px;
-            order: 2;
-        }
-
-        /* ===== FOOTER ===== */
-        footer {
-            position: absolute;
-            bottom: 3.5%;
-            left: 5%;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
+            color: #64748B;
             text-transform: uppercase;
-            color: #111111;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
         }
 
-        .emblem {
-            position: absolute;
-            bottom: 3%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 26px;
-            height: 22px;
-        }
-
-        .emblem svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .emblem text {
-            font-size: 7px;
+        .signoff-field .sign-val {
+            font-size: 11.5px;
             font-weight: 600;
-            fill: #333333;
-            font-family: Arial, sans-serif;
+            color: #172A4A;
         }
 
-        @media print {
-
-            html,
-            body {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                padding: 0;
-            }
-
-            body {
-                background: #ffffff;
-            }
-
-            .page {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                box-shadow: none;
-            }
-        }
+        footer { position: absolute; bottom: 3.5%; left: 5%; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #111111; }
+        .emblem { position: absolute; bottom: 3%; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; }
+        .emblem svg { width: 100%; height: 100%; }
+        .emblem text { font-size: 7px; font-weight: 600; fill: #333333; font-family: Arial, sans-serif; }
     </style>
 </head>
 
@@ -343,23 +200,18 @@
             <div class="strengths-box">
                 <h2>Financial Strengths</h2>
                 <div class="content">
-                    <div class="writing-line"></div>
-                    <div class="writing-line"></div>
-                    <div class="writing-line"></div>
+                    <div class="point-item">• Strong commitment to long-term financial security</div>
+                    <div class="point-item">• Low default risk across debt obligations</div>
+                    <div class="point-item">• Regular income growth trajectory</div>
                 </div>
             </div>
 
             <div class="concerns-box">
                 <h2>Key Concerns</h2>
                 <div class="content">
-                    <div class="numbered-line">
-                        <span>1.</span>
-                        <div class="writing-line"></div>
-                    </div>
-                    <div class="numbered-line">
-                        <span>2.</span>
-                        <div class="writing-line"></div>
-                    </div>
+                    <div class="point-item">• Inadequate emergency liquid fund buffer</div>
+                    <div class="point-item">• Need to optimize life and health insurance cover</div>
+                    <div class="point-item">• Retirement corpus gap requires step-up investment</div>
                 </div>
             </div>
         </section>
@@ -369,54 +221,48 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="col-priority">Priority</th>
-                        <th class="col-action">Action Item</th>
-                        <th class="col-timeline">Timeline</th>
-                        <th class="col-owner">Owner</th>
+                        <th style="width: 14%;">Priority</th>
+                        <th style="width: 48%;">Action Item</th>
+                        <th style="width: 18%;">Timeline</th>
+                        <th style="width: 20%;">Owner</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="priority">High</td>
-                        <td>Build emergency fund (3–6 months expenses)</td>
+                        <td style="font-weight: 700; color: #C62828;">High</td>
+                        <td>Build emergency liquid buffer (3–6 months expenses)</td>
                         <td>0–60 days</td>
-                        <td></td>
+                        <td>Client / Advisor</td>
                     </tr>
                     <tr>
-                        <td class="priority">High</td>
-                        <td>Activate / increase term insurance cover</td>
+                        <td style="font-weight: 700; color: #C62828;">High</td>
+                        <td>Activate / increase pure term life insurance cover</td>
                         <td>0–30 days</td>
-                        <td></td>
+                        <td>Client / Advisor</td>
                     </tr>
                     <tr>
-                        <td class="priority">Medium</td>
-                        <td>Start or increase SIP investments</td>
+                        <td style="font-weight: 700; color: #EF6C00;">Medium</td>
+                        <td>Start or increase monthly equity SIP investments</td>
                         <td>30–60 days</td>
-                        <td></td>
+                        <td>Client / Advisor</td>
                     </tr>
                     <tr>
-                        <td class="priority">Medium</td>
+                        <td style="font-weight: 700; color: #EF6C00;">Medium</td>
                         <td>Health insurance review and upgrade</td>
                         <td>30–60 days</td>
-                        <td></td>
+                        <td>Client / Advisor</td>
                     </tr>
                     <tr>
-                        <td class="priority">Medium</td>
-                        <td>Retirement gap calculation and plan</td>
+                        <td style="font-weight: 700; color: #EF6C00;">Medium</td>
+                        <td>Retirement gap calculation and NPS plan</td>
                         <td>60–90 days</td>
-                        <td></td>
+                        <td>Client / Advisor</td>
                     </tr>
                     <tr>
-                        <td class="priority">Plan</td>
-                        <td>Will and nomination update</td>
+                        <td style="font-weight: 700; color: #2E7D32;">Plan</td>
+                        <td>Draft registered Will &amp; update nominations</td>
                         <td>60–90 days</td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td class="priority">Plan</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
+                        <td>Client / Advisor</td>
                     </tr>
                 </tbody>
             </table>
@@ -425,24 +271,12 @@
         <section class="recommended-products">
             <div class="section-heading">Recommended Products / Solutions</div>
             <div class="products-box">
-                <div class="product-field"><span>1.</span>
-                    <div class="writing-line"></div>
-                </div>
-                <div class="product-field"><span>2.</span>
-                    <div class="writing-line"></div>
-                </div>
-                <div class="product-field"><span>3.</span>
-                    <div class="writing-line"></div>
-                </div>
-                <div class="product-field"><span>4.</span>
-                    <div class="writing-line"></div>
-                </div>
-                <div class="product-field"><span>5.</span>
-                    <div class="writing-line"></div>
-                </div>
-                <div class="product-field"><span>6.</span>
-                    <div class="writing-line"></div>
-                </div>
+                <div class="product-field">1. Pure Term Life Cover (10-15x Income)</div>
+                <div class="product-field">2. Emergency Reserve (3-6 Months)</div>
+                <div class="product-field">3. Goal-Based Equity SIP Portfolio</div>
+                <div class="product-field">4. Family Health Floater Cover (₹10-25L)</div>
+                <div class="product-field">5. Retirement NPS / Corpus Build-up</div>
+                <div class="product-field">6. Registered Will &amp; Nomination Update</div>
             </div>
         </section>
 
@@ -450,20 +284,20 @@
             <div class="section-heading">Advisor Sign-off</div>
             <div class="signoff-grid">
                 <div class="signoff-field">
-                    <strong>Advisor Name</strong>
-                    <div class="sign-line"></div>
+                    <span class="sign-label">Advisor Name</span>
+                    <span class="sign-val">Kutumb Wealth Advisor</span>
                 </div>
                 <div class="signoff-field">
-                    <strong>Signature</strong>
-                    <div class="sign-line"></div>
+                    <span class="sign-label">Signature</span>
+                    <span class="sign-val">[Verified Digital]</span>
                 </div>
                 <div class="signoff-field">
-                    <strong>Date</strong>
-                    <div class="sign-line"></div>
+                    <span class="sign-label">Date</span>
+                    <span class="sign-val sign-date-val"></span>
                 </div>
                 <div class="signoff-field">
-                    <strong>Client Signature</strong>
-                    <div class="sign-line"></div>
+                    <span class="sign-label">Client Name</span>
+                    <span class="sign-val sign-client-val"></span>
                 </div>
             </div>
         </section>

@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <title>About the Kutumb Advisory Kundali Booklet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         @page {
             size: A4 portrait;
@@ -30,7 +33,7 @@
             position: relative;
             overflow: hidden;
             box-sizing: border-box;
-            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             color: #111111;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
@@ -89,8 +92,8 @@
         }
 
         .graha-card {
-            border-radius: 3px;
-            padding: 26px 24px;
+            border-radius: 4px;
+            padding: 24px 20px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -100,56 +103,30 @@
             font-size: 13pt;
             font-weight: 700;
             color: #111111;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         .graha-card .meaning {
-            font-size: 10.5pt;
+            font-size: 10pt;
             font-weight: 400;
-            line-height: 1.3;
-            color: #111111;
+            line-height: 1.35;
+            color: #333333;
         }
 
-        .c-surya {
-            background: #FFF9E9;
-        }
-
-        .c-chandra {
-            background: #F4F1FC;
-        }
-
-        .c-mangal {
-            background: #FFF4EC;
-        }
-
-        .c-budh {
-            background: #F4F8EC;
-        }
-
-        .c-guru {
-            background: #EEF7FC;
-        }
-
-        .c-shukra {
-            background: #FFF0F4;
-        }
-
-        .c-shani {
-            background: #F5F0FA;
-        }
-
-        .c-rahu {
-            background: #FFF5EA;
-        }
-
-        .c-ketu {
-            background: #F5F4F1;
-        }
+        .c-surya { background: #FFF9E9; }
+        .c-chandra { background: #F4F1FC; }
+        .c-mangal { background: #FFF4EC; }
+        .c-budh { background: #F4F8EC; }
+        .c-guru { background: #EEF7FC; }
+        .c-shukra { background: #FFF0F4; }
+        .c-shani { background: #F5F0FA; }
+        .c-rahu { background: #FFF5EA; }
+        .c-ketu { background: #F5F4F1; }
 
         /* ===== SCORING ===== */
         .scoring-heading {
             position: absolute;
-            top: 74%;
+            top: 73.5%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -160,7 +137,7 @@
 
         .scoring {
             position: absolute;
-            top: 78%;
+            top: 77.5%;
             left: 9%;
             width: 82%;
             display: grid;
@@ -169,53 +146,34 @@
         }
 
         .score-box {
-            border-radius: 3px;
+            border-radius: 6px;
             padding: 14px 16px;
             display: flex;
-            align-items: baseline;
-            justify-content: flex-start;
-            gap: 6px;
-            flex-wrap: wrap;
-            position: relative;
-            min-height: 46px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 4px;
+            min-height: 52px;
         }
 
         .score-box .num {
             font-size: 16pt;
             font-weight: 700;
             color: #111111;
+            line-height: 1;
         }
 
         .score-box .label {
-            font-size: 8.5pt;
-            font-weight: 400;
-            color: #111111;
+            font-size: 9pt;
+            font-weight: 600;
+            color: #333333;
         }
 
-        .score-box .label-top {
-            position: absolute;
-            top: 10px;
-            right: 14px;
-            font-size: 8.5pt;
-            font-weight: 400;
-            color: #111111;
-        }
-
-        .s-strong {
-            background: #EEF7E9;
-        }
-
-        .s-mild {
-            background: #FFF8E8;
-        }
-
-        .s-moderate {
-            background: #FFF1E8;
-        }
-
-        .s-severe {
-            background: #FFF0F3;
-        }
+        .s-strong { background: #EEF7E9; }
+        .s-mild { background: #FFF8E8; }
+        .s-moderate { background: #FFF1E8; }
+        .s-severe { background: #FFF0F3; }
 
         /* ===== FOOTER ===== */
         footer {
@@ -262,8 +220,7 @@
         </header>
 
         <section class="intro">
-            <p>Maps nine financial forces that determine a family's wealth health. Each graha represents a pillar — and
-                a weakness in any one creates a financial dosha.</p>
+            <p>Maps nine financial forces that determine a family's wealth health. Each graha represents a pillar — and a weakness in any one creates a financial dosha.</p>
         </section>
 
         <section class="graha-grid">
@@ -311,22 +268,20 @@
 
         <section class="scoring">
             <div class="score-box s-strong">
-                <span class="label-top">Strong</span>
                 <span class="num">9–10</span>
-                <span class="label">graha</span>
+                <span class="label">Strong</span>
             </div>
             <div class="score-box s-mild">
                 <span class="num">7–8</span>
-                <span class="label">Mild dosha</span>
+                <span class="label">Mild Dosha</span>
             </div>
             <div class="score-box s-moderate">
                 <span class="num">4–6</span>
                 <span class="label">Moderate</span>
             </div>
             <div class="score-box s-severe">
-                <span class="label-top">Severe</span>
                 <span class="num">0–3</span>
-                <span class="label">dosha</span>
+                <span class="label">Severe Dosha</span>
             </div>
         </section>
 

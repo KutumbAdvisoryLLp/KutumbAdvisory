@@ -185,7 +185,7 @@ export function FinancialKundaliHero() {
       >
         <svg
           viewBox="0 0 1000 1000"
-          className="w-80 h-80 lg:w-[420px] lg:h-[420px] xl:w-[500px] xl:h-[500px]"
+          className="w-[280px] h-[280px] sm:w-80 sm:h-80 lg:w-[420px] lg:h-[420px] xl:w-[500px] xl:h-[500px] max-w-[90vw] max-h-[90vw]"
           aria-label="Financial Kundali — Nine interconnected pillars of family wealth"
         >
           <defs>

@@ -141,7 +141,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-10 font-serif text-6xl leading-[1.08] tracking-tight text-navy sm:text-7xl lg:text-8xl lg:leading-[1.06]"
+              className="mt-6 sm:mt-10 font-serif text-4xl sm:text-7xl lg:text-8xl leading-[1.1] sm:leading-[1.08] tracking-tight text-navy lg:leading-[1.06]"
             >
               Your family&apos;s finances are a universe.
               <br />
@@ -152,7 +152,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.35 }}
-              className="mt-8 max-w-xl text-xl leading-relaxed text-stone sm:text-2xl"
+              className="mt-6 sm:mt-8 max-w-xl text-lg sm:text-2xl leading-relaxed text-stone"
             >
               Most families don&apos;t have a money problem. They have a
               visibility problem. Financial Kundali brings every corner of your
@@ -163,17 +163,17 @@ export default function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-10 flex flex-col gap-4 sm:flex-row"
+              className="mt-8 sm:mt-10 flex flex-col gap-4 sm:flex-row sm:items-end"
             >
-              <div className="flex flex-col items-start gap-2">
+              <div className="flex flex-col items-start gap-2 w-full sm:w-auto">
                 <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[#B8862B]/70">
                   Premium Assessment
                 </span>
-                <Button variant="gold" size="lg" href="#financial-kundali">
+                <Button variant="gold" size="lg" href="#financial-kundali" className="w-full sm:w-auto">
                   Start Your Financial Kundali
                 </Button>
               </div>
-              <Button variant="secondary" size="lg" href="#toolkit" className="self-end">
+              <Button variant="secondary" size="lg" href="#toolkit" className="w-full sm:w-auto sm:self-end">
                 Explore Financial Toolkit
               </Button>
             </motion.div>
@@ -182,7 +182,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.7 }}
-              className="mt-16 flex items-start justify-center gap-10 lg:gap-16"
+              className="mt-12 sm:mt-16 flex items-start justify-center sm:justify-start gap-6 sm:gap-10 lg:gap-16"
             >
               {stats.map((stat, i) => (
                 <motion.div

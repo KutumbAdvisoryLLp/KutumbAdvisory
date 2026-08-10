@@ -114,13 +114,13 @@ export default function ActionPlanPage() {
       <p className="text-slate mt-1">Categorized roadmap to improve your Financial Kundali score step by step.</p>
 
       {/* Overall Progress Banner */}
-      <div className="mt-6 p-6 bg-white rounded-2xl border border-slate-lighter/20 shadow-card">
-        <div className="flex items-center justify-between mb-3">
+      <div className="mt-6 p-4 sm:p-6 bg-white rounded-2xl border border-slate-lighter/20 shadow-card">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <div>
             <span className="font-medium text-charcoal block">Overall Action Plan Progress</span>
             <span className="text-xs text-slate-light">Complete high-priority items first to see immediate score boosts.</span>
           </div>
-          <span className="text-sm font-semibold text-navy">
+          <span className="text-sm font-semibold text-navy whitespace-nowrap">
             {completedCount} of {totalCount} Completed
           </span>
         </div>
@@ -128,7 +128,7 @@ export default function ActionPlanPage() {
       </div>
 
       {/* Category Tabs */}
-      <div className="mt-8 flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+      <div className="mt-8 flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         {MASTER_CATEGORIES.map((cat) => {
           const count = cat.id === 'All'
             ? actions.length
@@ -169,9 +169,9 @@ export default function ActionPlanPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="p-6 bg-white rounded-2xl border border-slate-lighter/20 shadow-card hover:shadow-card-hover transition-all"
+              className="p-4 sm:p-6 bg-white rounded-2xl border border-slate-lighter/20 shadow-card hover:shadow-card-hover transition-all"
             >
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-3 sm:gap-4">
                 <button
                   onClick={() => toggleStatus(action.id)}
                   aria-label="Toggle completion status"
@@ -189,7 +189,7 @@ export default function ActionPlanPage() {
                 </button>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
                     <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${catMeta?.color ?? 'text-slate bg-slate-lighter border-slate-lighter'}`}>
                       {catMeta?.label ?? action.category}
                     </span>
@@ -202,7 +202,7 @@ export default function ActionPlanPage() {
                       {action.priority} Priority
                     </span>
 
-                    <span className={`text-xs font-medium ml-auto ${action.status === 'completed' ? 'text-emerald-600 font-semibold' : 'text-slate-light'}`}>
+                    <span className={`text-xs font-medium w-full sm:w-auto sm:ml-auto mt-1 sm:mt-0 ${action.status === 'completed' ? 'text-emerald-600 font-semibold' : 'text-slate-light'}`}>
                       {action.status === 'completed' ? '✓ Completed' : action.status === 'in-progress' ? 'In Progress' : 'Pending'}
                     </span>
                   </div>

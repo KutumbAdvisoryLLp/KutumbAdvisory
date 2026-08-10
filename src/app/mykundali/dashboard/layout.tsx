@@ -166,13 +166,19 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            <a
-              href="#"
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gold/15 hover:bg-gold/25 text-gold-dark border border-gold/30 text-xs font-semibold transition-all duration-300 shadow-sm"
-            >
-              <PhoneCall size={14} strokeWidth={2} />
-              <span>Talk to Expert</span>
-            </a>
+            <div className="relative group">
+              <a
+                href="tel:+919831610210"
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gold/15 hover:bg-gold/25 text-gold-dark border border-gold/30 text-xs font-semibold transition-all duration-300 shadow-sm"
+              >
+                <PhoneCall size={14} strokeWidth={2} />
+                <span>Talk to Expert</span>
+              </a>
+              <div className="absolute right-0 top-full mt-2 hidden group-hover:flex flex-col items-center bg-navy text-white text-xs py-2 px-3.5 rounded-xl shadow-xl border border-gold/30 z-50 whitespace-nowrap pointer-events-none">
+                <span className="font-semibold text-gold text-[10px] uppercase tracking-wider">Call Advisor</span>
+                <span className="font-mono text-xs text-white font-bold mt-0.5">+91 98316 10210</span>
+              </div>
+            </div>
             <span className="hidden sm:inline text-sm text-navy/70">
               Hi, {displayName}
             </span>

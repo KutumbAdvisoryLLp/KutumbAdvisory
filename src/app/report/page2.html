@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Kutumb Advisory Kundali — Cover</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         @page {
             size: A4 portrait;
@@ -31,7 +34,7 @@
             position: relative;
             overflow: hidden;
             box-sizing: border-box;
-            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             color: #111111;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
@@ -71,46 +74,48 @@
         /* ===== EMBLEM ===== */
         .brand-emblem {
             position: absolute;
-            top: 78mm;
+            top: 72mm;
             left: 0;
             width: 100%;
             text-align: center;
         }
 
         .brand-emblem img {
-            width: 88mm;
-            height: 88mm;
+            width: 95mm;
+            height: auto;
+            max-height: 95mm;
+            object-fit: contain;
         }
 
         /* ===== CLIENT INFORMATION ===== */
         .client-information {
             position: absolute;
             top: 190mm;
-            left: 5%;
-            width: 90%;
+            left: 8%;
+            width: 84%;
         }
 
         .client-information .field {
             display: flex;
-            align-items: flex-end;
-            margin-bottom: 11mm;
+            align-items: center;
+            margin-bottom: 7mm;
+            padding: 4px 0;
         }
 
         .client-information .label {
-            font-size: 16px;
-            font-weight: 400;
+            font-size: 15px;
+            font-weight: 600;
             color: #1a1a2e;
             text-transform: uppercase;
-            white-space: nowrap;
-            margin-right: 8px;
-            padding-bottom: 2px;
+            letter-spacing: 0.5px;
+            min-width: 180px;
         }
 
-        .client-information .field-line {
-            flex: 1;
-            border-bottom: 1px solid #1a1a2e;
-            height: 0;
-            align-self: flex-end;
+        .client-information .field-val {
+            font-size: 16px;
+            font-weight: 700;
+            color: #172A4A;
+            padding-left: 12px;
         }
 
         /* ===== FOOTER ===== */
@@ -147,25 +152,14 @@
         }
 
         @media print {
-
-            html,
-            body {
+            html, body {
                 width: 210mm;
                 height: 297mm;
                 margin: 0;
                 padding: 0;
             }
-
-            body {
-                background: #ffffff;
-            }
-
-            .page {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                box-shadow: none;
-            }
+            body { background: #ffffff; }
+            .page { width: 210mm; height: 297mm; margin: 0; box-shadow: none; }
         }
     </style>
 </head>
@@ -181,21 +175,21 @@
         </header>
 
         <section class="brand-emblem">
-            <img src="assets/kutumb_logo.png" alt="Kutumb Advisory LLP emblem">
+            <img src="/report/pagelogo_transparent.png" alt="Kutumb Advisory LLP emblem">
         </section>
 
         <section class="client-information">
             <div class="field">
-                <span class="label">Client Name:</span>
-                <span class="field-line"></span>
+                <span class="label">CLIENT NAME:</span>
+                <span class="field-val client-name-val"></span>
             </div>
             <div class="field">
-                <span class="label">Assessment Date:</span>
-                <span class="field-line"></span>
+                <span class="label">ASSESSMENT DATE:</span>
+                <span class="field-val assessment-date-val"></span>
             </div>
             <div class="field">
-                <span class="label">Advisor Name:</span>
-                <span class="field-line"></span>
+                <span class="label">ADVISOR NAME:</span>
+                <span class="field-val advisor-name-val">Kutumb Wealth Advisor</span>
             </div>
         </section>
 

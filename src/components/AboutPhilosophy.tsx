@@ -6,22 +6,22 @@ import AnimatedSection from "./AnimatedSection";
 const pillars = [
   {
     title: "Protect",
-    desc: "We build financial resilience that safeguards your family against uncertainty — ensuring your wealth endures through every stage of life.",
+    desc: "We build financial resilience that safeguards your family against uncertainty ensuring your wealth endures through every stage of life.",
     icon: "protect",
   },
   {
     title: "Grow",
-    desc: "Through disciplined, personalised strategies we help your wealth expand across generations — not just for today, but for those who follow.",
+    desc: "Through disciplined, personalised strategies we help your wealth expand across generations not just for today, but for those who follow.",
     icon: "grow",
   },
   {
     title: "Manage",
-    desc: "We bring order and clarity to your financial life — consolidating every dimension into a single, visible, actionable architecture.",
+    desc: "We bring order and clarity to your financial life consolidating every dimension into a single, visible, actionable architecture.",
     icon: "manage",
   },
   {
     title: "Transfer",
-    desc: "We ensure your family's wealth moves seamlessly across generations — with structures that honour your intentions and protect your legacy.",
+    desc: "We ensure your family's wealth moves seamlessly across generations with structures that honour your intentions and protect your legacy.",
     icon: "transfer",
   },
 ];
@@ -72,7 +72,7 @@ export default function AboutPhilosophy() {
             Four Pillars, One Purpose
           </h2>
           <p className="mt-8 text-lg leading-relaxed text-stone sm:text-xl">
-            Every decision we make is guided by four timeless principles —
+            Every decision we make is guided by four timeless principles
             designed to protect, grow, manage and transfer your family&apos;s
             wealth across generations.
           </p>

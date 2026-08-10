@@ -174,7 +174,7 @@ export function FinancialToolkitSection() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.03 }}
-                            className="w-[calc(50%-8px)] md:w-[calc(50%-8px)] lg:w-[calc(33.33%-11px)] max-w-sm"
+                            className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.33%-11px)] max-w-sm"
                           >
                             <ToolCard
                               icon={calc.id}
@@ -222,7 +222,7 @@ export function FinancialToolkitSection() {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: i * 0.03 }}
-                      className="w-[calc(50%-8px)] md:w-[calc(50%-8px)] lg:w-[calc(33.33%-11px)] max-w-sm"
+                      className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.33%-11px)] max-w-sm"
                     >
                       <ToolCard
                         icon={cl.id}
@@ -267,7 +267,7 @@ export function FinancialToolkitSection() {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: i * 0.03 }}
-                      className="w-[calc(50%-8px)] md:w-[calc(50%-8px)] lg:w-[calc(33.33%-11px)] max-w-sm"
+                      className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.33%-11px)] max-w-sm"
                     >
                       <ToolCard
                         icon={a.id}

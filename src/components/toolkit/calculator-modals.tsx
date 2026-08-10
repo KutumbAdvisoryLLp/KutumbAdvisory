@@ -31,7 +31,7 @@ export function CalculatorModal({ calc, onClose, onStartAssessment }: Calculator
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-navy/60 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -40,21 +40,21 @@ export function CalculatorModal({ calc, onClose, onStartAssessment }: Calculator
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-3xl shadow-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-modal max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
         >
-          <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-6 py-5 border-b border-slate-lighter/10">
+          <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 border-b border-slate-lighter/10 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center">
-                <ToolIcon id={calc.id} className="w-6 h-6" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center shrink-0">
+                <ToolIcon id={calc.id} className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <h2 className="font-serif text-2xl text-navy">{calc.title}</h2>
+              <h2 className="font-serif text-lg sm:text-2xl text-navy">{calc.title}</h2>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-slate-lighter/20 transition-colors">
+            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-slate-lighter/20 transition-colors shrink-0">
               <X size={16} className="text-slate" />
             </button>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1">
             <CalculatorContent calcId={calc.id} calcTitle={calc.title} onStartAssessment={onStartAssessment} />
           </div>
         </motion.div>
@@ -108,11 +108,11 @@ function CalculatorContent({ calcId, calcTitle, onStartAssessment }: { calcId: s
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-8 p-6 bg-navy rounded-2xl border border-gold/10"
+          className="mt-6 sm:mt-8 p-4 sm:p-6 bg-navy rounded-2xl border border-gold/10"
         >
-          <div className="flex items-center gap-2 mb-5">
+          <div className="flex items-center gap-2 mb-4 sm:mb-5">
             <div className="w-1.5 h-1.5 rounded-full bg-gold" />
-            <h3 className="font-serif text-xl text-gold">Results</h3>
+            <h3 className="font-serif text-lg sm:text-xl text-gold">Results</h3>
           </div>
           <div className="space-y-2">
             {Object.entries(result).map(([key, val], i) => (
@@ -121,12 +121,12 @@ function CalculatorContent({ calcId, calcTitle, onStartAssessment }: { calcId: s
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="flex items-center justify-between py-3 px-4 rounded-xl bg-white/5 hover:bg-white/[0.07] transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center justify-between py-2.5 px-3.5 sm:py-3 sm:px-4 gap-1 sm:gap-4 rounded-xl bg-white/5 hover:bg-white/[0.07] transition-colors"
               >
-                <span className="text-white/50 text-sm capitalize">
+                <span className="text-white/60 text-xs sm:text-sm capitalize">
                   {key.replace(/([A-Z])/g, ' $1').trim()}
                 </span>
-                <span className="text-white font-serif text-lg font-semibold tracking-tight">
+                <span className="text-white font-serif text-base sm:text-lg font-semibold tracking-tight">
                   {typeof val === 'number' ? fin.formatINR(val) : val}
                 </span>
               </motion.div>
@@ -134,9 +134,9 @@ function CalculatorContent({ calcId, calcTitle, onStartAssessment }: { calcId: s
           </div>
           <button
             onClick={handleReset}
-            className="mt-5 text-xs text-white/30 hover:text-gold-light transition-colors font-mono uppercase tracking-wider"
+            className="mt-4 sm:mt-5 text-xs text-white/40 hover:text-gold-light transition-colors font-mono uppercase tracking-wider"
           >
-            ← Reset & Recalculate
+            ← Reset &amp; Recalculate
           </button>
         </motion.div>
       )}
@@ -545,7 +545,7 @@ function LoanComparisonForm({ onResult }: { onResult: (r: Record<string, string 
   return (
     <div className="space-y-5">
       <Field label="Loan Amount (₹)" val={p} set={setP} min={10000} max={100000000} step={50000} prefix="₹" />
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div><Field label="Option 1 Rate (%)" val={r1} set={setR1} min={1} max={20} step={0.25} suffix="%" /></div>
         <div><Field label="Option 2 Rate (%)" val={r2} set={setR2} min={1} max={20} step={0.25} suffix="%" /></div>
         <div><Field label="Option 1 Tenure (mo)" val={t1} set={setT1} min={1} max={360} step={1} suffix="mo" /></div>

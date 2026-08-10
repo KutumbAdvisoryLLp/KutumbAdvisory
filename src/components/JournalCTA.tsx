@@ -30,7 +30,7 @@ export default function JournalCTA() {
           <p className="mt-8 mx-auto max-w-2xl text-lg leading-relaxed text-stone sm:text-xl">
             You have read the insights. Now see where your own family stands.
             Financial Kundali reveals the complete architecture of your
-            family&apos;s wealth — in one connected view.
+            family&apos;s wealth in one connected view.
           </p>
 
           <div className="mt-14 flex flex-col items-center justify-center gap-4 sm:flex-row">

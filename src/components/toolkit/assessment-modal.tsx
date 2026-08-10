@@ -71,7 +71,7 @@ export function AssessmentModal({ assessment, onClose, onStartAssessment }: Asse
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-navy/60 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -80,24 +80,24 @@ export function AssessmentModal({ assessment, onClose, onStartAssessment }: Asse
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-3xl shadow-modal max-w-xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-modal max-w-xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
         >
-          <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-6 py-5 border-b border-slate-lighter/10">
+          <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 border-b border-slate-lighter/10 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-navy-light/20 to-navy-light/5 flex items-center justify-center">
-                <ToolIcon id={assessment.id} className="w-6 h-6" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-navy-light/20 to-navy-light/5 flex items-center justify-center shrink-0">
+                <ToolIcon id={assessment.id} className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <h2 className="font-serif text-xl text-navy">{assessment.title}</h2>
+                <h2 className="font-serif text-lg sm:text-xl text-navy">{assessment.title}</h2>
                 <p className="text-xs text-slate">{assessment.time}</p>
               </div>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-slate-lighter/20 transition-colors">
+            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-slate-lighter/20 transition-colors shrink-0">
               <X size={16} className="text-slate" />
             </button>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1">
             {!showResult ? (
               <div className="space-y-6">
                 {assessment.questions.map((q, qi) => (

@@ -61,7 +61,7 @@ export default function JournalNewsletter() {
 
           <p className="mt-6 mx-auto max-w-lg text-base leading-relaxed text-white/60 sm:text-lg">
             No spam. No daily emails. Just one carefully crafted insight each
-            month — delivered to your inbox with the same care we put into our
+            month delivered to your inbox with the same care we put into our
             advisory work.
           </p>
 

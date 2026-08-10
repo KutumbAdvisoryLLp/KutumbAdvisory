@@ -4,261 +4,44 @@
 <head>
     <meta charset="UTF-8">
     <title>Guru — Wealth Creation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @page {
-            size: A4 portrait;
-            margin: 0;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background: #eeeeee;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        .page {
-            width: 210mm;
-            height: 297mm;
-            background: #ffffff;
-            position: relative;
-            overflow: hidden;
-            box-sizing: border-box;
-            font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-            color: #111111;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        /* ===== SECTION HEADER BANNER ===== */
-        .section-header {
-            position: absolute;
-            top: 6%;
-            left: 6%;
-            width: 88%;
-            height: 31mm;
-            background: #079A84;
-            border-radius: 3px 16px 16px 3px;
-            padding: 20px 0 0 10%;
-            color: #ffffff;
-        }
-
-        .section-header::before {
-            content: "";
-            position: absolute;
-            top: -2mm;
-            left: -2mm;
-            width: 3.5px;
-            height: calc(100% + 4mm);
-            background: #E4A519;
-            border-radius: 2px;
-        }
-
-        .section-header h1 {
-            font-size: 19px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .section-header p {
-            margin-top: 7px;
-            font-size: 13.5px;
-            font-weight: 400;
-            color: #ffffff;
-            opacity: 0.88;
-            line-height: 1.3;
-            max-width: 85%;
-        }
-
-        /* ===== QUESTIONNAIRE TABLE ===== */
-        .questionnaire {
-            position: absolute;
-            top: 19%;
-            left: 3%;
-            width: 94%;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #dedede;
-        }
-
-        thead th {
-            background: #fbfbfa;
-            font-size: 13.5px;
-            font-weight: 700;
-            color: #172A4A;
-            padding: 8mm 10px;
-            height: 18mm;
-            border-bottom: 1px solid #dedede;
-            border-right: 1px solid #dddddd;
-        }
-
-        thead th:last-child {
-            border-right: none;
-        }
-
-        th.col-question,
-        td.col-question {
-            width: 51%;
-            text-align: left;
-        }
-
-        th.col-yesno,
-        td.col-yesno {
-            width: 14%;
-            text-align: center;
-        }
-
-        th.col-remarks,
-        td.col-remarks {
-            width: 35%;
-            text-align: left;
-        }
-
-        tbody td {
-            border-bottom: 1px solid #e6e6e6;
-            border-right: 1px solid #dddddd;
-            height: 26.5mm;
-            vertical-align: middle;
-            padding: 0 12px;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: 1px solid #dedede;
-        }
-
-        tbody td:last-child {
-            border-right: none;
-        }
-
-        td.col-question {
-            font-size: 13.5px;
-            font-weight: 400;
-            color: #111111;
-            padding-left: 12px;
-        }
-
-        /* ===== SCORE / DOSHA AREA ===== */
-        .assessment-footer {
-            position: absolute;
-            top: 79%;
-            left: 3%;
-            width: 94%;
-        }
-
-        .score-dosha-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .score {
-            font-size: 13.5px;
-            font-weight: 400;
-            color: #111111;
-            line-height: 1.9;
-        }
-
-        .score .score-line {
-            display: inline-block;
-            border-bottom: 1px solid #111111;
-            width: 42mm;
-            height: 1px;
-            margin: 0 4px -2px 4px;
-        }
-
-        .dosha {
-            font-size: 13.5px;
-            font-weight: 400;
-            color: #111111;
-            margin-top: 2px;
-        }
-
-        /* ===== ADVISOR OBSERVATION ===== */
-        .observation {
-            margin-top: 9mm;
-            font-size: 13.5px;
-            font-weight: 400;
-            color: #111111;
-        }
-
-        .observation-line {
-            margin-top: 7mm;
-            width: 75%;
-            border-bottom: 1px solid #111111;
-            height: 1px;
-        }
-
-        /* ===== FOOTER ===== */
-        footer {
-            position: absolute;
-            bottom: 4%;
-            left: 5%;
-            right: 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        footer .brand {
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-            color: #111111;
-        }
-
-        .emblem {
-            position: absolute;
-            bottom: 3%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 20px;
-        }
-
-        .emblem svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .emblem text {
-            font-size: 7px;
-            font-weight: 600;
-            fill: #333333;
-            font-family: Arial, sans-serif;
-        }
-
-        @media print {
-
-            html,
-            body {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                padding: 0;
-            }
-
-            body {
-                background: #ffffff;
-            }
-
-            .page {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                box-shadow: none;
-            }
-        }
+        @page { size: A4 portrait; margin: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { margin: 0; padding: 0; background: #eeeeee; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .page { width: 210mm; height: 297mm; background: #ffffff; position: relative; overflow: hidden; box-sizing: border-box; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #111111; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .section-header { position: absolute; top: 5.5%; left: 5%; width: 90%; height: 30mm; background: #007B88; border-radius: 4px 16px 16px 4px; padding: 18px 24px; color: #ffffff; display: flex; flex-direction: column; justify-content: center; }
+        .section-header h1 { font-size: 18px; font-weight: 700; color: #ffffff; }
+        .section-header p { margin-top: 6px; font-size: 12.5px; font-weight: 400; color: #ffffff; opacity: 0.92; line-height: 1.35; }
+        .questionnaire { position: absolute; top: 18%; left: 5%; width: 90%; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid #dedede; }
+        thead th { background: #fbfbfa; font-size: 13px; font-weight: 700; color: #172A4A; padding: 10px 12px; border-bottom: 1px solid #dedede; border-right: 1px solid #dddddd; }
+        thead th:last-child { border-right: none; }
+        th.col-question, td.col-question { width: 46%; text-align: left; }
+        th.col-yesno, td.col-yesno { width: 14%; text-align: center; }
+        th.col-remarks, td.col-remarks { width: 40%; text-align: left; }
+        tbody td { border-bottom: 1px solid #e6e6e6; border-right: 1px solid #dddddd; height: 24mm; vertical-align: middle; padding: 8px 12px; word-wrap: break-word; overflow-wrap: break-word; }
+        tbody tr:last-child td { border-bottom: 1px solid #dedede; }
+        tbody td:last-child { border-right: none; }
+        td.col-question { font-size: 12.5px; font-weight: 500; color: #111111; line-height: 1.4; }
+        td.col-yesno { font-size: 13px; font-weight: 700; }
+        td.col-remarks { font-size: 11.5px; color: #333333; line-height: 1.4; }
+        .assessment-footer { position: absolute; top: 76.5%; left: 5%; width: 90%; }
+        .score-dosha-row { display: flex; justify-content: space-between; align-items: center; background: #F7F8FA; padding: 12px 18px; border-radius: 4px; border: 1px solid #E2E8F0; }
+        .score { font-size: 13px; font-weight: 600; color: #172A4A; }
+        .score-val { font-size: 14px; font-weight: 700; color: #172A4A; margin-left: 6px; }
+        .dosha { font-size: 13px; font-weight: 600; color: #172A4A; }
+        .observation { margin-top: 14px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 4px; padding: 12px 16px; }
+        .obs-title { font-size: 11.5px; font-weight: 700; color: #172A4A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .observation-text { font-size: 11.5px; color: #333333; line-height: 1.45; }
+        footer { position: absolute; bottom: 3.5%; left: 5%; right: 5%; display: flex; justify-content: space-between; align-items: center; }
+        footer .brand { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: #111111; }
+        .emblem { position: absolute; bottom: 3%; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; }
+        .emblem svg { width: 100%; height: 100%; }
+        .emblem text { font-size: 7px; font-weight: 600; fill: #333333; font-family: Arial, sans-serif; }
+        @media print { html, body { width: 210mm; height: 297mm; margin: 0; padding: 0; } body { background: #ffffff; } .page { width: 210mm; height: 297mm; margin: 0; box-shadow: none; } }
     </style>
 </head>
 
@@ -268,7 +51,7 @@
 
         <header class="section-header">
             <h1>Guru — Wealth Creation</h1>
-            <p>The wisdom that multiplies family prosperity</p>
+            <p>The wisdom that compounds assets over long horizons</p>
         </header>
 
         <section class="questionnaire">
@@ -282,27 +65,27 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="col-question">Investments linked to specific goals?</td>
+                        <td class="col-question">Goal-linked investment strategy in place?</td>
                         <td class="col-yesno"></td>
                         <td class="col-remarks"></td>
                     </tr>
                     <tr>
-                        <td class="col-question">Invest regularly (SIP / systematic plan)?</td>
+                        <td class="col-question">Monthly SIPs active in equity?</td>
                         <td class="col-yesno"></td>
                         <td class="col-remarks"></td>
                     </tr>
                     <tr>
-                        <td class="col-question">Portfolio adequately diversified?</td>
+                        <td class="col-question">Portfolio diversified across asset classes?</td>
                         <td class="col-yesno"></td>
                         <td class="col-remarks"></td>
                     </tr>
                     <tr>
-                        <td class="col-question">Investments beating inflation consistently?</td>
+                        <td class="col-question">Investments beating long-term inflation?</td>
                         <td class="col-yesno"></td>
                         <td class="col-remarks"></td>
                     </tr>
                     <tr>
-                        <td class="col-question">Long-term wealth strategy in place?</td>
+                        <td class="col-question">Written 10-year wealth plan exists?</td>
                         <td class="col-yesno"></td>
                         <td class="col-remarks"></td>
                     </tr>
@@ -312,16 +95,13 @@
 
         <section class="assessment-footer">
             <div class="score-dosha-row">
-                <div class="score">
-                    Score (0-10): <span class="score-line"></span><br>
-                    / Severe
-                </div>
-                <div class="dosha">Dosha: None / Mild / Moderate</div>
+                <div class="score">Score (0-10): <span class="score-val"></span></div>
+                <div class="dosha">Dosha: <span class="dosha-val">None</span></div>
             </div>
 
             <div class="observation">
-                Advisor Observation:
-                <div class="observation-line"></div>
+                <div class="obs-title">Advisor Observation</div>
+                <div class="observation-text"></div>
             </div>
         </section>
 
