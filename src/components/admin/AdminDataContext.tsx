@@ -120,6 +120,8 @@ interface AdminDataContextValue {
   updateArticle: (id: string, patch: Partial<AdminArticle>) => void;
   deleteArticle: (id: string) => void;
   toggleArticlePublished: (id: string) => void;
+
+  customerCount: number;
 }
 
 const AdminDataContext = createContext<AdminDataContextValue | null>(null);
@@ -130,21 +132,26 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [articles, setArticles] = useState<AdminArticle[]>([]);
+  const [customerCount, setCustomerCount] = useState(0);
 
   useEffect(() => {
     (async () => {
-      const [leadsRes, subsRes, articlesRes] = await Promise.all([
+      const [leadsRes, subsRes, articlesRes, customersRes] = await Promise.all([
         supabase.from("leads").select("*").order("submitted_at", { ascending: false }),
         supabase
           .from("newsletter_subscribers")
           .select("*")
           .order("subscribed_at", { ascending: false }),
         supabase.from("articles").select("*").order("created_at", { ascending: false }),
+        supabase.from("customers").select("id", { count: "exact", head: true }),
       ]);
 
       if (leadsRes.data) setLeads(leadsRes.data.map(leadFromRow));
       if (subsRes.data) setSubscribers(subsRes.data.map(subscriberFromRow));
       if (articlesRes.data) setArticles(articlesRes.data.map(articleFromRow));
+      if (customersRes.count !== null && customersRes.count !== undefined) {
+        setCustomerCount(customersRes.count);
+      }
       setLoading(false);
     })();
   }, [supabase]);
@@ -239,6 +246,7 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
         updateArticle,
         deleteArticle,
         toggleArticlePublished,
+        customerCount,
       }}
     >
       {children}

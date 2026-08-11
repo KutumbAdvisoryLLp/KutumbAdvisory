@@ -122,14 +122,15 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
 
   const rawDate = report?.completedAt
   let dateStr: string
-  if (!rawDate) {
+  if (!rawDate || rawDate.includes("Invalid")) {
     dateStr = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
   } else {
-    // completedAt may already be a formatted string (e.g. "10 August 2026") — detect ISO format first
     const parsed = new Date(rawDate)
-    dateStr = isNaN(parsed.getTime())
-      ? rawDate  // already a human-readable string, use as-is
-      : parsed.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+    if (isNaN(parsed.getTime())) {
+      dateStr = rawDate
+    } else {
+      dateStr = parsed.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+    }
   }
   const overallScore = report?.overallScore ?? 0
 

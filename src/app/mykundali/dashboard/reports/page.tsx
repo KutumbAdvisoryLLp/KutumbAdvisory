@@ -47,14 +47,19 @@ export default function ReportsPage() {
         if (data.graha_answers) {
           setGrahaAnswers(data.graha_answers as Record<string, Record<string, string>>)
         }
+        const rawDate = data.completed_at
+        const parsedDate = rawDate ? new Date(rawDate) : new Date()
+        const validDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate
+        const formattedDate = validDate.toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+
         setReport({
           overallScore: data.overall_score,
           overallStatus: data.overall_status,
-          completedAt: new Date(data.completed_at).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-          }),
+          completedAt: formattedDate,
           grahaScores: (data.graha_scores as unknown as Partial<Record<GrahaId, number>>) ?? {},
           recommendations: data.recommendations ?? [],
           advisorNotes: data.advisor_notes ?? '',

@@ -10,6 +10,9 @@ const dummyClient = new Proxy({}, {
         getUser: async () => ({ data: { user: null }, error: null }),
         signInWithPassword: async () => ({ data: { user: null }, error: null }),
         signOut: async () => ({ error: null }),
+        resetPasswordForEmail: async () => ({ data: {}, error: null }),
+        verifyOtp: async () => ({ data: { session: null, user: null }, error: null }),
+        updateUser: async () => ({ data: { user: null }, error: null }),
       };
     }
     const chain = () => new Proxy({}, {

@@ -125,24 +125,32 @@ export default function AdminAnalyticsPage() {
       since.setDate(since.getDate() - 13);
       since.setHours(0, 0, 0, 0);
 
-      const [leadsRes, subsCount, customersCount, resultsCount, pageViewsRes] = await Promise.all([
+      const [leadsRes, customersRes, subsCount, resultsCount, pageViewsRes] = await Promise.all([
         supabase.from("leads").select("submitted_at"),
+        supabase.from("customers").select("created_at"),
         supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
-        supabase.from("customers").select("id", { count: "exact", head: true }),
         supabase.from("assessment_results").select("customer_id", { count: "exact", head: true }),
         supabase.from("page_views").select("path,referrer,viewed_at").gte("viewed_at", since.toISOString()),
       ]);
 
-      const rows = leadsRes.data ?? [];
-      setTotalLeads(rows.length);
+      const leadRows = leadsRes.data ?? [];
+      const customerRows = customersRes.data ?? [];
       setTotalSubscribers(subsCount.count ?? 0);
-      setTotalCustomers(customersCount.count ?? 0);
+      setTotalCustomers(customerRows.length);
       setCompletedAssessments(resultsCount.count ?? 0);
+
+      // Combine lead submissions and customer registrations
+      const allLeadDates = [
+        ...leadRows.map((r: { submitted_at: string }) => r.submitted_at),
+        ...customerRows.map((c: { created_at: string }) => c.created_at),
+      ].filter(Boolean);
+
+      setTotalLeads(Math.max(leadRows.length, customerRows.length));
 
       const days = last14Days();
       const counts = new Map(days.map((d) => [d, 0]));
-      for (const row of rows) {
-        const day = row.submitted_at.slice(0, 10);
+      for (const dateStr of allLeadDates) {
+        const day = dateStr.slice(0, 10);
         if (counts.has(day)) counts.set(day, (counts.get(day) ?? 0) + 1);
       }
       setLeadsOverTimeData(

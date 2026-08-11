@@ -178,6 +178,26 @@ export function buildPaymentConfirmationHtml(name: string, amount: number, order
   );
 }
 
+// ─── 4. Password Reset OTP email ──────────────────────────────────────
+export function buildPasswordResetOtpHtml(otp: string): string {
+  return wrap(
+    `
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:600;color:#172A4A;text-align:center;">Password Reset Request</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#555555;line-height:1.6;text-align:center;">Use the 6-digit verification code below to reset your Kutumb Advisory account password.</p>
+
+    <div style="text-align:center;margin:32px 0;">
+      <div style="display:inline-block;background:#172A4A;color:#D7A52E;font-size:32px;font-weight:700;letter-spacing:0.35em;padding:16px 36px;border-radius:12px;font-family:monospace;">
+        ${otp}
+      </div>
+    </div>
+
+    <p style="margin:0 0 16px;font-size:13px;color:#666666;text-align:center;line-height:1.5;">This verification code will expire in 15 minutes.</p>
+    <p style="margin:0;font-size:13px;color:#888888;line-height:1.6;text-align:center;">If you did not request a password reset, please ignore this email.</p>
+    `,
+    `Your password reset verification code is ${otp}`
+  );
+}
+
 // ─── Sender utilities ────────────────────────────────────────────────
 
 export async function sendWelcomeEmail(to: string, name: string) {
@@ -186,6 +206,15 @@ export async function sendWelcomeEmail(to: string, name: string) {
     to,
     subject: "Welcome to Kutumb Advisory — Your Journey Begins ✦",
     html: buildWelcomeHtml(name),
+  });
+}
+
+export async function sendPasswordResetOtpEmail(to: string, otp: string) {
+  return getResend().emails.send({
+    from: `${FROM_NAME} <${FROM}>`,
+    to,
+    subject: `${otp} is your Kutumb Advisory password reset code`,
+    html: buildPasswordResetOtpHtml(otp),
   });
 }
 

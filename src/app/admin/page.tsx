@@ -8,7 +8,7 @@ import {
   ContactAdminIcon,
   NewsletterIcon,
   JournalAdminIcon,
-  PencilIcon,
+  UsersIcon,
 } from "@/components/icons/admin";
 
 function formatDate(iso: string) {
@@ -20,10 +20,9 @@ function formatDate(iso: string) {
 }
 
 export default function AdminDashboardPage() {
-  const { leads, subscribers, articles } = useAdminData();
+  const { leads, subscribers, articles, customerCount } = useAdminData();
 
   const publishedCount = articles.filter((a) => a.published).length;
-  const draftCount = articles.filter((a) => !a.published).length;
 
   const recentLeads = [...leads]
     .sort((a, b) => +new Date(b.submittedAt) - +new Date(a.submittedAt))
@@ -53,10 +52,10 @@ export default function AdminDashboardPage() {
       href: "/admin/journal",
     },
     {
-      label: "Draft Articles",
-      value: draftCount,
-      icon: PencilIcon,
-      href: "/admin/journal",
+      label: "Registered Customers",
+      value: customerCount,
+      icon: UsersIcon,
+      href: "/admin/customers",
     },
   ];
 

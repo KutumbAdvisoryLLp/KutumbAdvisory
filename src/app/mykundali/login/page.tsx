@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Button from "@/components/Button";
 import { useMykundaliAuth } from "@/components/mykundali/AuthContext";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "forgot-request" | "forgot-verify";
 
 interface FormState {
   fullName: string;
@@ -74,12 +74,15 @@ function FloatingInput({
 
 export default function MykundaliLoginPage() {
   const router = useRouter();
-  const { signUp, login } = useMykundaliAuth();
+  const { signUp, login, requestPasswordReset, verifyOtpAndResetPassword } = useMykundaliAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [form, setForm] = useState<FormState>(initialForm);
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,22 +104,70 @@ export default function MykundaliLoginPage() {
     if (mode === "signup" && !form.fullName.trim()) {
       errs.fullName = "Please enter your full name";
     }
-    if (!form.email.trim()) {
+    if ((mode === "signin" || mode === "signup" || mode === "forgot-request") && !form.email.trim()) {
       errs.email = "Please enter your email";
     }
     if (mode === "signup" && !form.phone.trim()) {
       errs.phone = "Please enter your phone number";
     }
-    if (!form.password.trim()) {
+    if ((mode === "signin" || mode === "signup") && !form.password.trim()) {
       errs.password = "Please enter a password";
+    }
+    if (mode === "forgot-verify") {
+      if (!otp.trim()) errs.otp = "Please enter the OTP verification code";
+      if (!newPassword.trim()) errs.newPassword = "Please enter your new password";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
+  const handleForgotRequest = async () => {
+    if (!form.email.trim()) {
+      setErrors({ email: "Please enter your registered email" });
+      return;
+    }
+    setSubmitting(true);
+    setFormError("");
+    setInfoMessage("");
+    const res = await requestPasswordReset(form.email);
+    setSubmitting(false);
+    if (!res.ok) {
+      setFormError(res.error ?? "Failed to send reset code. Please try again.");
+    } else {
+      setInfoMessage(`Verification code sent to ${form.email}. Please check your inbox.`);
+      setMode("forgot-verify");
+    }
+  };
+
+  const handleForgotVerify = async () => {
+    if (!validate()) return;
+    setSubmitting(true);
+    setFormError("");
+    setInfoMessage("");
+    const res = await verifyOtpAndResetPassword(form.email, otp, newPassword);
+    setSubmitting(false);
+    if (!res.ok) {
+      setFormError(res.error ?? "Failed to reset password. Please check your OTP.");
+    } else {
+      setInfoMessage("Password reset successfully! Please sign in with your new password.");
+      setMode("signin");
+      setOtp("");
+      setNewPassword("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
+    setInfoMessage("");
+
+    if (mode === "forgot-request") {
+      return handleForgotRequest();
+    }
+    if (mode === "forgot-verify") {
+      return handleForgotVerify();
+    }
+
     if (!validate()) return;
 
     setSubmitting(true);
@@ -140,6 +191,8 @@ export default function MykundaliLoginPage() {
     router.push(mode === "signup" ? "/mykundali/assessment/landing" : "/mykundali/dashboard");
   };
 
+  const isForgot = mode === "forgot-request" || mode === "forgot-verify";
+
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-6 py-32">
       <div className="w-full max-w-md">
@@ -148,38 +201,64 @@ export default function MykundaliLoginPage() {
             My Kutumb
           </p>
           <h1 className="font-serif text-3xl sm:text-4xl text-navy leading-tight">
-            {mode === "signin" ? "Welcome Back" : "Create Your Account"}
+            {mode === "signin"
+              ? "Welcome Back"
+              : mode === "signup"
+              ? "Create Your Account"
+              : mode === "forgot-request"
+              ? "Reset Password"
+              : "Verify OTP Code"}
           </h1>
           <p className="mt-3 text-sm text-stone/70">
             {mode === "signin"
               ? "Sign in to continue your Financial Kundali."
-              : "Begin your family's Financial Kundali journey."}
+              : mode === "signup"
+              ? "Begin your family's Financial Kundali journey."
+              : mode === "forgot-request"
+              ? "Enter your email to receive a password reset OTP code."
+              : `Enter the OTP code sent to ${form.email} and choose a new password.`}
           </p>
         </div>
 
-        {/* Mode Toggle */}
-        <div className="flex items-center rounded-xl bg-white border border-navy/8 p-1 mb-8">
-          <button
-            type="button"
-            onClick={() => setMode("signin")}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${
-              mode === "signin" ? "bg-navy text-white shadow-sm" : "text-stone/60 hover:text-navy"
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("signup")}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${
-              mode === "signup" ? "bg-navy text-white shadow-sm" : "text-stone/60 hover:text-navy"
-            }`}
-          >
-            Create Account
-          </button>
-        </div>
+        {/* Mode Toggle (hide during forgot flow) */}
+        {!isForgot && (
+          <div className="flex items-center rounded-xl bg-white border border-navy/8 p-1 mb-8">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signin");
+                setFormError("");
+                setInfoMessage("");
+              }}
+              className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${
+                mode === "signin" ? "bg-navy text-white shadow-sm" : "text-stone/60 hover:text-navy"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signup");
+                setFormError("");
+                setInfoMessage("");
+              }}
+              className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-300 ${
+                mode === "signup" ? "bg-navy text-white shadow-sm" : "text-stone/60 hover:text-navy"
+              }`}
+            >
+              Create Account
+            </button>
+          </div>
+        )}
 
         <div className="rounded-2xl bg-white shadow-[0_0_0_1px_rgba(168,121,31,0.08),0_4px_24px_rgba(32,27,98,0.06)] p-8">
+          {infoMessage && (
+            <div className="mb-5 rounded-xl bg-emerald-50 border border-emerald-200 p-3.5 text-center text-xs font-medium text-emerald-800">
+              {infoMessage}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             <AnimatePresence mode="popLayout" initial={false}>
               {mode === "signup" && (
@@ -202,14 +281,16 @@ export default function MykundaliLoginPage() {
               )}
             </AnimatePresence>
 
-            <FloatingInput
-              label="Email Address"
-              name="email"
-              type="email"
-              value={form.email}
-              error={errors.email}
-              onChange={handleChange}
-            />
+            {mode !== "forgot-verify" && (
+              <FloatingInput
+                label="Email Address"
+                name="email"
+                type="email"
+                value={form.email}
+                error={errors.email}
+                onChange={handleChange}
+              />
+            )}
 
             <AnimatePresence mode="popLayout" initial={false}>
               {mode === "signup" && (
@@ -233,14 +314,60 @@ export default function MykundaliLoginPage() {
               )}
             </AnimatePresence>
 
-            <FloatingInput
-              label="Password"
-              name="password"
-              type="password"
-              value={form.password}
-              error={errors.password}
-              onChange={handleChange}
-            />
+            {(mode === "signin" || mode === "signup") && (
+              <div>
+                <FloatingInput
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  error={errors.password}
+                  onChange={handleChange}
+                />
+                {mode === "signin" && (
+                  <div className="mt-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("forgot-request");
+                        setFormError("");
+                        setInfoMessage("");
+                      }}
+                      className="text-xs text-gold hover:underline font-medium"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {mode === "forgot-verify" && (
+              <>
+                <FloatingInput
+                  label="OTP Verification Code"
+                  name="otp"
+                  type="text"
+                  value={otp}
+                  error={errors.otp}
+                  onChange={(e) => {
+                    setOtp(e.target.value);
+                    if (errors.otp) setErrors((prev) => ({ ...prev, otp: "" }));
+                  }}
+                />
+                <FloatingInput
+                  label="New Password"
+                  name="newPassword"
+                  type="password"
+                  value={newPassword}
+                  error={errors.newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (errors.newPassword) setErrors((prev) => ({ ...prev, newPassword: "" }));
+                  }}
+                />
+              </>
+            )}
 
             {formError && (
               <p className="text-center text-[13px] text-red-500">
@@ -256,8 +383,30 @@ export default function MykundaliLoginPage() {
               loading={submitting}
               className="w-full"
             >
-              {mode === "signin" ? "Sign In" : "Create Account"}
+              {mode === "signin"
+                ? "Sign In"
+                : mode === "signup"
+                ? "Create Account"
+                : mode === "forgot-request"
+                ? "Send Verification Code"
+                : "Reset Password"}
             </Button>
+
+            {isForgot && (
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("signin");
+                    setFormError("");
+                    setInfoMessage("");
+                  }}
+                  className="text-xs text-stone/60 hover:text-navy font-medium transition-colors"
+                >
+                  ← Back to Sign In
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>

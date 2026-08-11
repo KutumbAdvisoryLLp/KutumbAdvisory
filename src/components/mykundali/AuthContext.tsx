@@ -32,6 +32,8 @@ interface AuthContextValue {
   userId: string | null;
   signUp: (params: SignUpParams) => Promise<AuthResult>;
   login: (params: LoginParams) => Promise<AuthResult>;
+  requestPasswordReset: (email: string) => Promise<AuthResult>;
+  verifyOtpAndResetPassword: (email: string, otp: string, newPassword: string) => Promise<AuthResult>;
   logout: () => void;
 }
 
@@ -39,37 +41,42 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function fetchCustomer(userId: string): Promise<MykundaliUser | null> {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("customers")
-    .select("full_name, email")
-    .eq("id", userId)
-    .maybeSingle();
+  try {
+    const { data } = await supabase
+      .from("customers")
+      .select("full_name, email")
+      .eq("id", userId)
+      .maybeSingle();
 
-  if (data) {
-    return { fullName: data.full_name, email: data.email };
+    if (data) {
+      return { fullName: data.full_name, email: data.email };
+    }
+
+    // Fallback: If user is authenticated in Supabase Auth but missing from public.customers
+    // (e.g. from schema resets), auto-create the customer row so they aren't blocked.
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData?.user && authData.user.id === userId) {
+      const email = authData.user.email ?? "";
+      const fullName =
+        (authData.user.user_metadata?.full_name as string) ||
+        (authData.user.user_metadata?.name as string) ||
+        email.split("@")[0] ||
+        "Customer";
+
+      await supabase.from("customers").upsert({
+        id: userId,
+        full_name: fullName,
+        email: email,
+      });
+
+      return { fullName, email };
+    }
+
+    return null;
+  } catch (err) {
+    console.error("[MykundaliAuth] fetchCustomer failed:", err);
+    return null;
   }
-
-  // Fallback: If user is authenticated in Supabase Auth but missing from public.customers
-  // (e.g. from schema resets), auto-create the customer row so they aren't blocked.
-  const { data: authData } = await supabase.auth.getUser();
-  if (authData?.user && authData.user.id === userId) {
-    const email = authData.user.email ?? "";
-    const fullName =
-      (authData.user.user_metadata?.full_name as string) ||
-      (authData.user.user_metadata?.name as string) ||
-      email.split("@")[0] ||
-      "Customer";
-
-    await supabase.from("customers").upsert({
-      id: userId,
-      full_name: fullName,
-      email: email,
-    });
-
-    return { fullName, email };
-  }
-
-  return null;
 }
 
 export function MykundaliAuthProvider({ children }: { children: React.ReactNode }) {
@@ -82,18 +89,23 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
     let active = true;
 
     (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        const customer = await fetchCustomer(session.user.id);
-        if (active) {
-          setUser(customer);
-          setUserId(customer ? session.user.id : null);
+        if (session?.user) {
+          const customer = await fetchCustomer(session.user.id);
+          if (active) {
+            setUser(customer);
+            setUserId(customer ? session.user.id : null);
+          }
         }
+      } catch (err) {
+        console.error("[MykundaliAuth] session hydration failed:", err);
+      } finally {
+        if (active) setHydrated(true);
       }
-      if (active) setHydrated(true);
     })();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
@@ -164,6 +176,47 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
     [supabase]
   );
 
+  const requestPasswordReset = useCallback(
+    async (email: string): Promise<AuthResult> => {
+      try {
+        const res = await fetch("/api/mykundali/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim() }),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          return { ok: false, error: body.error ?? "Failed to send reset OTP code." };
+        }
+        return { ok: true };
+      } catch (err: any) {
+        return { ok: false, error: err?.message ?? "Failed to send reset code." };
+      }
+    },
+    []
+  );
+
+  const verifyOtpAndResetPassword = useCallback(
+    async (email: string, otp: string, newPassword: string): Promise<AuthResult> => {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otp.trim(),
+        type: "recovery",
+      });
+      if (error || !data.session) {
+        return { ok: false, error: error?.message ?? "Invalid or expired OTP code." };
+      }
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (updateError) {
+        return { ok: false, error: updateError.message };
+      }
+      return { ok: true };
+    },
+    [supabase]
+  );
+
   const logout = useCallback(() => {
     supabase.auth.signOut();
     setUser(null);
@@ -172,7 +225,17 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
 
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn: !!user, hydrated, user, userId, signUp, login, logout }}
+      value={{
+        isLoggedIn: !!user,
+        hydrated,
+        user,
+        userId,
+        signUp,
+        login,
+        requestPasswordReset,
+        verifyOtpAndResetPassword,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -40,6 +40,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
+  // Insert lead into leads table so user registration is tracked as a lead in admin/analytics
+  await admin.from("leads").insert({
+    full_name: fullName.trim(),
+    email: email.trim(),
+    phone: phone.trim(),
+    city: null,
+    occupation: null,
+    age_group: null,
+    contact_as: null,
+    primary_goal: "MyKundali Account Registration",
+    preferred_meeting: null,
+    preferred_date: null,
+    preferred_time: null,
+    notes: null,
+    status: "new",
+  } as any);
+
   // Fire-and-forget welcome email — don't block signup if it fails
   sendWelcomeEmail(email.trim(), fullName.trim()).catch((err) =>
     console.error("[signup] Welcome email failed:", err)

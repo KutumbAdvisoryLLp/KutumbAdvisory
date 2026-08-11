@@ -54,11 +54,48 @@ export default function FamilyProfilePage() {
     }
   })
 
+  const [step0Errors, setStep0Errors] = useState<Record<string, string>>({})
+
   const totalSteps = 6
   const progress = ((step + 1) / totalSteps) * 100
 
-  const update = <K extends keyof FamilyProfile>(key: K, value: FamilyProfile[K]) =>
+  const update = <K extends keyof FamilyProfile>(key: K, value: FamilyProfile[K]) => {
     setProfile((prev) => ({ ...prev, [key]: value }))
+    setStep0Errors((prev) => {
+      if (Object.keys(prev).length === 0) return prev
+      const next = { ...prev }
+      if (key === 'familyName') delete next.familyName
+      return next
+    })
+  }
+
+  const validateStep0 = (): boolean => {
+    const errs: Record<string, string> = {}
+    if (!profile.familyName?.trim()) {
+      errs.familyName = 'Family Name is required'
+    }
+    if (!profile.primaryMember?.name?.trim()) {
+      errs.name = 'Primary member name is required'
+    }
+    if (!profile.primaryMember?.age || profile.primaryMember.age <= 0) {
+      errs.age = 'Please enter a valid age'
+    }
+    if (!profile.primaryMember?.occupation?.trim()) {
+      errs.occupation = 'Job / Occupation is required'
+    }
+    if (!profile.primaryMember?.income || profile.primaryMember.income <= 0) {
+      errs.income = 'Annual income / pay is required'
+    }
+    setStep0Errors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const handleNext = () => {
+    if (step === 0) {
+      if (!validateStep0()) return
+    }
+    setStep((s) => Math.min(totalSteps - 1, s + 1))
+  }
 
   // Pre-fill from any previously-saved profile so refreshing mid-flow resumes.
   useEffect(() => {
@@ -142,24 +179,94 @@ export default function FamilyProfilePage() {
       <p className="text-slate">Tell us about yourself to personalize your assessment.</p>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-charcoal mb-1.5">Family Name</label>
-          <input type="text" value={profile.familyName || ''} onChange={(e) => update('familyName', e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="e.g. Sharma Family" />
+          <label className="block text-sm font-medium text-charcoal mb-1.5">
+            Family Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={profile.familyName || ''}
+            onChange={(e) => {
+              update('familyName', e.target.value)
+              if (step0Errors.familyName) setStep0Errors((prev) => ({ ...prev, familyName: '' }))
+            }}
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white focus:outline-none transition-colors ${
+              step0Errors.familyName ? 'border-red-400 focus:border-red-500' : 'border-slate-lighter focus:border-gold'
+            }`}
+            placeholder="e.g. Sharma Family"
+          />
+          {step0Errors.familyName && <p className="mt-1 text-xs text-red-500">{step0Errors.familyName}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-charcoal mb-1.5">Primary Earning Member</label>
-          <input type="text" value={profile.primaryMember.name} onChange={(e) => update('primaryMember', { ...profile.primaryMember, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="Your name" />
+          <label className="block text-sm font-medium text-charcoal mb-1.5">
+            Primary Earning Member Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={profile.primaryMember.name}
+            onChange={(e) => {
+              update('primaryMember', { ...profile.primaryMember, name: e.target.value })
+              if (step0Errors.name) setStep0Errors((prev) => ({ ...prev, name: '' }))
+            }}
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white focus:outline-none transition-colors ${
+              step0Errors.name ? 'border-red-400 focus:border-red-500' : 'border-slate-lighter focus:border-gold'
+            }`}
+            placeholder="Your name"
+          />
+          {step0Errors.name && <p className="mt-1 text-xs text-red-500">{step0Errors.name}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-charcoal mb-1.5">Age</label>
-          <input type="number" value={profile.primaryMember.age || ''} onChange={(e) => update('primaryMember', { ...profile.primaryMember, age: Number(e.target.value) })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" />
+          <label className="block text-sm font-medium text-charcoal mb-1.5">
+            Age <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            value={profile.primaryMember.age || ''}
+            onChange={(e) => {
+              update('primaryMember', { ...profile.primaryMember, age: Number(e.target.value) })
+              if (step0Errors.age) setStep0Errors((prev) => ({ ...prev, age: '' }))
+            }}
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white focus:outline-none transition-colors ${
+              step0Errors.age ? 'border-red-400 focus:border-red-500' : 'border-slate-lighter focus:border-gold'
+            }`}
+            placeholder="e.g. 35"
+          />
+          {step0Errors.age && <p className="mt-1 text-xs text-red-500">{step0Errors.age}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-charcoal mb-1.5">Occupation</label>
-          <input type="text" value={profile.primaryMember.occupation || ''} onChange={(e) => update('primaryMember', { ...profile.primaryMember, occupation: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="e.g. Software Engineer" />
+          <label className="block text-sm font-medium text-charcoal mb-1.5">
+            Job / Occupation <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={profile.primaryMember.occupation || ''}
+            onChange={(e) => {
+              update('primaryMember', { ...profile.primaryMember, occupation: e.target.value })
+              if (step0Errors.occupation) setStep0Errors((prev) => ({ ...prev, occupation: '' }))
+            }}
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white focus:outline-none transition-colors ${
+              step0Errors.occupation ? 'border-red-400 focus:border-red-500' : 'border-slate-lighter focus:border-gold'
+            }`}
+            placeholder="e.g. Software Engineer"
+          />
+          {step0Errors.occupation && <p className="mt-1 text-xs text-red-500">{step0Errors.occupation}</p>}
         </div>
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-charcoal mb-1.5">Annual Income (₹)</label>
-          <input type="number" value={profile.primaryMember.income || ''} onChange={(e) => update('primaryMember', { ...profile.primaryMember, income: Number(e.target.value) })} className="w-full px-4 py-3 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none transition-colors" placeholder="0" />
+          <label className="block text-sm font-medium text-charcoal mb-1.5">
+            Annual Income / Pay (₹) <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            value={profile.primaryMember.income || ''}
+            onChange={(e) => {
+              update('primaryMember', { ...profile.primaryMember, income: Number(e.target.value) })
+              if (step0Errors.income) setStep0Errors((prev) => ({ ...prev, income: '' }))
+            }}
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white focus:outline-none transition-colors ${
+              step0Errors.income ? 'border-red-400 focus:border-red-500' : 'border-slate-lighter focus:border-gold'
+            }`}
+            placeholder="e.g. 1500000"
+          />
+          {step0Errors.income && <p className="mt-1 text-xs text-red-500">{step0Errors.income}</p>}
         </div>
       </div>
     </motion.div>,
@@ -644,7 +751,7 @@ export default function FamilyProfilePage() {
             ← Previous
           </Button>
           {step < totalSteps - 1 ? (
-            <Button showArrow={false} onClick={() => setStep(s => Math.min(totalSteps - 1, s + 1))} className="w-full sm:w-auto">
+            <Button showArrow={false} onClick={handleNext} className="w-full sm:w-auto">
               Continue →
             </Button>
           ) : (
