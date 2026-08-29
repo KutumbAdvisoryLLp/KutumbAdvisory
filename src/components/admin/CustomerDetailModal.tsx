@@ -285,8 +285,9 @@ function ModalContent({
           existingInsurance: (d.existing_insurance as unknown as InsuranceEntry[]) ?? [],
           familyName: pm?.familyName ?? '',
           timeHorizon: pm?.timeHorizon ?? '',
+          goalTimeHorizons: pm?.goalTimeHorizons ?? {},
           netWorthWorksheet: pm?.netWorthWorksheet ?? {
-            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0, insuranceValue: 0 },
             liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
           },
         });
@@ -316,6 +317,7 @@ function ModalContent({
         ...profile.primaryMember,
         familyName: profile.familyName,
         timeHorizon: profile.timeHorizon,
+        goalTimeHorizons: profile.goalTimeHorizons,
         netWorthWorksheet: profile.netWorthWorksheet,
       } as unknown as Json,
       spouse: (profile.spouse ?? null) as unknown as Json | null,
@@ -458,10 +460,11 @@ function ModalContent({
                           { key: 'shares', label: 'Shares' },
                           { key: 'property', label: 'Property' },
                           { key: 'gold', label: 'Gold' },
-                          { key: 'epfPpfNps', label: 'EPF / PPF / NPS' }
+                          { key: 'epfPpfNps', label: 'EPF / PPF / NPS' },
+                          { key: 'insuranceValue', label: 'Insurance Value' }
                         ].map(({ key, label }) => {
                           const worksheet = profile.netWorthWorksheet || {
-                            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+                            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0, insuranceValue: 0 },
                             liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
                           }
                           const val = (worksheet.assets as any)[key] || 0
@@ -506,7 +509,7 @@ function ModalContent({
                           { key: 'otherLoans', label: 'Other Loans' }
                         ].map(({ key, label }) => {
                           const worksheet = profile.netWorthWorksheet || {
-                            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+                            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0, insuranceValue: 0 },
                             liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
                           }
                           const val = (worksheet.liabilities as any)[key] || 0

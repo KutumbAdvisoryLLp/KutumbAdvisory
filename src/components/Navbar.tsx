@@ -67,9 +67,14 @@ export default function Navbar() {
             style={{ width: "auto", height: "auto" }}
             className="h-[62px] w-auto object-contain transition-all duration-500 group-hover:scale-[1.03]"
           />
-          <span className="hidden sm:inline font-serif text-2xl tracking-wide text-navy transition-all duration-300 group-hover:text-gold">
-            Kutumb
-          </span>
+          <div className="hidden sm:flex flex-col leading-none">
+            <span className="font-serif text-2xl tracking-wide text-navy transition-all duration-300 group-hover:text-gold">
+              Kutumb
+            </span>
+            <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.25em] text-stone/50 transition-colors duration-300 group-hover:text-gold/70">
+              Advisory
+            </span>
+          </div>
         </Link>
 
         {/* -- Navigation Capsule -- */}

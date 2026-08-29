@@ -37,7 +37,7 @@ export interface ReportPdfData {
   grahaAnswers?: Record<string, Record<string, string>>
 }
 
-const REMARKS_DICT: Record<string, { yes: string; no: string }> = {
+const REMARKS_DICT: Record<string, { yes: string; no: string; unsure?: string }> = {
   s1: { yes: "Diversified income stream enhances financial stability.", no: "Create a secondary income stream to reduce single-source dependency." },
   s2: { yes: "Consistent growth shows strong earning momentum.", no: "Focus on career advancement or upskilling to increase income." },
   s3: { yes: "Income contingency plan protects family during unexpected disruptions.", no: "Build an emergency buffer and income replacement strategy." },
@@ -135,20 +135,25 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
   const overallScore = report?.overallScore ?? 0
 
   const worksheet = profile?.netWorthWorksheet || {
-    assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+    assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0, insuranceValue: 0 },
     liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
   }
 
   const assets = worksheet.assets || {}
   const liabilities = worksheet.liabilities || {}
 
-  const totalAssets = (assets.bankFD || 0) + (assets.mutualFunds || 0) + (assets.shares || 0) + (assets.property || 0) + (assets.gold || 0) + (assets.epfPpfNps || 0)
+  const totalAssets = (assets.bankFD || 0) + (assets.mutualFunds || 0) + (assets.shares || 0) + (assets.property || 0) + (assets.gold || 0) + (assets.epfPpfNps || 0) + (assets.insuranceValue || 0)
   const totalLiabilities = (liabilities.homeLoan || 0) + (liabilities.personalLoan || 0) + (liabilities.vehicleLoan || 0) + (liabilities.creditCard || 0) + (liabilities.otherLoans || 0)
   const netWorth = totalAssets - totalLiabilities
 
   const insuranceStr = (profile?.existingInsurance ?? []).map(i => `${i.type} (₹${(i.sumInsured || (i as any).coverAmount || 0).toLocaleString("en-IN")})`).join(", ") || "None"
-  const investmentsStr = (profile?.existingInvestments ?? []).map(i => `${i.type} (₹${(i.currentValue || i.amount || (i as any).value || 0).toLocaleString("en-IN")})`).join(", ") || "None"
   const childrenStr = (profile?.children ?? []).length > 0 ? profile!.children!.map(c => `${c.name || "Child"} (${c.age || "—"} yrs)`).join(", ") : "No children"
+  const goalTimeHorizons = profile?.goalTimeHorizons || {}
+  const goalWithHorizon = (goal?: string) => {
+    if (!goal) return "—"
+    const horizon = goalTimeHorizons[goal]
+    return horizon ? `${goal} (${horizon})` : goal
+  }
 
   const pages: string[] = []
 
@@ -176,19 +181,18 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
     .replace('<span class="fval children-val">—</span>', `<span class="fval children-val">${childrenStr}</span>`)
     .replace('<span class="fval occupation-val">—</span>', `<span class="fval occupation-val">${profile?.primaryMember?.occupation || "—"}</span>`)
     .replace('<span class="fval risk-profile-val">—</span>', `<span class="fval risk-profile-val" style="text-transform:uppercase;">${profile?.riskProfile || "—"}</span>`)
-    .replace('<span class="fval goal1-val">—</span>', `<span class="fval goal1-val">${profile?.goals?.[0] || "—"}</span>`)
-    .replace('<span class="fval goal2-val">—</span>', `<span class="fval goal2-val">${profile?.goals?.[1] || "—"}</span>`)
-    .replace('<span class="fval goal3-val">—</span>', `<span class="fval goal3-val">${profile?.goals?.[2] || "—"}</span>`)
-    .replace('<span class="fval time-horizon-val">—</span>', `<span class="fval time-horizon-val">${profile?.timeHorizon || "—"}</span>`)
+    .replace('<span class="fval goal1-val">—</span>', `<span class="fval goal1-val">${goalWithHorizon(profile?.goals?.[0])}</span>`)
+    .replace('<span class="fval goal2-val">—</span>', `<span class="fval goal2-val">${goalWithHorizon(profile?.goals?.[1])}</span>`)
+    .replace('<span class="fval goal3-val">—</span>', `<span class="fval goal3-val">${goalWithHorizon(profile?.goals?.[2])}</span>`)
     .replace('<span class="fval monthly-expenses-val">—</span>', `<span class="fval monthly-expenses-val">₹${(profile?.monthlyExpenses || 0).toLocaleString("en-IN")}</span>`)
     .replace('<span class="fval insurance-val">—</span>', `<span class="fval insurance-val">${insuranceStr}</span>`)
-    .replace('<span class="fval investments-val">—</span>', `<span class="fval investments-val">${investmentsStr}</span>`)
     .replace('<span class="nval bank-fd-val">₹0</span>', `<span class="nval bank-fd-val">₹${(assets.bankFD || 0).toLocaleString("en-IN")}</span>`)
     .replace('<span class="nval mutual-funds-val">₹0</span>', `<span class="nval mutual-funds-val">₹${(assets.mutualFunds || 0).toLocaleString("en-IN")}</span>`)
     .replace('<span class="nval shares-val">₹0</span>', `<span class="nval shares-val">₹${(assets.shares || 0).toLocaleString("en-IN")}</span>`)
     .replace('<span class="nval property-val">₹0</span>', `<span class="nval property-val">₹${(assets.property || 0).toLocaleString("en-IN")}</span>`)
     .replace('<span class="nval gold-val">₹0</span>', `<span class="nval gold-val">₹${(assets.gold || 0).toLocaleString("en-IN")}</span>`)
     .replace('<span class="nval epf-val">₹0</span>', `<span class="nval epf-val">₹${(assets.epfPpfNps || 0).toLocaleString("en-IN")}</span>`)
+    .replace('<span class="nval insurance-value-val">₹0</span>', `<span class="nval insurance-value-val">₹${(assets.insuranceValue || 0).toLocaleString("en-IN")}</span>`)
     .replace('<span class="ntotal-assets-val" style="font-weight:700; color:#172A4A;">₹0</span>', `<span class="ntotal-assets-val" style="font-weight:700; color:#172A4A;">₹${totalAssets.toLocaleString("en-IN")}</span>`)
     .replace('<span class="nval home-loan-val">₹0</span>', `<span class="nval home-loan-val">₹${(liabilities.homeLoan || 0).toLocaleString("en-IN")}</span>`)
     .replace('<span class="nval personal-loan-val">₹0</span>', `<span class="nval personal-loan-val">₹${(liabilities.personalLoan || 0).toLocaleString("en-IN")}</span>`)
@@ -221,7 +225,7 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
     guru: ["g1", "g2", "g3", "g4", "g5"],
     shukra: ["sk1", "sk2", "sk3", "sk4", "sk5"],
     shani: ["sn1", "sn2", "sn3", "sn4", "sn5"],
-    rahu: ["r1", "r2", "r3", "r4", "r5"],
+    rahu: ["r1", "r2", "r3", "r4", "r5", "r6", "r7"],
     ketu: ["k1", "k2", "k3", "k4", "k5"],
   }
 
@@ -248,12 +252,13 @@ export function buildReportHtmlPages(data: ReportPdfData): string[] {
 
     for (const qk of qKeys) {
       const ans = gAns[qk] ?? (score >= 6 ? "Yes" : "No")
-      const remarkObj = REMARKS_DICT[qk] ?? { yes: "Well managed.", no: "Action recommended." }
-      const remark = ans === "Yes" ? remarkObj.yes : remarkObj.no
+      const remarkObj = REMARKS_DICT[qk] ?? { yes: "Well managed.", no: "Action recommended.", unsure: "Worth a quick review with your advisor." }
+      const remark = ans === "Yes" ? remarkObj.yes : ans === "Don't Know" ? (remarkObj.unsure ?? "Worth a quick review with your advisor.") : remarkObj.no
+      const ansColor = ans === "Yes" ? "#2E7D32" : ans === "Don't Know" ? "#78716C" : "#C62828"
 
       tpl = tpl.replace(
         `<td class="col-yesno"></td>`,
-        `<td class="col-yesno" style="text-align:center; font-weight:700; color:${ans === "Yes" ? "#2E7D32" : "#C62828"}; font-size:13px;">${ans}</td>`
+        `<td class="col-yesno" style="text-align:center; font-weight:700; color:${ansColor}; font-size:13px;">${ans}</td>`
       )
       tpl = tpl.replace(
         `<td class="col-remarks"></td>`,

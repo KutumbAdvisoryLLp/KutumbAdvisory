@@ -1,24 +1,65 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { CheckCircle2 } from 'lucide-react'
 import { ScoreRing } from '@/components/mykundali/score-ring'
 import { LockedContent } from '@/components/mykundali/locked-content'
 import { PaywallSection } from '@/components/mykundali/paywall-section'
-import { GRAHA_IDS } from '@/types'
-import { GRAHA_COLORS, GRAHA_EMOJIS } from '@/lib/kundali/grahas'
+import { GRAHA_IDS, getScoreStatus, getScoreLabel, type GrahaId } from '@/types'
+import { GRAHAS, GRAHA_COLORS, GRAHA_EMOJIS } from '@/lib/kundali/grahas'
+import { createClient } from '@/lib/supabase/client'
+import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 
-const scores: Record<string, number> = {
-  surya: 8, chandra: 6, mangal: 7, budh: 5, guru: 6,
-  shukra: 7, shani: 5, rahu: 4, ketu: 6,
-}
-const overallScore = 54
-const strongest = 'Mangal'
-const weakest = 'Rahu'
-
-const lockedGrahas = ['guru', 'shukra', 'shani', 'rahu', 'ketu']
+const overallMax = 90
+const unlockedGrahas = GRAHA_IDS.slice(0, 4)
+const lockedGrahas = GRAHA_IDS.slice(4)
 
 export default function PreviewPage() {
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+  const { userId } = useMykundaliAuth()
+
+  const [loading, setLoading] = useState(true)
+  const [scores, setScores] = useState<Record<string, number>>({})
+  const [overallScore, setOverallScore] = useState(0)
+  const [recommendations, setRecommendations] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!userId) return
+    ;(async () => {
+      const { data } = await supabase
+        .from('assessment_results')
+        .select('*')
+        .eq('customer_id', userId)
+        .maybeSingle()
+
+      if (!data) {
+        router.replace('/mykundali/assessment/landing')
+        return
+      }
+
+      setScores(data.graha_scores as unknown as Record<string, number>)
+      setOverallScore(data.overall_score)
+      setRecommendations(data.recommendations ?? [])
+      setLoading(false)
+    })()
+  }, [userId, supabase, router])
+
+  const entries = (Object.entries(scores) as [GrahaId, number][])
+  const sorted = [...entries].sort((a, b) => b[1] - a[1])
+  const strongestId = sorted[0]?.[0]
+  const weakestId = sorted[sorted.length - 1]?.[0]
+  const strongest = strongestId ? GRAHAS.find((g) => g.id === strongestId)?.name ?? strongestId : '—'
+  const weakest = weakestId ? GRAHAS.find((g) => g.id === weakestId)?.name ?? weakestId : '—'
+
+  const overallPercent = overallMax ? overallScore / overallMax : 0
+  const overallStars = Math.max(1, Math.round(overallPercent * 5))
+  const overallStatus = getScoreStatus(overallScore, overallMax)
+
+  if (loading) return null
+
   return (
     <div className="min-h-screen bg-white pb-32 sm:pb-40">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-16 sm:pb-20">
@@ -52,8 +93,10 @@ export default function PreviewPage() {
             <ScoreRing score={overallScore} maxScore={90} size="xl" />
           </div>
           <div className="mt-4 text-center">
-            <div className="text-xl sm:text-2xl text-gold-dark">★★★★☆</div>
-            <p className="text-slate text-sm sm:text-base mt-1">Fair · Room for improvement</p>
+            <div className="text-xl sm:text-2xl text-gold-dark">
+              {'★'.repeat(overallStars)}{'☆'.repeat(5 - overallStars)}
+            </div>
+            <p className="text-slate text-sm sm:text-base mt-1">{getScoreLabel(overallStatus)} · Room for improvement</p>
           </div>
         </motion.div>
 
@@ -67,12 +110,12 @@ export default function PreviewPage() {
           <div className="p-5 bg-white rounded-2xl border border-slate-lighter/20 shadow-card">
             <p className="text-xs text-slate-light uppercase tracking-wider mb-1">Strongest</p>
             <p className="font-serif text-xl text-success">{strongest}</p>
-            <p className="text-sm text-slate">Score: {scores.mangal}/10</p>
+            <p className="text-sm text-slate">Score: {strongestId ? scores[strongestId] : 0}/10</p>
           </div>
           <div className="p-5 bg-white rounded-2xl border border-slate-lighter/20 shadow-card">
             <p className="text-xs text-slate-light uppercase tracking-wider mb-1">Weakest</p>
             <p className="font-serif text-xl text-error">{weakest}</p>
-            <p className="text-sm text-slate">Score: {scores.rahu}/10</p>
+            <p className="text-sm text-slate">Score: {weakestId ? scores[weakestId] : 0}/10</p>
           </div>
         </motion.div>
 
@@ -114,7 +157,7 @@ export default function PreviewPage() {
         >
           <h3 className="font-serif text-xl text-navy mb-4">Graha Scores</h3>
           <div className="space-y-2">
-            {GRAHA_IDS.slice(0, 4).map((id) => (
+            {unlockedGrahas.map((id) => (
               <div key={id} className="flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-lighter/20">
                 <span className="text-xl">{GRAHA_EMOJIS[id]}</span>
                 <span className="flex-1 font-medium capitalize text-charcoal">{id}</span>
@@ -150,9 +193,9 @@ export default function PreviewPage() {
             <div className="flex items-start gap-3">
               <CheckCircle2 className="text-success shrink-0" size={20} strokeWidth={1.75} />
               <div>
-                <p className="font-medium text-charcoal">Emergency Fund</p>
+                <p className="font-medium text-charcoal">{weakest} — Priority Area</p>
                 <p className="text-sm text-slate mt-1">
-                  Build 6 months of expenses as your financial safety net.
+                  {recommendations[0] ?? 'Complete your assessment to see personalized recommendations.'}
                 </p>
               </div>
             </div>

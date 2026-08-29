@@ -251,28 +251,28 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* Recent Improvements */}
+      {/* Actions to Take */}
       <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         className="mt-10 mb-10"
       >
-        <h2 className="font-serif text-2xl text-navy mb-4">Recent Improvements</h2>
+        <h2 className="font-serif text-2xl text-navy mb-4">Actions to Take</h2>
         <div className="p-6 bg-white rounded-2xl border border-slate-lighter/20 shadow-card">
           <div className="space-y-4">
-            {[
-              'Emergency fund built up 40% → 60% of target',
-              'Life insurance reviewed and updated',
-              'Started monthly SIP of ₹15,000',
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D9B6E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-                <span className="text-sm text-charcoal">{item}</span>
+            {actionPlan.slice(3, 6).map((item) => (
+              <div key={item.id} className="flex items-center gap-3">
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: GRAHA_COLORS[item.grahaId as GrahaId] }}
+                />
+                <span className="text-sm text-charcoal">{item.title}</span>
               </div>
             ))}
+            {actionPlan.slice(3, 6).length === 0 && (
+              <p className="text-sm text-slate-light">No further actions yet — great work.</p>
+            )}
           </div>
         </div>
       </motion.div>

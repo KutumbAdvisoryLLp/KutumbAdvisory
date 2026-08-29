@@ -198,10 +198,8 @@ export const PAGE_4_TEMPLATE = `<!DOCTYPE html>
                 <div class="field-row"><span class="flabel">Financial Goal 1</span><span class="fval goal1-val">—</span></div>
                 <div class="field-row"><span class="flabel">Financial Goal 2</span><span class="fval goal2-val">—</span></div>
                 <div class="field-row"><span class="flabel">Financial Goal 3</span><span class="fval goal3-val">—</span></div>
-                <div class="field-row"><span class="flabel">Time Horizon</span><span class="fval time-horizon-val">—</span></div>
                 <div class="field-row"><span class="flabel">Monthly Expenses</span><span class="fval monthly-expenses-val">—</span></div>
                 <div class="field-row"><span class="flabel">Existing Insurance</span><span class="fval insurance-val">—</span></div>
-                <div class="field-row"><span class="flabel">Existing Investments</span><span class="fval investments-val">—</span></div>
             </div>
         </section>
         <div class="networth-heading">Net Worth Worksheet</div>
@@ -213,6 +211,7 @@ export const PAGE_4_TEMPLATE = `<!DOCTYPE html>
                 <div class="nw-row"><span class="nlabel">Property</span><span class="nval property-val">₹0</span></div>
                 <div class="nw-row"><span class="nlabel">Gold</span><span class="nval gold-val">₹0</span></div>
                 <div class="nw-row"><span class="nlabel">EPF / PPF / NPS</span><span class="nval epf-val">₹0</span></div>
+                <div class="nw-row"><span class="nlabel">Insurance Value</span><span class="nval insurance-value-val">₹0</span></div>
                 <div class="nw-row nw-total-row"><span class="nlabel" style="font-weight:700; color:#172A4A;">Total Assets</span><span class="ntotal-assets-val" style="font-weight:700; color:#172A4A;">₹0</span></div>
             </div>
             <div class="nw-box">
@@ -243,6 +242,7 @@ export const PAGE_4_TEMPLATE = `<!DOCTYPE html>
 </html>`
 
 function makeGrahaTemplate(title: string, sub: string, color: string, pageNum: number, questions: string[]) {
+    const rowHeightMm = Math.min(25, Math.floor(155 / questions.length))
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -266,7 +266,7 @@ function makeGrahaTemplate(title: string, sub: string, color: string, pageNum: n
         th.col-question, td.col-question { width: 46%; text-align: left; }
         th.col-yesno, td.col-yesno { width: 14%; text-align: center; }
         th.col-remarks, td.col-remarks { width: 40%; text-align: left; }
-        tbody td { border-bottom: 1px solid #e6e6e6; border-right: 1px solid #dddddd; height: 25mm; vertical-align: middle; padding: 10px 14px; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.45; }
+        tbody td { border-bottom: 1px solid #e6e6e6; border-right: 1px solid #dddddd; height: ${rowHeightMm}mm; vertical-align: middle; padding: 10px 14px; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.45; }
         tbody tr:last-child td { border-bottom: 1px solid #dedede; }
         tbody td:last-child { border-right: none; }
         td.col-question { font-size: 12.5px; font-weight: 500; color: #111111; }
@@ -443,7 +443,9 @@ export const PAGE_12_TEMPLATE = makeGrahaTemplate(
         "Understand every investment made?",
         "Avoid emotional financial decisions?",
         "Seek professional guidance regularly?",
-        "Portfolio aligned to actual risk profile?"
+        "Portfolio aligned to actual risk profile?",
+        "Do you know about inflation?",
+        "Do you know about market-risk?"
     ]
 )
 

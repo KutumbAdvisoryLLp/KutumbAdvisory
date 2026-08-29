@@ -1,4 +1,5 @@
-// Hand-written to match supabase/migrations/0001_init.sql.
+// Hand-written to match supabase/migrations/0001_schema.sql plus
+// 0003_fix_assessment_answers_unique.sql and 0004_fix_schema_drift.sql.
 // If the schema changes, update this file to match — there is no live
 // project connection available to regenerate it automatically.
 
@@ -249,7 +250,10 @@ export interface Database {
           action_plan: Json;
           strongest_graha: string | null;
           weakest_graha: string | null;
-          completed_at: string;
+          pdf_url: string | null;
+          unlocked: boolean;
+          created_at: string;
+          updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["assessment_results"]["Row"]> & {
           customer_id: string;

@@ -86,10 +86,13 @@ export function QuestionCard({
           })}
 
         {question.type === 'yesno' && (
-          <div className="flex gap-4 mt-2">
-            {['Yes', 'No'].map((opt) => {
+          <div className="flex gap-3 sm:gap-4 mt-2">
+            {(question.options ?? ['Yes', 'No']).map((opt) => {
               const isSelected = value === opt
               const isYes = opt === 'Yes'
+              const isNo = opt === 'No'
+              const isUnsure = !isYes && !isNo
+              const icon = isYes ? '✓' : isNo ? '✗' : '?'
               return (
                 <button
                   key={opt}
@@ -98,14 +101,16 @@ export function QuestionCard({
                     'flex-1 py-5 rounded-2xl border-2 text-lg font-semibold transition-all duration-300',
                     isSelected && isYes
                       ? 'border-emerald-400 bg-emerald-50 text-emerald-700 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
-                      : isSelected && !isYes
+                      : isSelected && isNo
                         ? 'border-rose-400 bg-rose-50 text-rose-700 shadow-[0_0_20px_rgba(244,63,94,0.15)]'
-                        : 'border-slate-lighter bg-white text-slate hover:border-slate-light hover:shadow-card'
+                        : isSelected && isUnsure
+                          ? 'border-slate-light bg-slate-lighter/40 text-slate shadow-[0_0_20px_rgba(100,116,139,0.12)]'
+                          : 'border-slate-lighter bg-white text-slate hover:border-slate-light hover:shadow-card'
                   )}
                 >
                   <div className="flex flex-col items-center gap-1.5">
-                    <span className="text-2xl">{isYes ? '✓' : '✗'}</span>
-                    <span>{opt}</span>
+                    <span className="text-2xl">{icon}</span>
+                    <span className={isUnsure ? 'text-sm sm:text-base' : undefined}>{opt}</span>
                   </div>
                 </button>
               )

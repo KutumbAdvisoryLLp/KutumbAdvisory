@@ -172,14 +172,17 @@ export function computeFoundationScore(profile: FamilyProfile) {
   const goalsCount = (profile.goals ?? []).filter((g) => g && g.trim()).length;
   const goalsScore = goalsCount >= 2 ? 2 : goalsCount === 1 ? 1 : 0;
 
-  const timeHorizonScore = profile.timeHorizon && profile.timeHorizon.trim() ? 1 : 0;
+  const hasGoalHorizon = Object.values(profile.goalTimeHorizons ?? {}).some((h) => h && h.trim());
+  const timeHorizonScore = hasGoalHorizon || (profile.timeHorizon && profile.timeHorizon.trim()) ? 1 : 0;
   const expensesScore = (profile.monthlyExpenses ?? 0) > 0 ? 1 : 0;
 
   const insCount = (profile.existingInsurance ?? []).length;
   const insuranceScore = insCount > 0 ? 1 : 0;
 
-  const invCount = (profile.existingInvestments ?? []).length;
-  const investmentsScore = invCount > 0 ? 1 : 0;
+  const worksheetAssets = profile.netWorthWorksheet?.assets;
+  const investmentAssetsValue =
+    (worksheetAssets?.mutualFunds ?? 0) + (worksheetAssets?.shares ?? 0) + (worksheetAssets?.gold ?? 0) + (worksheetAssets?.epfPpfNps ?? 0);
+  const investmentsScore = investmentAssetsValue > 0 || (profile.existingInvestments ?? []).length > 0 ? 1 : 0;
 
   const assets = profile.totalAssets ?? 0;
   const assetsScore = assets >= 100000 ? 2 : assets > 0 ? 1 : 0;
@@ -225,8 +228,10 @@ function optionScore(
   reverseScore?: boolean
 ): number {
   if (value === undefined) return 5; // neutral for unanswered
-  // Yes/No binary scoring (2-option questions)
-  if (options && options.length === 2) {
+  // Yes/No/Don't Know binary-style scoring — "Don't Know" is always neutral,
+  // it isn't a weakness, the person just hasn't checked yet.
+  if (value === "Don't Know") return 5;
+  if (options && (options.length === 2 || options.length === 3) && options.includes("Yes") && options.includes("No")) {
     const isYes = value === "Yes";
     return reverseScore ? (isYes ? 0 : 10) : (isYes ? 10 : 0);
   }
@@ -318,13 +323,15 @@ export function computeAssessmentResult(
     .map(([id]) => grahaDetails[id].suggestions[0])
     .filter((s): s is string => !!s);
 
-  const actionPlan = sorted.slice(-3).reverse().map(([id], i) => ({
+  // Weakest 6 grahas, weakest first — dashboard splits this into "Top
+  // Priorities" (first 3) and "Actions to Take" (next 3).
+  const actionPlan = sorted.slice(-6).reverse().map(([id], i) => ({
     id: `${id}-action`,
     grahaId: id,
     title: grahaDetails[id].suggestions[0] ?? `Improve ${id}`,
     description: grahaDetails[id].advisorNote,
     status: "not-started" as const,
-    priority: (i === 0 ? "high" : i === 1 ? "medium" : "low") as "high" | "medium" | "low",
+    priority: (i === 0 ? "high" : i <= 2 ? "medium" : "low") as "high" | "medium" | "low",
     category: GRAHAS.find((g) => g.id === id)?.subtitle ?? id,
   }));
 

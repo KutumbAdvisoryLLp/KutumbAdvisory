@@ -34,8 +34,8 @@ export default function JournalHero() {
           </h1>
 
           <p className="mt-8 max-w-2xl text-lg leading-relaxed text-stone sm:text-xl">
-            Thoughtful insights on building, protecting and transferring family
-            wealth across generations. No noise. No fluff. Just timeless
+            Thoughtful insights on building, protecting and transferring
+            legacy across generations. No noise. No fluff. Just timeless
             principles and practical guidance.
           </p>
         </motion.div>

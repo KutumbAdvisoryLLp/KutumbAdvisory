@@ -35,6 +35,7 @@ export interface FamilyProfile {
   totalLiabilities: number
   riskProfile: 'conservative' | 'moderate' | 'aggressive'
   goals: string[]
+  goalTimeHorizons?: Record<string, string>
   existingInvestments: InvestmentEntry[]
   existingInsurance: InsuranceEntry[]
   familyName?: string
@@ -47,6 +48,7 @@ export interface FamilyProfile {
       property: number
       gold: number
       epfPpfNps: number
+      insuranceValue: number
     }
     liabilities: {
       homeLoan: number

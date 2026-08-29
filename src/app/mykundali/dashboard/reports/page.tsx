@@ -37,17 +37,24 @@ export default function ReportsPage() {
   useEffect(() => {
     if (!userId) return
     ;(async () => {
-      const [resultRes, profileRes] = await Promise.all([
+      const [resultRes, profileRes, answersRes] = await Promise.all([
         supabase.from('assessment_results').select('*').eq('customer_id', userId).maybeSingle(),
         supabase.from('family_profiles').select('*').eq('customer_id', userId).maybeSingle(),
+        supabase.from('assessment_answers').select('graha_id, question_id, value').eq('customer_id', userId),
       ])
+
+      if (answersRes.data) {
+        const map: Record<string, Record<string, string>> = {}
+        for (const row of answersRes.data) {
+          if (!map[row.graha_id]) map[row.graha_id] = {}
+          map[row.graha_id][row.question_id] = row.value as unknown as string
+        }
+        setGrahaAnswers(map)
+      }
 
       if (resultRes.data) {
         const data = resultRes.data
-        if (data.graha_answers) {
-          setGrahaAnswers(data.graha_answers as Record<string, Record<string, string>>)
-        }
-        const rawDate = data.completed_at
+        const rawDate = data.updated_at
         const parsedDate = rawDate ? new Date(rawDate) : new Date()
         const validDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate
         const formattedDate = validDate.toLocaleDateString('en-IN', {
@@ -85,12 +92,13 @@ export default function ReportsPage() {
           totalLiabilities: d.total_liabilities ?? 0,
           riskProfile: d.risk_profile ?? 'moderate',
           goals: d.goals ?? [],
+          goalTimeHorizons: pm?.goalTimeHorizons ?? {},
           existingInvestments: (d.existing_investments as unknown as InvestmentEntry[]) ?? [],
           existingInsurance: (d.existing_insurance as unknown as InsuranceEntry[]) ?? [],
           familyName: pm?.familyName ?? '',
           timeHorizon: pm?.timeHorizon ?? '',
           netWorthWorksheet: pm?.netWorthWorksheet ?? {
-            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+            assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0, insuranceValue: 0 },
             liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
           },
         })

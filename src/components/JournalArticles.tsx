@@ -33,7 +33,7 @@ export default function JournalArticles({ articles }: { articles: ArticleRow[] }
             </h2>
             <p className="mt-6 text-lg leading-relaxed text-stone">
               We&apos;re preparing our first insights on building, protecting,
-              and transferring family wealth. Check back soon.
+              and transferring legacy. Check back soon.
             </p>
           </motion.div>
         </div>

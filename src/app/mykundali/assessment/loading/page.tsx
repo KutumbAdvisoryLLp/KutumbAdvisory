@@ -59,7 +59,7 @@ export default function LoadingPage() {
         familyName: pm?.familyName ?? '',
         timeHorizon: pm?.timeHorizon ?? '',
         netWorthWorksheet: pm?.netWorthWorksheet ?? {
-          assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0 },
+          assets: { bankFD: 0, mutualFunds: 0, shares: 0, property: 0, gold: 0, epfPpfNps: 0, insuranceValue: 0 },
           liabilities: { homeLoan: 0, personalLoan: 0, vehicleLoan: 0, creditCard: 0, otherLoans: 0 }
         },
       }
