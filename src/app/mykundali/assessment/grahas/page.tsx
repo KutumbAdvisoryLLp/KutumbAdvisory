@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { AnimatePresence } from 'framer-motion'
 import Button from '@/components/Button'
 import { ProgressBar } from '@/components/mykundali/progress-bar'
 import { QuestionCard } from '@/components/mykundali/question-card'
@@ -114,6 +113,15 @@ export default function GrahaAssessmentPage() {
               {currentGrahaIdx + 1} of {GRAHAS.length} Grahas
             </span>
           </div>
+
+          <div className="mt-2 flex items-center gap-4">
+            <div className="flex-1">
+              <ProgressBar value={currentGrahaProgress} size="sm" showPercentage={false} color="bg-navy/60" />
+            </div>
+            <span className="text-xs font-mono text-slate-light shrink-0">
+              Q{currentQuestionIdx + 1}/{graha.questions.length}
+            </span>
+          </div>
         </div>
 
         {/* Graha Header */}
@@ -137,17 +145,15 @@ export default function GrahaAssessmentPage() {
 
         {/* Question */}
         <div className="min-h-[280px] sm:min-h-[320px]">
-          <AnimatePresence mode="wait">
-            <QuestionCard
-              key={question.id}
-              question={question}
-              value={answers[question.id]}
-              onChange={handleAnswer}
-              questionNumber={currentQuestionIdx + 1}
-              totalQuestions={graha.questions.length}
-              color={GRAHA_COLORS[graha.id]}
-            />
-          </AnimatePresence>
+          <QuestionCard
+            key={question.id}
+            question={question}
+            value={answers[question.id]}
+            onChange={handleAnswer}
+            questionNumber={currentQuestionIdx + 1}
+            totalQuestions={graha.questions.length}
+            color={GRAHA_COLORS[graha.id]}
+          />
         </div>
 
         {/* Navigation */}

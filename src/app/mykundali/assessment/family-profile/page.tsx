@@ -734,9 +734,7 @@ export default function FamilyProfilePage() {
         </div>
 
         {/* Content */}
-        <AnimatePresence mode="wait">
-          {steps[step]}
-        </AnimatePresence>
+        {steps[step]}
 
         {/* Navigation */}
         <div className="mt-10 flex flex-col-reverse sm:flex-row gap-3 sm:gap-0 justify-between items-center">

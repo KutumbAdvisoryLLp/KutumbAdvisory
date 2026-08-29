@@ -64,7 +64,10 @@ export default function PreviewPage() {
     <div className="min-h-screen bg-white pb-32 sm:pb-40">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-16 sm:pb-20">
         {/* Back */}
-        <button className="text-sm text-slate hover:text-charcoal transition-colors mb-6 sm:mb-8">
+        <button
+          onClick={() => router.push('/mykundali/assessment/landing')}
+          className="text-sm text-slate hover:text-charcoal transition-colors mb-6 sm:mb-8"
+        >
           ← Back
         </button>
 
