@@ -16,10 +16,13 @@ import {
   Menu,
   X,
   PhoneCall,
+  MessageSquareQuote,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
+import { useLoadingOverlay } from '@/components/LoadingOverlayContext'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
+import LeaveTestimonialModal from '@/components/mykundali/LeaveTestimonialModal'
 
 const KUTUMB_LOGO_URL =
   'https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780312133/tree_qw9bji.png'
@@ -41,7 +44,9 @@ export default function DashboardLayout({
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showRetakeConfirm, setShowRetakeConfirm] = useState(false)
-  const { isLoggedIn, hydrated, user, logout } = useMykundaliAuth()
+  const [showTestimonialModal, setShowTestimonialModal] = useState(false)
+  const { isLoggedIn, hydrated, user, userId, logout } = useMykundaliAuth()
+  const { hide: hideLoadingOverlay } = useLoadingOverlay()
 
   const confirmRetake = async () => {
     setShowRetakeConfirm(false)
@@ -54,6 +59,12 @@ export default function DashboardLayout({
       router.replace('/mykundali/login')
     }
   }, [hydrated, isLoggedIn, router])
+
+  useEffect(() => {
+    if (hydrated && isLoggedIn) {
+      hideLoadingOverlay()
+    }
+  }, [hydrated, isLoggedIn, hideLoadingOverlay])
 
   const handleLogout = () => {
     logout()
@@ -179,6 +190,13 @@ export default function DashboardLayout({
                 <span className="font-mono text-xs text-white font-bold mt-0.5">+91 98316 10210</span>
               </div>
             </div>
+            <button
+              onClick={() => setShowTestimonialModal(true)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-navy/5 hover:bg-navy/10 text-navy/70 hover:text-navy border border-navy/10 text-xs font-semibold transition-all duration-300 shadow-sm"
+            >
+              <MessageSquareQuote size={14} strokeWidth={2} />
+              <span className="hidden sm:inline">Leave Testimonial</span>
+            </button>
             <span className="hidden sm:inline text-sm text-navy/70">
               Hi, {displayName}
             </span>
@@ -269,6 +287,15 @@ export default function DashboardLayout({
         onConfirm={confirmRetake}
         onCancel={() => setShowRetakeConfirm(false)}
       />
+
+      {userId && (
+        <LeaveTestimonialModal
+          open={showTestimonialModal}
+          onClose={() => setShowTestimonialModal(false)}
+          userId={userId}
+          defaultName={displayName}
+        />
+      )}
     </div>
   )
 }

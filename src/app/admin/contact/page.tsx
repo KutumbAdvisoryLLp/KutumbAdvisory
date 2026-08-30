@@ -2,11 +2,13 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
+import { Download } from "lucide-react";
 import { useAdminData } from "@/components/admin/AdminDataContext";
 import { useToast } from "@/components/admin/ToastContext";
 import StatusPill from "@/components/admin/StatusPill";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import LeadDetailModal from "@/components/admin/LeadDetailModal";
+import { downloadCsv } from "@/lib/exportCsv";
 import type { Lead, LeadStatus } from "@/types/admin";
 import {
   SearchIcon,
@@ -61,6 +63,43 @@ export default function AdminContactPage() {
     setDeleteTarget(null);
   };
 
+  const handleExport = () => {
+    downloadCsv("kutumb-contacts", [
+      [
+        "Full Name",
+        "Email",
+        "Phone",
+        "City",
+        "Occupation",
+        "Age Group",
+        "Contact As",
+        "Primary Goal",
+        "Preferred Meeting",
+        "Preferred Date",
+        "Preferred Time",
+        "Notes",
+        "Status",
+        "Submitted",
+      ],
+      ...filtered.map((l) => [
+        l.fullName,
+        l.email,
+        l.phone,
+        l.city,
+        l.occupation,
+        l.ageGroup,
+        l.contactAs,
+        l.primaryGoal,
+        l.preferredMeeting,
+        l.preferredDate,
+        l.preferredTime,
+        l.notes,
+        l.status,
+        formatDate(l.submittedAt),
+      ]),
+    ]);
+  };
+
   return (
     <div>
       <motion.div
@@ -97,7 +136,7 @@ export default function AdminContactPage() {
             className="h-12 w-full rounded-xl border border-navy/10 bg-white pl-11 pr-4 text-sm text-navy outline-none transition-all duration-300 focus:border-gold/30 focus:shadow-[0_0_0_3px_rgba(168,121,31,0.08)]"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {statusFilters.map((s) => (
             <button
               key={s}
@@ -111,6 +150,13 @@ export default function AdminContactPage() {
               {s}
             </button>
           ))}
+          <button
+            onClick={handleExport}
+            className="flex h-9 shrink-0 items-center gap-2 rounded-xl border border-navy/10 bg-white px-4 text-xs font-medium text-navy transition-colors duration-300 hover:bg-cream/50"
+          >
+            <Download size={14} />
+            Export to Excel
+          </button>
         </div>
       </motion.div>
 

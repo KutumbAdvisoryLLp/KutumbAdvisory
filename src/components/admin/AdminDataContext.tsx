@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useAdminAuth } from "./AdminAuthContext";
 import type { Database } from "@/lib/supabase/types";
 import type { Lead, Subscriber, AdminArticle } from "@/types/admin";
 
@@ -128,6 +129,7 @@ const AdminDataContext = createContext<AdminDataContextValue | null>(null);
 
 export function AdminDataProvider({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createClient(), []);
+  const { isAuthenticated, isLoading: authLoading } = useAdminAuth();
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -135,6 +137,13 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
   const [customerCount, setCustomerCount] = useState(0);
 
   useEffect(() => {
+    // Firing these queries before AdminAuthContext's own session check
+    // resolves races the client's auth state — the request goes out
+    // without a valid session, RLS silently returns nothing, and the
+    // dashboard looks empty until a manual refresh re-runs everything
+    // after the (by-then-warm) session is in place.
+    if (authLoading || !isAuthenticated) return;
+
     (async () => {
       const [leadsRes, subsRes, articlesRes, customersRes] = await Promise.all([
         supabase.from("leads").select("*").order("submitted_at", { ascending: false }),
@@ -154,7 +163,7 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
       }
       setLoading(false);
     })();
-  }, [supabase]);
+  }, [supabase, authLoading, isAuthenticated]);
 
   const updateLead = useCallback(
     (id: string, patch: Partial<Lead>) => {

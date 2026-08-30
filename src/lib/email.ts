@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { createAdminClient } from "./supabase/admin-client";
 
 const FROM = process.env.NEWSLETTER_FROM_EMAIL || "hello@kutumbadvisory.com";
 const FROM_NAME = "Kutumb Advisory";
@@ -7,6 +8,17 @@ const FROM_NAME = "Kutumb Advisory";
 // (process.env.RESEND_API_KEY would be undefined during static analysis).
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
+}
+
+// Resend doesn't expose a "remaining quota" API, so the admin Developer
+// page tracks daily usage against the account's limit itself — log every
+// email actually sent (not attempted) here.
+async function logEmailSend(count: number) {
+  try {
+    await createAdminClient().from("email_send_log").insert({ count });
+  } catch (err) {
+    console.error("[email] Failed to log email send:", err);
+  }
 }
 
 // ─── Shared HTML wrapper ───────────────────────────────────────────
@@ -198,24 +210,59 @@ export function buildPasswordResetOtpHtml(otp: string): string {
   );
 }
 
+// ─── 5. Signup verification OTP email ─────────────────────────────────
+export function buildSignupOtpHtml(otp: string): string {
+  return wrap(
+    `
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:600;color:#172A4A;text-align:center;">Verify Your Email</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#555555;line-height:1.6;text-align:center;">Use the 6-digit verification code below to complete your Kutumb Advisory account signup.</p>
+
+    <div style="text-align:center;margin:32px 0;">
+      <div style="display:inline-block;background:#172A4A;color:#D7A52E;font-size:32px;font-weight:700;letter-spacing:0.35em;padding:16px 36px;border-radius:12px;font-family:monospace;">
+        ${otp}
+      </div>
+    </div>
+
+    <p style="margin:0 0 16px;font-size:13px;color:#666666;text-align:center;line-height:1.5;">This verification code will expire in 15 minutes.</p>
+    <p style="margin:0;font-size:13px;color:#888888;line-height:1.6;text-align:center;">If you did not request this, please ignore this email.</p>
+    `,
+    `Your Kutumb Advisory verification code is ${otp}`
+  );
+}
+
 // ─── Sender utilities ────────────────────────────────────────────────
 
 export async function sendWelcomeEmail(to: string, name: string) {
-  return getResend().emails.send({
+  const result = await getResend().emails.send({
     from: `${FROM_NAME} <${FROM}>`,
     to,
     subject: "Welcome to Kutumb Advisory — Your Journey Begins ✦",
     html: buildWelcomeHtml(name),
   });
+  if (!result.error) await logEmailSend(1);
+  return result;
 }
 
 export async function sendPasswordResetOtpEmail(to: string, otp: string) {
-  return getResend().emails.send({
+  const result = await getResend().emails.send({
     from: `${FROM_NAME} <${FROM}>`,
     to,
     subject: `${otp} is your Kutumb Advisory password reset code`,
     html: buildPasswordResetOtpHtml(otp),
   });
+  if (!result.error) await logEmailSend(1);
+  return result;
+}
+
+export async function sendSignupOtpEmail(to: string, otp: string) {
+  const result = await getResend().emails.send({
+    from: `${FROM_NAME} <${FROM}>`,
+    to,
+    subject: `${otp} is your Kutumb Advisory verification code`,
+    html: buildSignupOtpHtml(otp),
+  });
+  if (!result.error) await logEmailSend(1);
+  return result;
 }
 
 export async function sendPaymentConfirmationEmail(
@@ -224,12 +271,14 @@ export async function sendPaymentConfirmationEmail(
   amountPaise: number,
   orderId: string
 ) {
-  return getResend().emails.send({
+  const result = await getResend().emails.send({
     from: `${FROM_NAME} <${FROM}>`,
     to,
     subject: "Payment Confirmed — Financial Kundali Unlocked ✓",
     html: buildPaymentConfirmationHtml(name, amountPaise, orderId),
   });
+  if (!result.error) await logEmailSend(1);
+  return result;
 }
 
 export async function sendNewsletterBatch(
@@ -246,6 +295,7 @@ export async function sendNewsletterBatch(
       batch.map((to) => ({ from: `${FROM_NAME} <${FROM}>`, to, subject, html }))
     );
     if (error) return { sent: i, error: error.message };
+    await logEmailSend(batch.length);
   }
 
   return { sent: recipients.length };

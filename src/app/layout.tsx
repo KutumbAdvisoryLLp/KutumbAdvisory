@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Inter, JetBrains_Mono } from "next/font/google";
 import SiteChrome from "@/components/SiteChrome";
+import { MykundaliAuthProvider } from "@/components/mykundali/AuthContext";
+import { LoadingOverlayProvider } from "@/components/LoadingOverlayContext";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -52,7 +54,11 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-dvh flex flex-col bg-white">
-        <SiteChrome>{children}</SiteChrome>
+        <LoadingOverlayProvider>
+          <MykundaliAuthProvider>
+            <SiteChrome>{children}</SiteChrome>
+          </MykundaliAuthProvider>
+        </LoadingOverlayProvider>
       </body>
     </html>
   );

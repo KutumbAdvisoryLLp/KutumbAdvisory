@@ -4,9 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAdminAuth } from "@/components/admin/AdminAuthContext";
+import { useLoadingOverlay } from "@/components/LoadingOverlayContext";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 export default function AdminLoginPage() {
-  const { isAuthenticated, isLoading, login } = useAdminAuth();
+  const { isAuthenticated, isLoading, deviceConflict, login, resolveDeviceConflict, cancelDeviceConflict } =
+    useAdminAuth();
+  const { show: showLoadingOverlay } = useLoadingOverlay();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,8 +19,10 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
+      showLoadingOverlay("Opening your dashboard...");
       router.replace("/admin");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,12 +31,13 @@ export default function AdminLoginPage() {
     setSubmitting(true);
 
     const ok = await login(email, password);
-    if (ok) {
-      router.push("/admin");
-    } else {
+    setSubmitting(false);
+    if (!ok) {
       setError("Incorrect email or password, or this account is not an admin.");
-      setSubmitting(false);
+      return;
     }
+    // If a device conflict came up, the modal below takes over — the
+    // existing isAuthenticated effect handles redirecting once resolved.
   };
 
   return (
@@ -136,6 +143,19 @@ export default function AdminLoginPage() {
           Internal use only.
         </p>
       </motion.div>
+
+      <ConfirmDialog
+        open={!!deviceConflict}
+        title="Already signed in elsewhere"
+        description={`This admin account is currently active on ${
+          deviceConflict?.deviceLabel ?? "another device"
+        }. Only one device can be signed in at a time.`}
+        confirmLabel="Log out from other devices"
+        cancelLabel="Cancel"
+        danger={false}
+        onConfirm={resolveDeviceConflict}
+        onCancel={cancelDeviceConflict}
+      />
     </div>
   );
 }

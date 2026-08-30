@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMykundaliAuth } from "@/components/mykundali/AuthContext";
 
 const KUTUMB_LOGO_URL =
   "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780312133/tree_qw9bji.png";
@@ -22,6 +25,20 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isLoggedIn, hasPaid, logout } = useMykundaliAuth();
+  const router = useRouter();
+
+  const myKundaliHref = !isLoggedIn
+    ? "/mykundali"
+    : hasPaid
+    ? "/mykundali/dashboard"
+    : "/mykundali/assessment/landing";
+
+  const handleLogout = () => {
+    logout();
+    setMobileOpen(false);
+    router.push("/");
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -96,12 +113,12 @@ export default function Navbar() {
         </div>
 
         {/* -- CTA -- */}
-        <div className="hidden lg:block">
+        <div className="hidden lg:flex items-center gap-2.5">
           <Link
-            href="/mykundali"
+            href={myKundaliHref}
             className="group relative inline-flex items-center gap-2.5 rounded-[14px] bg-white px-5 py-2.5 text-[15px] font-medium text-navy shadow-[0_2px_8px_rgba(32,27,98,0.04),0_0_0_1px_rgba(168,121,31,0.1)] transition-all duration-400 hover:bg-gold hover:text-white hover:shadow-[0_8px_24px_rgba(168,121,31,0.2),0_0_0_1px_rgba(168,121,31,0.2)] hover:-translate-y-0.5"
           >
-            <span className="relative z-10">My Kutumb</span>
+            <span className="relative z-10">My Kundali</span>
             <svg
               width="14"
               height="14"
@@ -117,6 +134,16 @@ export default function Navbar() {
               <path d="m12 5 7 7-7 7" />
             </svg>
           </Link>
+          {isLoggedIn && (
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 rounded-[14px] px-4 py-2.5 text-[15px] font-medium text-stone/60 hover:text-navy hover:bg-white/70 transition-all duration-300"
+              aria-label="Log out"
+            >
+              <LogOut size={16} strokeWidth={2} />
+              <span className="hidden xl:inline">Log out</span>
+            </button>
+          )}
         </div>
 
         {/* -- Hamburger -- */}
@@ -173,14 +200,14 @@ export default function Navbar() {
                 </MotionLink>
               ))}
               <MotionLink
-                href="/mykundali"
+                href={myKundaliHref}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: navLinks.length * 0.08 + 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 onClick={() => setMobileOpen(false)}
                 className="mt-4 flex items-center gap-3 rounded-[18px] bg-gold px-10 py-3.5 text-lg font-medium text-white shadow-xl shadow-gold/20 transition-all duration-300 hover:bg-gold-light"
               >
-                My Kutumb
+                My Kundali
                 <svg
                   width="18"
                   height="18"
@@ -195,6 +222,22 @@ export default function Navbar() {
                   <path d="m12 5 7 7-7 7" />
                 </svg>
               </MotionLink>
+              {isLoggedIn && (
+                <MotionLink
+                  href="#"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: navLinks.length * 0.08 + 0.18, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  onClick={(e: React.MouseEvent) => {
+                    e.preventDefault();
+                    handleLogout();
+                  }}
+                  className="flex items-center gap-2 text-sm font-medium text-stone/60 hover:text-navy transition-colors duration-300"
+                >
+                  <LogOut size={15} strokeWidth={2} />
+                  Log out
+                </MotionLink>
+              )}
             </div>
           </motion.div>
         )}

@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminAuth } from "./AdminAuthContext";
+import { useLoadingOverlay } from "@/components/LoadingOverlayContext";
 import AdminSidebar from "./AdminSidebar";
 import AdminTopbar from "./AdminTopbar";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAdminAuth();
+  const { hide: hideLoadingOverlay } = useLoadingOverlay();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -16,6 +18,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       router.replace("/admin/login");
     }
   }, [isLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      hideLoadingOverlay();
+    }
+  }, [isLoading, isAuthenticated, hideLoadingOverlay]);
 
   if (isLoading || !isAuthenticated) {
     return (

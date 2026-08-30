@@ -309,6 +309,55 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["payments"]["Insert"]>;
         Relationships: [];
       };
+      device_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          user_type: "admin" | "mykundali";
+          device_id: string;
+          device_label: string | null;
+          last_seen_at: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["device_sessions"]["Row"], "id" | "last_seen_at" | "created_at"> & {
+          id?: string;
+          last_seen_at?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["device_sessions"]["Insert"]>;
+        Relationships: [];
+      };
+      testimonial_submissions: {
+        Row: {
+          id: string;
+          customer_id: string | null;
+          name: string;
+          testimonial: string;
+          status: "new" | "featured" | "dismissed";
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["testimonial_submissions"]["Row"], "id" | "status" | "created_at"> & {
+          id?: string;
+          status?: "new" | "featured" | "dismissed";
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["testimonial_submissions"]["Insert"]>;
+        Relationships: [];
+      };
+      email_send_log: {
+        Row: {
+          id: string;
+          count: number;
+          sent_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["email_send_log"]["Row"], "id" | "count" | "sent_at"> & {
+          id?: string;
+          count?: number;
+          sent_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["email_send_log"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

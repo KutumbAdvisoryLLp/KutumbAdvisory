@@ -16,7 +16,9 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+import { Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { downloadCsv } from "@/lib/exportCsv";
 
 const NAVY = "#201B62";
 const GOLD = "#A8791F";
@@ -193,22 +195,60 @@ export default function AdminAnalyticsPage() {
 
   const inProgressAssessments = Math.max(0, totalCustomers - completedAssessments);
 
+  const handleExport = () => {
+    downloadCsv("kutumb-analytics", [
+      ["Summary"],
+      ["Metric", "Value"],
+      ["Total Leads", totalLeads],
+      ["Newsletter Subscribers", totalSubscribers],
+      ["Registered Customers", totalCustomers],
+      ["Assessments Completed", completedAssessments],
+      ["Assessments In Progress", inProgressAssessments],
+      [],
+      ["Page Views — Last 14 Days"],
+      ["Date", "Views"],
+      ...pageViewsData.map((d) => [d.date, d.views]),
+      [],
+      ["Leads Over Time — Last 14 Days"],
+      ["Date", "Leads"],
+      ...leadsOverTimeData.map((d) => [d.date, d.leads]),
+      [],
+      ["Top Pages — Last 14 Days"],
+      ["Page", "Views"],
+      ...topPagesData.map((d) => [d.page, d.views]),
+      [],
+      ["Traffic Sources — Last 14 Days"],
+      ["Source", "Share %"],
+      ...trafficSourcesData.map((d) => [d.source, d.value]),
+    ]);
+  };
+
   return (
     <div>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
-        <p className="text-xs font-semibold tracking-[0.12em] uppercase text-[#B8862B]">
-          Analytics
-        </p>
-        <h1 className="mt-3 font-serif text-3xl text-navy sm:text-4xl">
-          Site Analytics
-        </h1>
-        <p className="mt-2 text-sm text-stone/60">
-          Traffic and lead trends across the Kutumb Advisory website.
-        </p>
+        <div>
+          <p className="text-xs font-semibold tracking-[0.12em] uppercase text-[#B8862B]">
+            Analytics
+          </p>
+          <h1 className="mt-3 font-serif text-3xl text-navy sm:text-4xl">
+            Site Analytics
+          </h1>
+          <p className="mt-2 text-sm text-stone/60">
+            Traffic and lead trends across the Kutumb Advisory website.
+          </p>
+        </div>
+        <button
+          onClick={handleExport}
+          className="flex h-11 shrink-0 items-center gap-2 rounded-xl border border-navy/10 bg-white px-4 text-sm font-medium text-navy transition-colors duration-300 hover:bg-cream/50"
+        >
+          <Download size={15} />
+          Export to Excel
+        </button>
       </motion.div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

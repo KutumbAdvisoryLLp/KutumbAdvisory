@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { downloadCsv } from "@/lib/exportCsv";
 import { SearchIcon, UsersIcon } from "@/components/icons/admin";
 import CustomerDetailModal from "@/components/admin/CustomerDetailModal";
 
@@ -71,6 +73,20 @@ export default function AdminCustomersPage() {
     );
   }, [customers, search]);
 
+  const handleExport = () => {
+    downloadCsv("kutumb-customers", [
+      ["Full Name", "Email", "Phone", "Signed Up", "Status", "Score"],
+      ...filtered.map((c) => [
+        c.fullName,
+        c.email,
+        c.phone,
+        formatDate(c.createdAt),
+        statusLabel[c.status],
+        c.overallScore !== null ? `${c.overallScore}/90` : "",
+      ]),
+    ]);
+  };
+
   const statusLabel: Record<CustomerListItem["status"], string> = {
     "not-started": "Not started",
     "in-progress": "Assessment in progress",
@@ -105,18 +121,27 @@ export default function AdminCustomersPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative mt-8 w-full max-w-sm"
+        className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
-        <SearchIcon
-          size={16}
-          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-stone/30"
-        />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name or email"
-          className="h-12 w-full rounded-xl border border-navy/10 bg-white pl-11 pr-4 text-sm text-navy outline-none transition-all duration-300 focus:border-gold/30 focus:shadow-[0_0_0_3px_rgba(168,121,31,0.08)]"
-        />
+        <div className="relative w-full max-w-sm">
+          <SearchIcon
+            size={16}
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-stone/30"
+          />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email"
+            className="h-12 w-full rounded-xl border border-navy/10 bg-white pl-11 pr-4 text-sm text-navy outline-none transition-all duration-300 focus:border-gold/30 focus:shadow-[0_0_0_3px_rgba(168,121,31,0.08)]"
+          />
+        </div>
+        <button
+          onClick={handleExport}
+          className="flex h-11 shrink-0 items-center gap-2 rounded-xl border border-navy/10 bg-white px-4 text-sm font-medium text-navy transition-colors duration-300 hover:bg-cream/50"
+        >
+          <Download size={15} />
+          Export to Excel
+        </button>
       </motion.div>
 
       <motion.div

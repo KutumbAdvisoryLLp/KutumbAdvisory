@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "@/components/Button";
 import { useMykundaliAuth } from "@/components/mykundali/AuthContext";
+import { isAllowedEmailDomain, ALLOWED_EMAIL_PROVIDERS_LABEL } from "@/lib/allowedEmailDomains";
+import { useLoadingOverlay } from "@/components/LoadingOverlayContext";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
-type Mode = "signin" | "signup" | "forgot-request" | "forgot-verify";
+type Mode = "signin" | "signup" | "signup-verify" | "forgot-request" | "forgot-verify";
 
 interface FormState {
   fullName: string;
@@ -74,7 +77,17 @@ function FloatingInput({
 
 export default function MykundaliLoginPage() {
   const router = useRouter();
-  const { signUp, login, requestPasswordReset, verifyOtpAndResetPassword } = useMykundaliAuth();
+  const {
+    sendSignupOtp,
+    verifySignupOtp,
+    login,
+    requestPasswordReset,
+    verifyOtpAndResetPassword,
+    deviceConflict,
+    resolveDeviceConflict,
+    cancelDeviceConflict,
+  } = useMykundaliAuth();
+  const { show: showLoadingOverlay } = useLoadingOverlay();
   const [mode, setMode] = useState<Mode>("signin");
   const [form, setForm] = useState<FormState>(initialForm);
   const [otp, setOtp] = useState("");
@@ -106,6 +119,8 @@ export default function MykundaliLoginPage() {
     }
     if ((mode === "signin" || mode === "signup" || mode === "forgot-request") && !form.email.trim()) {
       errs.email = "Please enter your email";
+    } else if (mode === "signup" && form.email.trim() && !isAllowedEmailDomain(form.email)) {
+      errs.email = `Please use an email from one of these providers: ${ALLOWED_EMAIL_PROVIDERS_LABEL}.`;
     }
     if (mode === "signup" && !form.phone.trim()) {
       errs.phone = "Please enter your phone number";
@@ -116,6 +131,9 @@ export default function MykundaliLoginPage() {
     if (mode === "forgot-verify") {
       if (!otp.trim()) errs.otp = "Please enter the OTP verification code";
       if (!newPassword.trim()) errs.newPassword = "Please enter your new password";
+    }
+    if (mode === "signup-verify" && !otp.trim()) {
+      errs.otp = "Please enter the verification code";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -156,6 +174,20 @@ export default function MykundaliLoginPage() {
     }
   };
 
+  const handleSignupVerify = async () => {
+    if (!validate()) return;
+    setSubmitting(true);
+    setFormError("");
+    const result = await verifySignupOtp(form.email, otp);
+    setSubmitting(false);
+    if (!result.ok) {
+      setFormError(result.error ?? "Invalid or expired verification code.");
+      return;
+    }
+    showLoadingOverlay("Setting up your account...");
+    router.push("/mykundali/assessment/landing");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -167,28 +199,48 @@ export default function MykundaliLoginPage() {
     if (mode === "forgot-verify") {
       return handleForgotVerify();
     }
+    if (mode === "signup-verify") {
+      return handleSignupVerify();
+    }
 
     if (!validate()) return;
 
     setSubmitting(true);
 
-    const result =
-      mode === "signup"
-        ? await signUp({
-            fullName: form.fullName,
-            email: form.email,
-            phone: form.phone,
-            password: form.password,
-          })
-        : await login({ email: form.email, password: form.password });
-
-    if (!result.ok) {
-      setFormError(result.error ?? "Something went wrong. Please try again.");
+    if (mode === "signup") {
+      const result = await sendSignupOtp({
+        fullName: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+      });
       setSubmitting(false);
+      if (!result.ok) {
+        setFormError(result.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+      setOtp("");
+      setInfoMessage(`Verification code sent to ${form.email}. Please check your inbox.`);
+      setMode("signup-verify");
       return;
     }
 
-    router.push(mode === "signup" ? "/mykundali/assessment/landing" : "/mykundali/dashboard");
+    const result = await login({ email: form.email, password: form.password });
+
+    setSubmitting(false);
+
+    if (!result.ok) {
+      setFormError(result.error ?? "Something went wrong. Please try again.");
+      return;
+    }
+
+    if ("deviceConflict" in result && result.deviceConflict) {
+      // The conflict modal below takes over — it navigates once resolved.
+      return;
+    }
+
+    showLoadingOverlay("Opening your dashboard...");
+    router.push("/mykundali/dashboard");
   };
 
   const isForgot = mode === "forgot-request" || mode === "forgot-verify";
@@ -205,6 +257,8 @@ export default function MykundaliLoginPage() {
               ? "Welcome Back"
               : mode === "signup"
               ? "Create Your Account"
+              : mode === "signup-verify"
+              ? "Verify Your Email"
               : mode === "forgot-request"
               ? "Reset Password"
               : "Verify OTP Code"}
@@ -214,14 +268,16 @@ export default function MykundaliLoginPage() {
               ? "Sign in to continue your Financial Kundali."
               : mode === "signup"
               ? "Begin your family's Financial Kundali journey."
+              : mode === "signup-verify"
+              ? `Enter the verification code sent to ${form.email}.`
               : mode === "forgot-request"
               ? "Enter your email to receive a password reset OTP code."
               : `Enter the OTP code sent to ${form.email} and choose a new password.`}
           </p>
         </div>
 
-        {/* Mode Toggle (hide during forgot flow) */}
-        {!isForgot && (
+        {/* Mode Toggle (hide during forgot flow and signup verification) */}
+        {!isForgot && mode !== "signup-verify" && (
           <div className="flex items-center rounded-xl bg-white border border-navy/8 p-1 mb-8">
             <button
               type="button"
@@ -281,7 +337,7 @@ export default function MykundaliLoginPage() {
               )}
             </AnimatePresence>
 
-            {mode !== "forgot-verify" && (
+            {mode !== "forgot-verify" && mode !== "signup-verify" && (
               <FloatingInput
                 label="Email Address"
                 name="email"
@@ -369,6 +425,20 @@ export default function MykundaliLoginPage() {
               </>
             )}
 
+            {mode === "signup-verify" && (
+              <FloatingInput
+                label="Verification Code"
+                name="otp"
+                type="text"
+                value={otp}
+                error={errors.otp}
+                onChange={(e) => {
+                  setOtp(e.target.value);
+                  if (errors.otp) setErrors((prev) => ({ ...prev, otp: "" }));
+                }}
+              />
+            )}
+
             {formError && (
               <p className="text-center text-[13px] text-red-500">
                 {typeof formError === "string" ? formError : (formError as any)?.message || "Something went wrong."}
@@ -386,7 +456,9 @@ export default function MykundaliLoginPage() {
               {mode === "signin"
                 ? "Sign In"
                 : mode === "signup"
-                ? "Create Account"
+                ? "Send Verification Code"
+                : mode === "signup-verify"
+                ? "Verify & Create Account"
                 : mode === "forgot-request"
                 ? "Send Verification Code"
                 : "Reset Password"}
@@ -407,9 +479,43 @@ export default function MykundaliLoginPage() {
                 </button>
               </div>
             )}
+
+            {mode === "signup-verify" && (
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("signup");
+                    setOtp("");
+                    setFormError("");
+                    setInfoMessage("");
+                  }}
+                  className="text-xs text-stone/60 hover:text-navy font-medium transition-colors"
+                >
+                  ← Back to edit details
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deviceConflict}
+        title="Already signed in elsewhere"
+        description={`Your account is currently active on ${
+          deviceConflict?.deviceLabel ?? "another device"
+        }. Only one device can be signed in at a time.`}
+        confirmLabel="Log out from other devices"
+        cancelLabel="Cancel"
+        danger={false}
+        onConfirm={async () => {
+          await resolveDeviceConflict();
+          showLoadingOverlay("Opening your dashboard...");
+          router.push("/mykundali/dashboard");
+        }}
+        onCancel={cancelDeviceConflict}
+      />
     </div>
   );
 }

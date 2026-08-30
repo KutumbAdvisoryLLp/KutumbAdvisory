@@ -10,44 +10,51 @@ const defaultTeam = [
   {
     name: "Raunak",
     role: "Technology & Digital",
-    bio: "Leads technology strategy and digital transformation at Kutumb, building platforms that make family wealth management accessible and intuitive.",
+    bio: "Social media strategy and technology operations keeping Kutumb's client experience seamless and modern.",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301027/raunak_ftpboc.png",
   },
   {
     name: "Tanishq",
     role: "Client Relations",
-    bio: "Ensures every family receives the highest standard of care and attention. Specialises in building long-term relationships rooted in trust.",
+    bio: "Ensuring every family receives attentive, responsive service from the first conversation through every milestone.",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780394568/tanishq_i9einp.png",
   },
   {
     name: "Harsh",
     role: "CRM & Operations",
-    bio: "Manages the systems and processes that power Kutumb's advisory framework, ensuring seamless service delivery for every family.",
+    bio: "Managing client relationships and internal coordination so your experience with Kutumb is always coherent and reliable.",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780394568/harsh_ftie7y.png",
   },
   {
     name: "Atri Ganguly",
     role: "Compliance & Legal",
-    bio: "Oversees regulatory compliance, legal frameworks, and governance structures that protect both Kutumb and the families we serve.",
+    bio: "25+ years of senior management experience across portfolio management, financial planning, and risk management. Our families' interests are legally protected at every step.",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301670/attri_rcnc0p.png",
   },
   {
     name: "Tejpal Singh Bagga",
     role: "Investments & Portfolio",
-    bio: "Leads investment strategy and portfolio construction, bringing deep expertise in asset allocation and wealth preservation.",
+    bio: "Certified financial planner with 20+ years advising on mutual funds, SIFs, AIFs, and portfolio structuring for HNI families.",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301742/tejpal_bzcxev.png",
   },
   {
     name: "Soumik Saha",
     role: "Portfolio Management",
-    bio: "Manages day-to-day portfolio operations, performance monitoring, and rebalancing to ensure every family's portfolio stays aligned with their goals.",
+    bio: "CFP(CM) with 20+ years supporting financial advisory professionals and HNI investors across bonds, AIFs, ETFs, and structured products.",
     image:
       "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301742/soumik_qfrcte.png",
+  },
+  {
+    name: "Sarbani Sadhu Das",
+    role: "Insurance Specialist",
+    bio: "Experienced sales and distribution professional focused on mediclaim, general insurance, and investor engagement across cross-functional mandates.",
+    image:
+      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
   },
 ];
 

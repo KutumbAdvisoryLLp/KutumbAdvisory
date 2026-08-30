@@ -15,8 +15,18 @@ import {
   Server,
   Key,
   Layers,
+  ShieldAlert,
+  UserX,
+  Mail,
+  MessageSquareX,
+  Quote,
+  Send,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/admin/ToastContext";
+import DangerConfirmModal from "@/components/admin/DangerConfirmModal";
+
+type DangerAction = "customers" | "newsletter" | "contacts" | "testimonials" | null;
 
 interface TableStats {
   customers: number;
@@ -28,8 +38,15 @@ interface TableStats {
   pageViews: number;
 }
 
+// Resend's free-tier daily cap — bump this if the account is on a plan
+// without that limit. Resend has no "remaining quota" API, so usage is
+// tracked in our own email_send_log table instead.
+const DAILY_EMAIL_LIMIT = 100;
+
 export default function AdminDeveloperPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { showToast } = useToast();
+  const [activeDanger, setActiveDanger] = useState<DangerAction>(null);
   const [stats, setStats] = useState<TableStats>({
     customers: 0,
     familyProfiles: 0,
@@ -40,6 +57,7 @@ export default function AdminDeveloperPage() {
     pageViews: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [emailsSentToday, setEmailsSentToday] = useState(0);
 
   // Key Visibility toggles
   const [showAnon, setShowAnon] = useState(false);
@@ -56,7 +74,10 @@ export default function AdminDeveloperPage() {
 
   const fetchStats = async () => {
     setLoading(true);
-    const [c, fp, ar, l, ns, a, pv] = await Promise.all([
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const [c, fp, ar, l, ns, a, pv, emailLog] = await Promise.all([
       supabase.from("customers").select("*", { count: "exact", head: true }),
       supabase.from("family_profiles").select("*", { count: "exact", head: true }),
       supabase.from("assessment_results").select("*", { count: "exact", head: true }),
@@ -64,6 +85,7 @@ export default function AdminDeveloperPage() {
       supabase.from("newsletter_subscribers").select("*", { count: "exact", head: true }),
       supabase.from("articles").select("*", { count: "exact", head: true }),
       supabase.from("page_views").select("*", { count: "exact", head: true }),
+      supabase.from("email_send_log").select("count").gte("sent_at", startOfToday.toISOString()),
     ]);
 
     setStats({
@@ -75,6 +97,7 @@ export default function AdminDeveloperPage() {
       articles: a.count ?? 0,
       pageViews: pv.count ?? 0,
     });
+    setEmailsSentToday((emailLog.data ?? []).reduce((sum: number, r: { count: number }) => sum + r.count, 0));
     setLoading(false);
   };
 
@@ -98,6 +121,54 @@ export default function AdminDeveloperPage() {
       latency: Math.round(end - start),
     });
     setPinging(false);
+  };
+
+  const handleDeleteCustomers = async () => {
+    const res = await fetch("/api/admin/danger/delete-all-customers", { method: "POST" });
+    const body = await res.json();
+    if (!res.ok) {
+      showToast(body.error ?? "Could not delete customers.", "error");
+      return;
+    }
+    showToast(`Deleted ${body.deleted} customer account(s) and all their data.`, "success");
+    setActiveDanger(null);
+    fetchStats();
+  };
+
+  const handleDeleteNewsletter = async () => {
+    const { error } = await supabase.from("newsletter_subscribers").delete().not("id", "is", null);
+    if (error) {
+      showToast(error.message, "error");
+      return;
+    }
+    showToast("Deleted all newsletter signups.", "success");
+    setActiveDanger(null);
+    fetchStats();
+  };
+
+  const handleDeleteContacts = async () => {
+    const { error } = await supabase.from("leads").delete().not("id", "is", null);
+    if (error) {
+      showToast(error.message, "error");
+      return;
+    }
+    showToast("Deleted all contacts.", "success");
+    setActiveDanger(null);
+    fetchStats();
+  };
+
+  const handleDeleteTestimonials = async () => {
+    const [a, b] = await Promise.all([
+      supabase.from("testimonials").delete().not("id", "is", null),
+      supabase.from("testimonial_submissions").delete().not("id", "is", null),
+    ]);
+    if (a.error || b.error) {
+      showToast(a.error?.message ?? b.error?.message ?? "Could not delete testimonials.", "error");
+      return;
+    }
+    showToast("Deleted all testimonials and submissions.", "success");
+    setActiveDanger(null);
+    fetchStats();
   };
 
   // Estimated Database calculations
@@ -208,6 +279,39 @@ export default function AdminDeveloperPage() {
             Registered customer accounts in Supabase Auth system.
           </p>
         </div>
+      </div>
+
+      {/* Email Quota Card */}
+      <div className="rounded-2xl bg-white p-6 shadow-card border border-stone/10">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-xs font-semibold uppercase tracking-wider text-stone/60 flex items-center gap-2">
+            <Send size={16} className="text-gold" />
+            <span>Email Quota (Resend)</span>
+          </span>
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-mono bg-emerald-100 text-emerald-800 font-medium">
+            {Math.max(0, DAILY_EMAIL_LIMIT - emailsSentToday)} remaining today
+          </span>
+        </div>
+
+        <div className="flex items-baseline gap-2 mb-2">
+          <span className="font-serif text-3xl font-bold text-navy">
+            {loading ? "..." : emailsSentToday}
+          </span>
+          <span className="text-xs text-stone/50">/ {DAILY_EMAIL_LIMIT} emails sent today</span>
+        </div>
+
+        <div className="h-2.5 w-full rounded-full bg-cream overflow-hidden mb-3 border border-stone/10">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-gold to-gold-dark transition-all duration-500"
+            style={{
+              width: `${Math.min(100, Math.max(2, (emailsSentToday / DAILY_EMAIL_LIMIT) * 100))}%`,
+            }}
+          />
+        </div>
+
+        <p className="text-xs text-stone/60">
+          Counts welcome, OTP, payment, and newsletter emails actually sent today. Resets at midnight.
+        </p>
       </div>
 
       {/* Table Record Breakdown */}
@@ -403,6 +507,95 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)`}</pre>
         </div>
       </div>
+
+      {/* Danger Zone */}
+      <div className="rounded-2xl bg-white p-6 sm:p-8 shadow-card border border-red-200 space-y-5">
+        <div>
+          <h2 className="font-serif text-xl text-red-600 flex items-center gap-2">
+            <ShieldAlert size={20} />
+            <span>Danger Zone</span>
+          </h2>
+          <p className="text-xs text-stone/60 mt-1">
+            These actions permanently delete data and cannot be undone. Each requires typing
+            &ldquo;delete&rdquo; and your admin password to confirm.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            onClick={() => setActiveDanger("customers")}
+            className="flex items-center gap-3 p-4 rounded-xl border border-red-200 bg-red-50/40 hover:bg-red-50 transition-colors text-left"
+          >
+            <UserX className="text-red-600 shrink-0" size={20} />
+            <div>
+              <p className="text-sm font-semibold text-navy">Delete All Users &amp; Their Data</p>
+              <p className="text-xs text-stone/60">Every customer account, assessment, and payment record.</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveDanger("newsletter")}
+            className="flex items-center gap-3 p-4 rounded-xl border border-red-200 bg-red-50/40 hover:bg-red-50 transition-colors text-left"
+          >
+            <Mail className="text-red-600 shrink-0" size={20} />
+            <div>
+              <p className="text-sm font-semibold text-navy">Delete All Newsletter Signups</p>
+              <p className="text-xs text-stone/60">Every row in the newsletter subscribers list.</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveDanger("contacts")}
+            className="flex items-center gap-3 p-4 rounded-xl border border-red-200 bg-red-50/40 hover:bg-red-50 transition-colors text-left"
+          >
+            <MessageSquareX className="text-red-600 shrink-0" size={20} />
+            <div>
+              <p className="text-sm font-semibold text-navy">Delete All Contacts</p>
+              <p className="text-xs text-stone/60">Every lead submitted via the contact form and signups.</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveDanger("testimonials")}
+            className="flex items-center gap-3 p-4 rounded-xl border border-red-200 bg-red-50/40 hover:bg-red-50 transition-colors text-left"
+          >
+            <Quote className="text-red-600 shrink-0" size={20} />
+            <div>
+              <p className="text-sm font-semibold text-navy">Delete All Testimonials</p>
+              <p className="text-xs text-stone/60">Published testimonials and pending customer submissions.</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <DangerConfirmModal
+        open={activeDanger === "customers"}
+        title="Delete all users?"
+        description="This permanently deletes every customer account, including their assessment answers, results, family profiles, and payment records. This cannot be undone."
+        onCancel={() => setActiveDanger(null)}
+        onConfirm={handleDeleteCustomers}
+      />
+      <DangerConfirmModal
+        open={activeDanger === "newsletter"}
+        title="Delete all newsletter signups?"
+        description="This permanently deletes every newsletter subscriber. This cannot be undone."
+        onCancel={() => setActiveDanger(null)}
+        onConfirm={handleDeleteNewsletter}
+      />
+      <DangerConfirmModal
+        open={activeDanger === "contacts"}
+        title="Delete all contacts?"
+        description="This permanently deletes every lead submitted through the contact form and account signups. This cannot be undone."
+        onCancel={() => setActiveDanger(null)}
+        onConfirm={handleDeleteContacts}
+      />
+      <DangerConfirmModal
+        open={activeDanger === "testimonials"}
+        title="Delete all testimonials?"
+        description="This permanently deletes every published testimonial and every pending customer submission. This cannot be undone."
+        onCancel={() => setActiveDanger(null)}
+        onConfirm={handleDeleteTestimonials}
+      />
     </div>
   );
 }

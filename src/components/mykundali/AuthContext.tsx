@@ -1,11 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getDeviceId, getDeviceLabel } from "@/lib/deviceInfo";
 
 export interface MykundaliUser {
   fullName: string;
   email: string;
+}
+
+export interface DeviceConflict {
+  deviceLabel: string;
 }
 
 interface SignUpParams {
@@ -23,6 +28,7 @@ interface LoginParams {
 interface AuthResult {
   ok: boolean;
   error?: string;
+  deviceConflict?: boolean;
 }
 
 interface AuthContextValue {
@@ -30,8 +36,13 @@ interface AuthContextValue {
   hydrated: boolean;
   user: MykundaliUser | null;
   userId: string | null;
-  signUp: (params: SignUpParams) => Promise<AuthResult>;
+  hasPaid: boolean;
+  deviceConflict: DeviceConflict | null;
+  sendSignupOtp: (params: SignUpParams) => Promise<AuthResult>;
+  verifySignupOtp: (email: string, otp: string) => Promise<AuthResult>;
   login: (params: LoginParams) => Promise<AuthResult>;
+  resolveDeviceConflict: () => Promise<void>;
+  cancelDeviceConflict: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<AuthResult>;
   verifyOtpAndResetPassword: (email: string, otp: string, newPassword: string) => Promise<AuthResult>;
   logout: () => void;
@@ -84,6 +95,34 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
   const [user, setUser] = useState<MykundaliUser | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [hasPaid, setHasPaid] = useState(false);
+  const [deviceConflict, setDeviceConflict] = useState<DeviceConflict | null>(null);
+  const pendingLoginRef = useRef(false);
+  const pendingCustomerRef = useRef<{ id: string; customer: MykundaliUser } | null>(null);
+
+  // Reacts to userId however it gets set (login, hydration, signup, device
+  // conflict resolution) — single source of truth for "has this customer
+  // unlocked their dashboard" instead of duplicating a payments fetch at
+  // every place userId can change.
+  useEffect(() => {
+    let active = true;
+    if (!userId) {
+      setHasPaid(false);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("customer_id", userId)
+        .eq("status", "paid")
+        .maybeSingle();
+      if (active) setHasPaid(!!data);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [userId, supabase]);
 
   useEffect(() => {
     let active = true;
@@ -109,6 +148,11 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
     })();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
+      // While login() is resolving a possible device conflict, it owns the
+      // authenticated-state transition — this listener would otherwise race
+      // it and log the user in before the conflict modal can be shown.
+      if (pendingLoginRef.current) return;
+
       if (!session?.user) {
         setUser(null);
         setUserId(null);
@@ -125,27 +169,48 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
     };
   }, [supabase]);
 
-  const signUp = useCallback(
-    async ({ fullName, email, phone, password }: SignUpParams): Promise<AuthResult> => {
-      const res = await fetch("/api/mykundali/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName: fullName.trim(), email: email.trim(), phone: phone.trim(), password }),
+  const sendSignupOtp = useCallback(async ({ fullName, email, phone, password }: SignUpParams): Promise<AuthResult> => {
+    const res = await fetch("/api/mykundali/auth/send-signup-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fullName: fullName.trim(), email: email.trim(), phone: phone.trim(), password }),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      return { ok: false, error: body.error ?? "Could not start signup" };
+    }
+    return { ok: true };
+  }, []);
+
+  const verifySignupOtp = useCallback(
+    async (email: string, otp: string): Promise<AuthResult> => {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otp.trim(),
+        type: "signup",
       });
+      if (error || !data.session || !data.user) {
+        return { ok: false, error: error?.message ?? "Invalid or expired verification code." };
+      }
+
+      const res = await fetch("/api/mykundali/signup/finalize", { method: "POST" });
       const body = await res.json();
       if (!res.ok) {
-        return { ok: false, error: body.error ?? "Could not create account" };
+        return { ok: false, error: body.error ?? "Could not finish creating your account." };
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (error || !data.user) {
-        return { ok: false, error: error?.message ?? "Account created — please sign in." };
-      }
+      await supabase.from("device_sessions").upsert(
+        {
+          user_id: data.user.id,
+          user_type: "mykundali",
+          device_id: getDeviceId(),
+          device_label: getDeviceLabel(),
+          last_seen_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,device_id" }
+      );
 
-      setUser({ fullName: fullName.trim(), email: email.trim() });
+      setUser({ fullName: body.fullName, email: body.email });
       setUserId(data.user.id);
       return { ok: true };
     },
@@ -154,27 +219,90 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
 
   const login = useCallback(
     async ({ email, password }: LoginParams): Promise<AuthResult> => {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      pendingLoginRef.current = true;
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
 
-      if (error || !data.user) {
-        return { ok: false, error: error?.message ?? "Incorrect email or password." };
+        if (error || !data.user) {
+          return { ok: false, error: error?.message ?? "Incorrect email or password." };
+        }
+
+        const customer = await fetchCustomer(data.user.id);
+        if (!customer) {
+          await supabase.auth.signOut();
+          return { ok: false, error: "This account is not registered as a customer." };
+        }
+
+        const deviceId = getDeviceId();
+        const { data: others } = await supabase
+          .from("device_sessions")
+          .select("device_label")
+          .eq("user_id", data.user.id)
+          .neq("device_id", deviceId);
+
+        if (others && others.length > 0) {
+          pendingCustomerRef.current = { id: data.user.id, customer };
+          setDeviceConflict({ deviceLabel: others[0].device_label || "another device" });
+          return { ok: true, deviceConflict: true };
+        }
+
+        await supabase.from("device_sessions").upsert(
+          {
+            user_id: data.user.id,
+            user_type: "mykundali",
+            device_id: deviceId,
+            device_label: getDeviceLabel(),
+            last_seen_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,device_id" }
+        );
+
+        setUser(customer);
+        setUserId(data.user.id);
+        return { ok: true };
+      } finally {
+        pendingLoginRef.current = false;
       }
-
-      const customer = await fetchCustomer(data.user.id);
-      if (!customer) {
-        await supabase.auth.signOut();
-        return { ok: false, error: "This account is not registered as a customer." };
-      }
-
-      setUser(customer);
-      setUserId(data.user.id);
-      return { ok: true };
     },
     [supabase]
   );
+
+  const resolveDeviceConflict = useCallback(async () => {
+    const pending = pendingCustomerRef.current;
+    if (!pending) return;
+
+    const deviceId = getDeviceId();
+    await supabase.auth.signOut({ scope: "others" });
+    await supabase
+      .from("device_sessions")
+      .delete()
+      .eq("user_id", pending.id)
+      .neq("device_id", deviceId);
+    await supabase.from("device_sessions").upsert(
+      {
+        user_id: pending.id,
+        user_type: "mykundali",
+        device_id: deviceId,
+        device_label: getDeviceLabel(),
+        last_seen_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,device_id" }
+    );
+
+    setUser(pending.customer);
+    setUserId(pending.id);
+    setDeviceConflict(null);
+    pendingCustomerRef.current = null;
+  }, [supabase]);
+
+  const cancelDeviceConflict = useCallback(async () => {
+    await supabase.auth.signOut();
+    setDeviceConflict(null);
+    pendingCustomerRef.current = null;
+  }, [supabase]);
 
   const requestPasswordReset = useCallback(
     async (email: string): Promise<AuthResult> => {
@@ -218,10 +346,13 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
   );
 
   const logout = useCallback(() => {
+    if (userId) {
+      supabase.from("device_sessions").delete().eq("user_id", userId).eq("device_id", getDeviceId()).then();
+    }
     supabase.auth.signOut();
     setUser(null);
     setUserId(null);
-  }, [supabase]);
+  }, [supabase, userId]);
 
   return (
     <AuthContext.Provider
@@ -230,8 +361,13 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
         hydrated,
         user,
         userId,
-        signUp,
+        hasPaid,
+        deviceConflict,
+        sendSignupOtp,
+        verifySignupOtp,
         login,
+        resolveDeviceConflict,
+        cancelDeviceConflict,
         requestPasswordReset,
         verifyOtpAndResetPassword,
         logout,

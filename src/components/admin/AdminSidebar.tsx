@@ -14,12 +14,13 @@ import {
   SettingsIcon,
   CloseIcon,
 } from "@/components/icons/admin";
-import { Megaphone, MessageSquareQuote, HelpCircle, UserCheck, Code2 } from "lucide-react";
+import { Megaphone, MessageSquareQuote, HelpCircle, UserCheck, Code2, Inbox } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: DashboardIcon },
   { label: "Banners", href: "/admin/banners", icon: Megaphone },
   { label: "Testimonials", href: "/admin/testimonials", icon: MessageSquareQuote },
+  { label: "View Testimonials", href: "/admin/testimonial-submissions", icon: Inbox },
   { label: "FAQs", href: "/admin/faqs", icon: HelpCircle },
   { label: "Team", href: "/admin/team", icon: UserCheck },
   { label: "Journal", href: "/admin/journal", icon: JournalAdminIcon },

@@ -19,6 +19,9 @@
 -- ═══════════════════════════════════════════════════════════════════
 create extension if not exists pgcrypto;
 
+drop table if exists public.email_send_log          cascade;
+drop table if exists public.testimonial_submissions cascade;
+drop table if exists public.device_sessions         cascade;
 drop table if exists public.payments               cascade;
 drop table if exists public.page_views              cascade;
 drop table if exists public.newsletter_sends        cascade;
@@ -242,6 +245,32 @@ create table public.payments (
   created_at          timestamptz not null default now()
 );
 
+create table public.device_sessions (
+  id            uuid        primary key default gen_random_uuid(),
+  user_id       uuid        not null references auth.users(id) on delete cascade,
+  user_type     text        not null check (user_type in ('admin','mykundali')),
+  device_id     text        not null,
+  device_label  text,
+  last_seen_at  timestamptz not null default now(),
+  created_at    timestamptz not null default now(),
+  unique (user_id, device_id)
+);
+
+create table public.testimonial_submissions (
+  id            uuid        primary key default gen_random_uuid(),
+  customer_id   uuid        references public.customers(id) on delete set null,
+  name          text        not null,
+  testimonial   text        not null,
+  status        text        not null default 'new' check (status in ('new','featured','dismissed')),
+  created_at    timestamptz not null default now()
+);
+
+create table public.email_send_log (
+  id       uuid        primary key default gen_random_uuid(),
+  count    integer     not null default 1,
+  sent_at  timestamptz not null default now()
+);
+
 -- ═══════════════════════════════════════════════════════════════════
 -- 6. ROW LEVEL SECURITY (RLS) & POLICIES
 -- ═══════════════════════════════════════════════════════════════════
@@ -261,6 +290,9 @@ alter table public.assessment_results     enable row level security;
 alter table public.newsletter_sends       enable row level security;
 alter table public.page_views             enable row level security;
 alter table public.payments               enable row level security;
+alter table public.device_sessions        enable row level security;
+alter table public.testimonial_submissions enable row level security;
+alter table public.email_send_log         enable row level security;
 
 create policy "Admins can view admin_users" on public.admin_users for select using (true);
 
@@ -300,6 +332,13 @@ create policy "Public insert page_views" on public.page_views for insert with ch
 create policy "Admins view page_views" on public.page_views for select using (auth.uid() in (select id from public.admin_users));
 
 create policy "Customers view own payments" on public.payments for select using (auth.uid() = customer_id or auth.uid() in (select id from public.admin_users));
+
+create policy "Users manage own device sessions" on public.device_sessions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "Customers submit testimonials" on public.testimonial_submissions for insert with check (auth.uid() = customer_id);
+create policy "Admins manage testimonial submissions" on public.testimonial_submissions for all using (auth.uid() in (select id from public.admin_users));
+
+create policy "Admins view email_send_log" on public.email_send_log for select using (auth.uid() in (select id from public.admin_users));
 create policy "Admins manage payments" on public.payments for all using (auth.uid() in (select id from public.admin_users));
 
 -- ═══════════════════════════════════════════════════════════════════
@@ -337,13 +376,19 @@ values
 insert into public.team_members (name, role, bio, image_url, linkedin_url, is_founder, display_order)
 values
   ('Deepika', 'Founder & Principal Advisor', 'With over 12 years of experience in wealth management and private banking, Deepika founded Kutumb Advisory to bring structural clarity to Indian family finances. She specializes in 9-Graha wealth architecture, multi-generational trust design, and holistic risk management.', 'https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780300586/deepika-founder_u8eiuz.jpg', 'https://linkedin.com/in/deepika-kutumb', true, 1),
-  ('Rajesh Sharma', 'Head of Wealth Architecture', 'Chartered Accountant with 15+ years advising business families on tax optimization, estate succession, and corporate asset structuring.', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80', 'https://linkedin.com', false, 2),
-  ('Ananya Iyer', 'Lead Family Risk Specialist', 'Certified Financial Planner with deep expertise in emergency corpus planning, insurance protection design, and health security frameworks.', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80', 'https://linkedin.com', false, 3);
+  ('Raunak', 'Technology & Digital', 'Social media strategy and technology operations keeping Kutumb''s client experience seamless and modern.', 'https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301027/raunak_ftpboc.png', null, false, 2),
+  ('Tanishq', 'Client Relations', 'Ensuring every family receives attentive, responsive service from the first conversation through every milestone.', 'https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780394568/tanishq_i9einp.png', null, false, 3),
+  ('Harsh', 'CRM & Operations', 'Managing client relationships and internal coordination so your experience with Kutumb is always coherent and reliable.', 'https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780394568/harsh_ftie7y.png', null, false, 4),
+  ('Atri Ganguly', 'Compliance & Legal', '25+ years of senior management experience across portfolio management, financial planning, and risk management. Our families'' interests are legally protected at every step.', 'https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301670/attri_rcnc0p.png', null, false, 5),
+  ('Tejpal Singh Bagga', 'Investments & Portfolio', 'Certified financial planner with 20+ years advising on mutual funds, SIFs, AIFs, and portfolio structuring for HNI families.', 'https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301742/tejpal_bzcxev.png', null, false, 6),
+  ('Soumik Saha', 'Portfolio Management', 'CFP(CM) with 20+ years supporting financial advisory professionals and HNI investors across bonds, AIFs, ETFs, and structured products.', 'https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780301742/soumik_qfrcte.png', null, false, 7),
+  ('Sarbani Sadhu Das', 'Insurance Specialist', 'Experienced sales and distribution professional focused on mediclaim, general insurance, and investor engagement across cross-functional mandates.', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80', null, false, 8);
 
 insert into public.testimonials (name, location, role, quote, avatar_url, rating, is_featured, display_order)
 values
   ('Vikram Mehta', 'Mumbai', 'Tech Entrepreneur & Business Owner', 'Financial Kundali completely transformed how my wife and I view our family wealth. We went from scattered investments across five platforms to a single, crystal-clear 9-graha dashboard.', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80', 5, true, 1),
-  ('Priya & Suresh Kulkarni', 'Bengaluru', 'Senior Corporate Executives', 'The 90-Day Action Plan pinpointed our insurance gaps immediately. Working with Kutumb brought total financial peace to our multi-generational household.', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80', 5, true, 2);
+  ('Priya & Suresh Kulkarni', 'Bengaluru', 'Senior Corporate Executives', 'The 90-Day Action Plan pinpointed our insurance gaps immediately. Working with Kutumb brought total financial peace to our multi-generational household.', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80', 5, true, 2),
+  ('Meera & Arun S.', 'Delhi', 'Entrepreneurs', 'We were with three different advisors before Kutumb. Now we have one complete view, one trusted relationship, and one plan that spans our entire family''s future.', null, 5, true, 3);
 
 insert into public.faqs (category, question, answer, display_order, is_published)
 values
