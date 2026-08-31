@@ -48,9 +48,22 @@ export default function DashboardLayout({
   const { isLoggedIn, hydrated, user, userId, logout } = useMykundaliAuth()
   const { hide: hideLoadingOverlay } = useLoadingOverlay()
 
+  const [retakeError, setRetakeError] = useState('')
+
   const confirmRetake = async () => {
+    setRetakeError('')
+    const res = await fetch('/api/mykundali/assessment/retake', { method: 'POST' })
+    if (!res.ok) {
+      // Don't navigate on failure — that's what silently bounced people to
+      // /mykundali/login before, with no indication why. Surface it instead.
+      setRetakeError(
+        res.status === 401
+          ? 'Your session expired — please sign in again to retake the assessment.'
+          : 'Could not start a retake. Please try again.'
+      )
+      return
+    }
     setShowRetakeConfirm(false)
-    await fetch('/api/mykundali/assessment/retake', { method: 'POST' })
     router.push('/mykundali/assessment/landing')
   }
 
@@ -280,12 +293,18 @@ export default function DashboardLayout({
       <ConfirmDialog
         open={showRetakeConfirm}
         title="Retake your Financial Kundali?"
-        description="Retaking the assessment resets your current results. You'll need to complete payment of ₹999 again to unlock your new Financial Kundali."
+        description={
+          retakeError ||
+          "Retaking the assessment resets your current results. You'll need to complete payment of ₹999 again to unlock your new Financial Kundali."
+        }
         confirmLabel="Retake & Pay Again"
         cancelLabel="Cancel"
         danger={false}
         onConfirm={confirmRetake}
-        onCancel={() => setShowRetakeConfirm(false)}
+        onCancel={() => {
+          setShowRetakeConfirm(false)
+          setRetakeError('')
+        }}
       />
 
       {userId && (

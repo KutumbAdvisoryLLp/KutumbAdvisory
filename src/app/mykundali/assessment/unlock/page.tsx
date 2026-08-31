@@ -67,7 +67,6 @@ export default function UnlockPage() {
   const { user, userId } = useMykundaliAuth()
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
-  const [scriptLoaded, setScriptLoaded] = useState(false)
 
   // Auto-redirect if user has already unlocked/paid
   useEffect(() => {
@@ -103,10 +102,27 @@ export default function UnlockPage() {
         return
       }
 
-      if (!scriptLoaded || !window.Razorpay) {
-        setError('Payment gateway is loading — please try again in a moment.')
-        setProcessing(false)
-        return
+      // next/script's onLoad doesn't reliably re-fire when the script was
+      // already loaded by an earlier mount of this page (e.g. after
+      // navigating away and back), which left a "gateway is loading" error
+      // showing even though window.Razorpay was actually available. Check
+      // the real global directly, with a short poll as a fallback for a
+      // genuinely slow load.
+      if (!window.Razorpay) {
+        const found = await new Promise<boolean>((resolve) => {
+          const start = Date.now()
+          const check = () => {
+            if (window.Razorpay) return resolve(true)
+            if (Date.now() - start > 4000) return resolve(false)
+            setTimeout(check, 150)
+          }
+          check()
+        })
+        if (!found) {
+          setError('Payment gateway is loading — please try again in a moment.')
+          setProcessing(false)
+          return
+        }
       }
 
       const razorpay = new window.Razorpay({
@@ -147,10 +163,7 @@ export default function UnlockPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        onLoad={() => setScriptLoaded(true)}
-      />
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-20 sm:pt-28 pb-12 sm:pb-16">
         {/* Back */}
         <button
