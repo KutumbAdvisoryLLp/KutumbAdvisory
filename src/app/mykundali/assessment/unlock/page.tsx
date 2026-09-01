@@ -69,22 +69,32 @@ export default function UnlockPage() {
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
   const [priceInr, setPriceInr] = useState(FINANCIAL_KUNDALI_PRICE_INR)
+  const [checkingAccess, setCheckingAccess] = useState(true)
 
-  // Auto-redirect if user has already unlocked/paid
+  // Gate this page on actually having something to unlock. Without this, a
+  // customer who signs up, logs out before finishing the assessment, and
+  // logs back in gets sent here by the dashboard's paywall redirect (no
+  // payment on file) even though they have no assessment_results yet —
+  // there's nothing to pay for. Mirrors the same check already done on the
+  // preview page.
   useEffect(() => {
     if (!userId) return
     ;(async () => {
       const supabase = createClient()
-      const { data } = await supabase
-        .from('payments')
-        .select('id')
-        .eq('customer_id', userId)
-        .eq('status', 'paid')
-        .maybeSingle()
+      const [paymentRes, resultsRes] = await Promise.all([
+        supabase.from('payments').select('id').eq('customer_id', userId).eq('status', 'paid').maybeSingle(),
+        supabase.from('assessment_results').select('customer_id').eq('customer_id', userId).maybeSingle(),
+      ])
 
-      if (data) {
+      if (paymentRes.data) {
         window.location.href = '/mykundali/dashboard'
+        return
       }
+      if (!resultsRes.data) {
+        window.location.href = '/mykundali/assessment/landing'
+        return
+      }
+      setCheckingAccess(false)
     })()
   }, [userId])
 
@@ -165,6 +175,14 @@ export default function UnlockPage() {
     } catch {
       window.location.href = '/mykundali/payment-failed'
     }
+  }
+
+  if (checkingAccess) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gold/20 border-t-gold" />
+      </div>
+    )
   }
 
   return (

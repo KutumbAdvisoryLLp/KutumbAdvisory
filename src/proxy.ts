@@ -76,7 +76,21 @@ export async function proxy(request: NextRequest) {
         .maybeSingle();
 
       if (!paidRow) {
-        return NextResponse.redirect(new URL("/mykundali/assessment/unlock", request.url));
+        // Don't send someone straight to the payment page unless they
+        // actually have a completed assessment to pay for — otherwise a
+        // customer who signs up, logs out mid-assessment, and logs back in
+        // lands on "Unlock Your Financial Kundali" for a report that
+        // doesn't exist yet. Send them back to finish the assessment
+        // instead; their progress (family profile, graha answers) resumes
+        // automatically.
+        const { data: resultsRow } = await supabase
+          .from("assessment_results")
+          .select("customer_id")
+          .eq("customer_id", user.id)
+          .maybeSingle();
+
+        const destination = resultsRow ? "/mykundali/assessment/unlock" : "/mykundali/assessment/landing";
+        return NextResponse.redirect(new URL(destination, request.url));
       }
     }
   }
