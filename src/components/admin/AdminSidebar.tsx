@@ -73,7 +73,7 @@ function SidebarContent({
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-4 pb-4">
         {navItems.map((item) => {
           const active = isActive(pathname, item.href);
           return (

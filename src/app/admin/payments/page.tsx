@@ -275,12 +275,14 @@ export default function AdminPaymentsPage() {
                       >
                         Revoke
                       </button>
-                      <button
-                        onClick={() => setRefundTarget(p)}
-                        className="rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-600 transition-colors duration-300 hover:bg-amber-50"
-                      >
-                        Refund
-                      </button>
+                      {p.source === "razorpay" && (
+                        <button
+                          onClick={() => setRefundTarget(p)}
+                          className="rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-600 transition-colors duration-300 hover:bg-amber-50"
+                        >
+                          Refund
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -381,9 +383,9 @@ export default function AdminPaymentsPage() {
 
       <ConfirmDialog
         open={!!refundTarget}
-        title="Mark as refunded?"
-        description={`This marks the payment for ${refundTarget?.customerName ?? "this customer"} as refunded and re-locks their dashboard. Process the actual refund in Razorpay separately — this only updates our records.`}
-        confirmLabel={busy ? "Saving..." : "Mark Refunded"}
+        title="Refund this payment?"
+        description={`This issues a real refund through Razorpay for ${refundTarget?.customerName ?? "this customer"}'s payment and re-locks their dashboard. The money is actually returned — this cannot be undone.`}
+        confirmLabel={busy ? "Processing..." : "Refund Payment"}
         onConfirm={handleRefund}
         onCancel={() => {
           setRefundTarget(null);

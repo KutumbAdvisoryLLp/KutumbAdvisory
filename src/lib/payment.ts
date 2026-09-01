@@ -27,5 +27,9 @@ export async function getFinancialKundaliPriceInr(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getFinancialKundaliPricePaise(supabase: any): Promise<number> {
-  return (await getFinancialKundaliPriceInr(supabase)) * 100;
+  // Math.round guards against float imprecision if an admin ever sets a
+  // fractional rupee price (e.g. 499.50 * 100 can land on 49949.999999999
+  // in JS) — Razorpay requires an integer paise amount, and order creation
+  // would silently send a mismatched amount otherwise.
+  return Math.round((await getFinancialKundaliPriceInr(supabase)) * 100);
 }

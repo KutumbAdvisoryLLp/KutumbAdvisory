@@ -145,13 +145,13 @@ export function AdminToggle({
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300 ${
-          checked ? "bg-gold" : "bg-navy/15"
+        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/40 focus-visible:ring-offset-2 ${
+          checked ? "border-gold bg-gold" : "border-navy/15 bg-navy/10"
         }`}
       >
         <span
-          className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-300 ${
-            checked ? "translate-x-5" : "translate-x-0.5"
+          className={`inline-block h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.25)] transition-transform duration-300 ${
+            checked ? "translate-x-[22px]" : "translate-x-[3px]"
           }`}
         />
       </button>
