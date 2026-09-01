@@ -3,7 +3,10 @@
 import { useEffect, useState, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import type { Json } from "@/lib/supabase/types";
+import type { Json, Database } from "@/lib/supabase/types";
+
+type PaymentRow = Database["public"]["Tables"]["payments"]["Row"];
+type DeviceSessionRow = Database["public"]["Tables"]["device_sessions"]["Row"];
 import { useToast } from "@/components/admin/ToastContext";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { AdminInput, AdminTextarea, AdminSelect } from "@/components/admin/FormControls";
@@ -252,16 +255,54 @@ function ModalContent({
   const [hasResult, setHasResult] = useState(false);
   const [confirmSaveResult, setConfirmSaveResult] = useState(false);
 
+  const [payments, setPayments] = useState<
+    { id: string; amount: number; status: string; source: string; createdAt: string }[]
+  >([]);
+  const [deviceSessions, setDeviceSessions] = useState<
+    { id: string; deviceLabel: string | null; lastSeenAt: string }[]
+  >([]);
+  const [confirmResetPassword, setConfirmResetPassword] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [resendingEmail, setResendingEmail] = useState(false);
+
   useEffect(() => {
     (async () => {
-      const [profileRes, resultRes, answersRes] = await Promise.all([
+      const [profileRes, resultRes, answersRes, paymentsRes, sessionsRes] = await Promise.all([
         supabase.from("family_profiles").select("*").eq("customer_id", customer.id).maybeSingle(),
         supabase.from("assessment_results").select("*").eq("customer_id", customer.id).maybeSingle(),
         supabase
           .from("assessment_answers")
           .select("question_id", { count: "exact", head: true })
           .eq("customer_id", customer.id),
+        supabase
+          .from("payments")
+          .select("id, amount, status, source, created_at")
+          .eq("customer_id", customer.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("device_sessions")
+          .select("id, device_label, last_seen_at")
+          .eq("user_id", customer.id)
+          .order("last_seen_at", { ascending: false }),
       ]);
+
+      setPayments(
+        (paymentsRes.data ?? []).map((p: Pick<PaymentRow, "id" | "amount" | "status" | "source" | "created_at">) => ({
+          id: p.id,
+          amount: p.amount,
+          status: p.status,
+          source: p.source,
+          createdAt: p.created_at,
+        }))
+      );
+      setDeviceSessions(
+        (sessionsRes.data ?? []).map((s: Pick<DeviceSessionRow, "id" | "device_label" | "last_seen_at">) => ({
+          id: s.id,
+          deviceLabel: s.device_label,
+          lastSeenAt: s.last_seen_at,
+        }))
+      );
 
       if (profileRes.data) {
         const d = profileRes.data;
@@ -353,6 +394,40 @@ function ModalContent({
     setActionPlan((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
   };
 
+  const handleResetPassword = async () => {
+    setConfirmResetPassword(false);
+    setResettingPassword(true);
+    const res = await fetch("/api/admin/customers/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customerId: customer.id }),
+    });
+    const body = await res.json();
+    setResettingPassword(false);
+    if (!res.ok) {
+      showToast(body.error ?? "Could not reset password", "error");
+      return;
+    }
+    setTempPassword(body.tempPassword);
+    setDeviceSessions([]);
+  };
+
+  const handleResendWelcomeEmail = async () => {
+    setResendingEmail(true);
+    const res = await fetch("/api/admin/customers/resend-welcome-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customerId: customer.id }),
+    });
+    setResendingEmail(false);
+    if (!res.ok) {
+      const body = await res.json();
+      showToast(body.error ?? "Could not resend welcome email", "error");
+      return;
+    }
+    showToast("Welcome email resent");
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -388,6 +463,94 @@ function ModalContent({
           <p className="mt-10 text-sm text-stone/50">Loading…</p>
         ) : (
           <div className="mt-8 space-y-8">
+            {/* Account & Support */}
+            <section>
+              <h4 className="font-serif text-xl text-navy">Account &amp; Support</h4>
+              <div className="mt-4 space-y-5 rounded-xl border border-navy/8 p-5">
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-stone/40">
+                    Payment History
+                  </p>
+                  {payments.length === 0 ? (
+                    <p className="text-sm text-stone/50">No payment records.</p>
+                  ) : (
+                    <div className="divide-y divide-navy/6 rounded-lg border border-navy/8">
+                      {payments.map((p) => (
+                        <div key={p.id} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
+                          <span className="text-navy">₹{(p.amount / 100).toLocaleString("en-IN")}</span>
+                          <span className="text-xs capitalize text-stone/50">
+                            {p.status.replace(/_/g, " ")}
+                            {p.source === "manual" ? " · manual" : ""}
+                          </span>
+                          <span className="text-xs text-stone/40">
+                            {new Date(p.createdAt).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-stone/40">
+                    Trusted Devices
+                  </p>
+                  {deviceSessions.length === 0 ? (
+                    <p className="text-sm text-stone/50">No active device sessions on file.</p>
+                  ) : (
+                    <div className="divide-y divide-navy/6 rounded-lg border border-navy/8">
+                      {deviceSessions.map((s) => (
+                        <div key={s.id} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
+                          <span className="text-navy">{s.deviceLabel ?? "Unknown device"}</span>
+                          <span className="text-xs text-stone/40">
+                            Last seen{" "}
+                            {new Date(s.lastSeenAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {tempPassword && (
+                  <div className="rounded-lg border border-gold/30 bg-gold/5 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gold-dark">
+                      New Temporary Password
+                    </p>
+                    <p className="mt-2 select-all break-all rounded-md bg-white px-3 py-2 font-mono text-sm text-navy">
+                      {tempPassword}
+                    </p>
+                    <p className="mt-2 text-[11px] leading-relaxed text-stone/50">
+                      Shown once — relay this to the customer securely. This won&apos;t be shown again.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmResetPassword(true)}
+                    disabled={resettingPassword}
+                    className="rounded-xl border border-navy/10 bg-white px-4 py-2.5 text-sm font-medium text-navy transition-colors duration-300 hover:bg-cream/50 disabled:opacity-50"
+                  >
+                    {resettingPassword ? "Resetting..." : "Reset Password"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResendWelcomeEmail}
+                    disabled={resendingEmail}
+                    className="rounded-xl border border-navy/10 bg-white px-4 py-2.5 text-sm font-medium text-navy transition-colors duration-300 hover:bg-cream/50 disabled:opacity-50"
+                  >
+                    {resendingEmail ? "Sending..." : "Resend Welcome Email"}
+                  </button>
+                </div>
+              </div>
+            </section>
+
             {/* Family Profile */}
             <section>
               <h4 className="font-serif text-xl text-navy">Family Profile</h4>
@@ -699,6 +862,15 @@ function ModalContent({
           danger
           onConfirm={saveResult}
           onCancel={() => setConfirmSaveResult(false)}
+        />
+
+        <ConfirmDialog
+          open={confirmResetPassword}
+          title="Reset this customer's password?"
+          description="Generates a new password and clears their trusted devices. They'll be logged out of other sessions once those sessions' tokens expire (usually within an hour) — not instantly. You'll need to relay the new password to them yourself."
+          confirmLabel="Reset Password"
+          onConfirm={handleResetPassword}
+          onCancel={() => setConfirmResetPassword(false)}
         />
       </motion.div>
     </motion.div>

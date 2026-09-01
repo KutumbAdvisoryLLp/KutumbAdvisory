@@ -4,47 +4,46 @@ import { createAdminClient } from "@/lib/supabase/admin-client";
 import { logAdminAction } from "@/lib/auditLog";
 
 export async function POST(request: Request) {
+  const { paymentId } = await request.json();
+  if (!paymentId) {
+    return NextResponse.json({ error: "Missing paymentId" }, { status: 400 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const { data: adminRow } = await supabase
-    .from("admin_users")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-
+  const { data: adminRow } = await supabase.from("admin_users").select("id").eq("id", user.id).maybeSingle();
   if (!adminRow) {
     return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
 
   const admin = createAdminClient();
 
-  const { data: customers, error: custErr } = await admin.from("customers").select("id");
-  if (custErr) {
-    return NextResponse.json({ error: custErr.message }, { status: 500 });
-  }
+  const { data: payment, error } = await admin
+    .from("payments")
+    .update({ status: "revoked" })
+    .eq("id", paymentId)
+    .select()
+    .single();
 
-  let deleted = 0;
-  for (const c of customers ?? []) {
-    const { error } = await admin.auth.admin.deleteUser(c.id);
-    if (!error) deleted += 1;
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  await admin.from("leads").delete().eq("primary_goal", "MyKundali Account Registration");
 
   logAdminAction({
     adminId: user.id,
     adminEmail: user.email ?? "unknown",
-    action: "customer.delete_all",
-    details: { deleted },
+    action: "payment.revoke",
+    targetType: "payment",
+    targetId: paymentId,
+    details: { customerId: payment.customer_id },
     request,
   });
 
-  return NextResponse.json({ ok: true, deleted });
+  return NextResponse.json({ ok: true, payment });
 }

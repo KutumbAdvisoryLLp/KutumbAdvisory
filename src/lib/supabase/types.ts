@@ -177,6 +177,7 @@ export interface Database {
           meta_description: string | null;
           favicon_url: string | null;
           logo_url: string | null;
+          financial_kundali_price_inr: number | null;
           updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["site_settings"]["Row"]> & { id: number };
@@ -299,14 +300,16 @@ export interface Database {
           razorpay_payment_id: string | null;
           amount: number;
           currency: string;
-          status: "created" | "paid" | "failed" | "superseded_by_retake";
+          status: "created" | "paid" | "failed" | "superseded_by_retake" | "revoked" | "refunded";
+          source: string;
           created_at: string;
           paid_at: string | null;
         };
-        Insert: Omit<Database["public"]["Tables"]["payments"]["Row"], "id" | "created_at" | "currency"> & {
+        Insert: Omit<Database["public"]["Tables"]["payments"]["Row"], "id" | "created_at" | "currency" | "source"> & {
           id?: string;
           created_at?: string;
           currency?: string;
+          source?: string;
         };
         Update: Partial<Database["public"]["Tables"]["payments"]["Insert"]>;
         Relationships: [];
@@ -388,6 +391,66 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["rate_limit_hits"]["Insert"]>;
+        Relationships: [];
+      };
+      admin_audit_log: {
+        Row: {
+          id: string;
+          admin_id: string | null;
+          admin_email: string;
+          action: string;
+          target_type: string | null;
+          target_id: string | null;
+          details: Json | null;
+          device_label: string | null;
+          ip_address: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["admin_audit_log"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["admin_audit_log"]["Insert"]>;
+        Relationships: [];
+      };
+      feature_flags: {
+        Row: {
+          flag_key: string;
+          enabled: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["feature_flags"]["Row"]> & { flag_key: string };
+        Update: Partial<Database["public"]["Tables"]["feature_flags"]["Row"]>;
+        Relationships: [];
+      };
+      email_templates: {
+        Row: {
+          template_key: string;
+          subject: string;
+          heading: string;
+          intro_text: string;
+          footer_text: string | null;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["email_templates"]["Row"]> & { template_key: string };
+        Update: Partial<Database["public"]["Tables"]["email_templates"]["Row"]>;
+        Relationships: [];
+      };
+      error_log: {
+        Row: {
+          id: string;
+          context: string;
+          message: string;
+          details: Json | null;
+          customer_id: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["error_log"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["error_log"]["Insert"]>;
         Relationships: [];
       };
     };

@@ -19,7 +19,8 @@ import {
   MessageSquareQuote,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
-import { FINANCIAL_KUNDALI_PRICE_INR } from '@/lib/payment'
+import { FINANCIAL_KUNDALI_PRICE_INR, getFinancialKundaliPriceInr } from '@/lib/payment'
+import { createClient } from '@/lib/supabase/client'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 import { useLoadingOverlay } from '@/components/LoadingOverlayContext'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
@@ -50,6 +51,19 @@ export default function DashboardLayout({
   const { hide: hideLoadingOverlay } = useLoadingOverlay()
 
   const [retakeError, setRetakeError] = useState('')
+  const [priceInr, setPriceInr] = useState(FINANCIAL_KUNDALI_PRICE_INR)
+  const [testimonialsPaused, setTestimonialsPaused] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    getFinancialKundaliPriceInr(supabase).then(setPriceInr)
+    supabase
+      .from('feature_flags')
+      .select('enabled')
+      .eq('flag_key', 'pause_testimonial_submissions')
+      .maybeSingle()
+      .then(({ data }: { data: { enabled: boolean } | null }) => setTestimonialsPaused(!!data?.enabled))
+  }, [])
 
   const confirmRetake = async () => {
     setRetakeError('')
@@ -204,13 +218,15 @@ export default function DashboardLayout({
                 <span className="font-mono text-xs text-white font-bold mt-0.5">+91 98316 10210</span>
               </div>
             </div>
-            <button
-              onClick={() => setShowTestimonialModal(true)}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-navy/5 hover:bg-navy/10 text-navy/70 hover:text-navy border border-navy/10 text-xs font-semibold transition-all duration-300 shadow-sm"
-            >
-              <MessageSquareQuote size={14} strokeWidth={2} />
-              <span className="hidden sm:inline">Leave Testimonial</span>
-            </button>
+            {!testimonialsPaused && (
+              <button
+                onClick={() => setShowTestimonialModal(true)}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-navy/5 hover:bg-navy/10 text-navy/70 hover:text-navy border border-navy/10 text-xs font-semibold transition-all duration-300 shadow-sm"
+              >
+                <MessageSquareQuote size={14} strokeWidth={2} />
+                <span className="hidden sm:inline">Leave Testimonial</span>
+              </button>
+            )}
             <span className="hidden sm:inline text-sm text-navy/70">
               Hi, {displayName}
             </span>
@@ -296,7 +312,7 @@ export default function DashboardLayout({
         title="Retake your Financial Kundali?"
         description={
           retakeError ||
-          `Retaking the assessment resets your current results. You'll need to complete payment of ₹${FINANCIAL_KUNDALI_PRICE_INR} again to unlock your new Financial Kundali.`
+          `Retaking the assessment resets your current results. You'll need to complete payment of ₹${priceInr} again to unlock your new Financial Kundali.`
         }
         confirmLabel="Retake & Pay Again"
         cancelLabel="Cancel"

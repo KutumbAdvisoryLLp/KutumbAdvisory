@@ -151,12 +151,13 @@ create table public.articles (
 );
 
 create table public.site_settings (
-  id               integer     primary key,
-  site_title       text        not null default 'Kutumb Advisory',
-  meta_description text,
-  favicon_url      text,
-  logo_url         text,
-  updated_at       timestamptz not null default now()
+  id                          integer     primary key,
+  site_title                  text        not null default 'Kutumb Advisory',
+  meta_description            text,
+  favicon_url                 text,
+  logo_url                    text,
+  financial_kundali_price_inr numeric,
+  updated_at                  timestamptz not null default now()
 );
 
 -- ═══════════════════════════════════════════════════════════════════
@@ -243,6 +244,7 @@ create table public.payments (
   amount              numeric     not null,
   currency            text        not null default 'INR',
   status              text        not null default 'created',
+  source              text        not null default 'razorpay',
   paid_at             timestamptz,
   created_at          timestamptz not null default now()
 );
@@ -294,6 +296,57 @@ create table public.rate_limit_hits (
 );
 create index rate_limit_hits_key_created_idx on public.rate_limit_hits (key, created_at);
 
+-- Who did what, when, from what device/IP. No insert policy on purpose —
+-- every insert goes through service-role from server API routes.
+create table public.admin_audit_log (
+  id           uuid        primary key default gen_random_uuid(),
+  admin_id     uuid        references auth.users(id) on delete set null,
+  admin_email  text        not null,
+  action       text        not null,
+  target_type  text,
+  target_id    text,
+  details      jsonb,
+  device_label text,
+  ip_address   text,
+  created_at   timestamptz not null default now()
+);
+create index admin_audit_log_created_idx on public.admin_audit_log (created_at desc);
+
+-- Feature flags / kill switches. Only the flags that non-admin users
+-- genuinely need to read client-side (maintenance mode, the testimonial
+-- pause toggle) are publicly readable — pause_payments and
+-- pause_new_signups are enforced server-side only and stay admin-only, so
+-- anonymous visitors can't enumerate that operational state.
+create table public.feature_flags (
+  flag_key   text        primary key,
+  enabled    boolean     not null default false,
+  updated_at timestamptz not null default now(),
+  updated_by text
+);
+
+-- Admin-editable email copy — seeded to match what's hardcoded in
+-- src/lib/email.ts so existing emails are unaffected until an admin
+-- actually edits something.
+create table public.email_templates (
+  template_key text        primary key,
+  subject      text        not null,
+  heading      text        not null,
+  intro_text   text        not null,
+  footer_text  text,
+  updated_at   timestamptz not null default now()
+);
+
+-- Server error log, feeding the admin monitoring dashboard.
+create table public.error_log (
+  id          uuid        primary key default gen_random_uuid(),
+  context     text        not null,
+  message     text        not null,
+  details     jsonb,
+  customer_id uuid,
+  created_at  timestamptz not null default now()
+);
+create index error_log_created_idx on public.error_log (created_at desc);
+
 -- SECURITY DEFINER function so "is this uid an admin" can be checked from
 -- within admin_users' own RLS policy without the self-reference causing
 -- Postgres's "infinite recursion detected in policy" error — the function
@@ -334,6 +387,10 @@ alter table public.testimonial_submissions enable row level security;
 alter table public.email_send_log         enable row level security;
 alter table public.signup_otp_codes       enable row level security;
 alter table public.rate_limit_hits        enable row level security;
+alter table public.admin_audit_log        enable row level security;
+alter table public.feature_flags          enable row level security;
+alter table public.email_templates        enable row level security;
+alter table public.error_log              enable row level security;
 
 create policy "Admins can view admin_users" on public.admin_users for select using (auth.uid() = id or public.is_admin(auth.uid()));
 
@@ -393,6 +450,15 @@ create policy "Admins manage testimonial submissions" on public.testimonial_subm
 create policy "Admins view email_send_log" on public.email_send_log for select using (auth.uid() in (select id from public.admin_users));
 create policy "Admins manage payments" on public.payments for all using (auth.uid() in (select id from public.admin_users));
 
+create policy "Admins view audit log" on public.admin_audit_log for select using (public.is_admin(auth.uid()));
+
+create policy "Public read maintenance flag" on public.feature_flags for select using (flag_key in ('maintenance_mode_customer_portal', 'pause_testimonial_submissions'));
+create policy "Admins manage feature_flags" on public.feature_flags for all using (public.is_admin(auth.uid()));
+
+create policy "Admins manage email_templates" on public.email_templates for all using (public.is_admin(auth.uid()));
+
+create policy "Admins view error_log" on public.error_log for select using (public.is_admin(auth.uid()));
+
 -- ═══════════════════════════════════════════════════════════════════
 -- 7. ENCRYPTION HELPERS
 -- (available for future use — nothing currently encrypts through these;
@@ -420,6 +486,34 @@ $$ language plpgsql immutable security definer;
 -- ═══════════════════════════════════════════════════════════════════
 insert into public.site_settings (id, site_title, meta_description)
 values (1, 'Kutumb Advisory', 'Discover your Financial Kundali and bring clarity to your family''s financial universe.');
+
+insert into public.feature_flags (flag_key, enabled) values
+  ('maintenance_mode_customer_portal', false),
+  ('pause_new_signups', false),
+  ('pause_testimonial_submissions', false),
+  ('pause_payments', false);
+
+insert into public.email_templates (template_key, subject, heading, intro_text, footer_text) values
+  ('welcome',
+   'Welcome to Kutumb Advisory — Your Journey Begins ✦',
+   'Welcome to Kutumb Advisory, {{first_name}} 🙏',
+   'We''re honoured to have you take the first step towards understanding and strengthening your family''s financial health.',
+   'With warmth,<br/>The Kutumb Advisory Team'),
+  ('signup_otp',
+   '{{otp}} is your Kutumb Advisory verification code',
+   'Verify Your Email',
+   'Use the 6-digit verification code below to complete your Kutumb Advisory account signup.',
+   'If you did not request this, please ignore this email.'),
+  ('password_reset_otp',
+   '{{otp}} is your Kutumb Advisory password reset code',
+   'Password Reset Request',
+   'Use the 6-digit verification code below to reset your Kutumb Advisory account password.',
+   'If you did not request a password reset, please ignore this email.'),
+  ('payment_confirmation',
+   'Payment Confirmed — Financial Kundali Unlocked ✓',
+   'Payment Confirmed!',
+   'Thank you, {{first_name}}. Your Financial Kundali is now unlocked.',
+   null);
 
 insert into public.announcements (message, link_text, link_url, bg_color, text_color, is_active)
 values

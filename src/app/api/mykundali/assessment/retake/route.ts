@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { logServerError } from "@/lib/errorLog";
 
 // Retaking the assessment resets the customer's paywall AND their previous
 // assessment content, so the next visit to /mykundali/dashboard bounces
@@ -31,6 +32,7 @@ export async function POST() {
   const cleanupError = resultsRes.error ?? answersRes.error ?? profilesRes.error;
   if (cleanupError) {
     console.error("[retake] Could not clear previous assessment data:", cleanupError);
+    logServerError("assessment.retake", cleanupError.message, undefined, user.id);
     return NextResponse.json(
       { error: "Could not reset your previous assessment. Please try again." },
       { status: 500 }
@@ -48,6 +50,7 @@ export async function POST() {
     .eq("status", "paid");
   if (supersedeError) {
     console.error("[retake] Could not supersede payment status:", supersedeError);
+    logServerError("assessment.retake", supersedeError.message, undefined, user.id);
     return NextResponse.json({ error: "Could not reset payment status" }, { status: 500 });
   }
 

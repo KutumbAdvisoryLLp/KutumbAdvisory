@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
-import { FINANCIAL_KUNDALI_PRICE_PAISE } from "@/lib/payment";
+import { getFinancialKundaliPricePaise } from "@/lib/payment";
+import { getFeatureFlag } from "@/lib/featureFlags";
+import { logServerError } from "@/lib/errorLog";
 
-const AMOUNT_PAISE = FINANCIAL_KUNDALI_PRICE_PAISE;
 // How long a not-yet-paid order stays reusable — long enough to survive a
 // double-click or a page reload mid-checkout, short enough that a genuinely
 // abandoned attempt doesn't linger indefinitely.
@@ -20,6 +21,13 @@ export async function POST() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
+    if (await getFeatureFlag("pause_payments")) {
+      return NextResponse.json(
+        { error: "Payments are temporarily paused. Please try again shortly." },
+        { status: 503 }
+      );
+    }
+
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keyId || !keySecret) {
@@ -27,6 +35,7 @@ export async function POST() {
     }
 
     const admin = createAdminClient();
+    const AMOUNT_PAISE = await getFinancialKundaliPricePaise(admin);
 
     const { data: existingPaid } = await admin
       .from("payments")
@@ -128,6 +137,7 @@ export async function POST() {
     return NextResponse.json({ orderId: order.id, amount: AMOUNT_PAISE, keyId });
   } catch (err) {
     console.error("[create-order] Unexpected error:", err);
+    logServerError("payment.create-order", err instanceof Error ? err.message : String(err));
     return NextResponse.json({ error: "Unexpected server error" }, { status: 500 });
   }
 }

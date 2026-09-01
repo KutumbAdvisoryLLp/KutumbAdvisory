@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Button from '@/components/Button'
 import { useRouter } from 'next/navigation'
-import { FINANCIAL_KUNDALI_PRICE_INR } from '@/lib/payment'
+import { FINANCIAL_KUNDALI_PRICE_INR, getFinancialKundaliPriceInr } from '@/lib/payment'
+import { createClient } from '@/lib/supabase/client'
 
 const features = [
   'Complete Financial Kundali Report',
@@ -20,6 +22,11 @@ const features = [
 
 export function PaywallSection() {
   const router = useRouter()
+  const [priceInr, setPriceInr] = useState(FINANCIAL_KUNDALI_PRICE_INR)
+
+  useEffect(() => {
+    getFinancialKundaliPriceInr(createClient()).then(setPriceInr)
+  }, [])
 
   return (
     <section className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-lighter/30 bg-white/95 backdrop-blur-xl">
@@ -30,7 +37,7 @@ export function PaywallSection() {
               ✦ Unlock Your Complete Financial Kundali
             </p>
             <div className="flex items-center gap-3 mt-1">
-              <span className="font-serif text-2xl text-gold-dark font-semibold">₹{FINANCIAL_KUNDALI_PRICE_INR}</span>
+              <span className="font-serif text-2xl text-gold-dark font-semibold">₹{priceInr}</span>
               <span className="text-xs text-slate-light">One-time · Lifetime access</span>
             </div>
           </div>

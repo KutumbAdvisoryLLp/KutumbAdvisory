@@ -7,6 +7,7 @@ import { useToast } from "@/components/admin/ToastContext";
 import { createClient } from "@/lib/supabase/client";
 import { AdminInput, AdminTextarea } from "@/components/admin/FormControls";
 import { ImageIcon } from "@/components/icons/admin";
+import { FINANCIAL_KUNDALI_PRICE_INR } from "@/lib/payment";
 
 const KUTUMB_LOGO_URL =
   "https://res.cloudinary.com/dtzqrfg6q/image/upload/v1780312133/tree_qw9bji.png";
@@ -56,6 +57,7 @@ export default function AdminSettingsPage() {
   );
   const [faviconUrl, setFaviconUrl] = useState("/favicon.ico");
   const [logoUrl, setLogoUrl] = useState(KUTUMB_LOGO_URL);
+  const [kundaliPrice, setKundaliPrice] = useState(String(FINANCIAL_KUNDALI_PRICE_INR));
 
   const [accountEmail, setAccountEmail] = useState(adminEmail ?? "");
   const [syncedAdminEmail, setSyncedAdminEmail] = useState(adminEmail);
@@ -80,9 +82,25 @@ export default function AdminSettingsPage() {
         setMetaDescription(data.meta_description ?? "");
         setFaviconUrl(data.favicon_url ?? "/favicon.ico");
         if (data.logo_url) setLogoUrl(data.logo_url);
+        if (data.financial_kundali_price_inr != null) {
+          setKundaliPrice(String(data.financial_kundali_price_inr));
+        }
       }
     })();
   }, [supabase]);
+
+  const handleSavePrice = async () => {
+    const parsed = Number(kundaliPrice);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      showToast("Enter a valid price greater than 0", "error");
+      return;
+    }
+    const { error } = await supabase
+      .from("site_settings")
+      .update({ financial_kundali_price_inr: parsed })
+      .eq("id", 1);
+    showToast(error ? "Could not save price" : "Price updated");
+  };
 
   const handleSaveMetadata = async () => {
     const { error } = await supabase
@@ -220,6 +238,21 @@ export default function AdminSettingsPage() {
               />
             </div>
           </div>
+        </SectionCard>
+
+        <SectionCard
+          title="Pricing"
+          subtitle="The Financial Kundali unlock price, shown across the customer portal"
+          onSave={handleSavePrice}
+          delay={0.12}
+        >
+          <AdminInput
+            label="Financial Kundali Price (₹)"
+            name="kundaliPrice"
+            type="number"
+            value={kundaliPrice}
+            onChange={(e) => setKundaliPrice(e.target.value)}
+          />
         </SectionCard>
 
         <SectionCard

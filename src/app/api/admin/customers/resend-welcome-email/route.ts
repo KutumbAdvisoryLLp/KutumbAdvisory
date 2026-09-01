@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { sendWelcomeEmail } from "@/lib/email";
 import { logAdminAction } from "@/lib/auditLog";
 
 export async function POST(request: Request) {
@@ -13,17 +14,11 @@ export async function POST(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const { data: adminRow } = await supabase
-    .from("admin_users")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-
+  const { data: adminRow } = await supabase.from("admin_users").select("id").eq("id", user.id).maybeSingle();
   if (!adminRow) {
     return NextResponse.json({ error: "Not authorized." }, { status: 403 });
   }
@@ -32,30 +27,24 @@ export async function POST(request: Request) {
 
   const { data: customer } = await admin
     .from("customers")
-    .select("email")
+    .select("email, full_name")
     .eq("id", customerId)
     .maybeSingle();
-
-  const { error } = await admin.auth.admin.deleteUser(customerId);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!customer) {
+    return NextResponse.json({ error: "Customer not found" }, { status: 404 });
   }
 
-  if (customer?.email) {
-    await admin
-      .from("leads")
-      .delete()
-      .eq("email", customer.email)
-      .eq("primary_goal", "MyKundali Account Registration");
+  const { error } = await sendWelcomeEmail(customer.email, customer.full_name);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 502 });
   }
 
   logAdminAction({
     adminId: user.id,
     adminEmail: user.email ?? "unknown",
-    action: "customer.delete",
+    action: "customer.resend_welcome_email",
     targetType: "customer",
     targetId: customerId,
-    details: { email: customer?.email ?? null },
     request,
   });
 

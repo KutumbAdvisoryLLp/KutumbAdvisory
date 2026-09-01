@@ -16,6 +16,25 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/mykundali/dashboard") ||
     pathname.startsWith("/mykundali/assessment");
 
+  // Maintenance mode covers the customer portal only (not /admin — an
+  // admin still needs to work while it's on, and not
+  // /mykundali/payment-failed, so nobody mid-checkout gets stranded).
+  // /mykundali/maintenance itself is deliberately excluded from the
+  // middleware matcher below, so this can never redirect-loop.
+  const isMaintenanceGated =
+    pathname === "/mykundali" || pathname === "/mykundali/login" || isCustomerRoute;
+
+  if (isMaintenanceGated) {
+    const { data: flag } = await supabase
+      .from("feature_flags")
+      .select("enabled")
+      .eq("flag_key", "maintenance_mode_customer_portal")
+      .maybeSingle();
+    if (flag?.enabled) {
+      return NextResponse.redirect(new URL("/mykundali/maintenance", request.url));
+    }
+  }
+
   if (isAdminRoute) {
     if (!user) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
@@ -70,5 +89,7 @@ export const config = {
     "/admin/:path*",
     "/mykundali/dashboard/:path*",
     "/mykundali/assessment/:path*",
+    "/mykundali/login",
+    "/mykundali",
   ],
 };

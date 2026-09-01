@@ -3,11 +3,85 @@ import { createAdminClient } from "./supabase/admin-client";
 
 const FROM = process.env.NEWSLETTER_FROM_EMAIL || "hello@kutumbadvisory.com";
 const FROM_NAME = "Kutumb Advisory";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 // Lazily instantiated so Next.js doesn't evaluate it at build time
 // (process.env.RESEND_API_KEY would be undefined during static analysis).
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
+}
+
+// ─── DB-driven templates ───────────────────────────────────────────
+// Only subject/heading/intro/footer are admin-editable — the branded
+// wrapper, and any fixed structural content within an email (OTP box,
+// payment details table, feature list) stays code-controlled.
+export type EmailTemplateKey = "welcome" | "signup_otp" | "password_reset_otp" | "payment_confirmation";
+
+interface EmailTemplateContent {
+  subject: string;
+  heading: string;
+  intro: string;
+  footer: string | null;
+}
+
+// Matches the seed data in supabase/migrations/0011_admin_platform_controls.sql
+// — used if the row is missing (e.g. migration not yet run).
+const DEFAULT_TEMPLATES: Record<EmailTemplateKey, EmailTemplateContent> = {
+  welcome: {
+    subject: "Welcome to Kutumb Advisory — Your Journey Begins ✦",
+    heading: "Welcome to Kutumb Advisory, {{first_name}} 🙏",
+    intro:
+      "We're honoured to have you take the first step towards understanding and strengthening your family's financial health.",
+    footer: "With warmth,<br/>The Kutumb Advisory Team",
+  },
+  signup_otp: {
+    subject: "{{otp}} is your Kutumb Advisory verification code",
+    heading: "Verify Your Email",
+    intro: "Use the 6-digit verification code below to complete your Kutumb Advisory account signup.",
+    footer: "If you did not request this, please ignore this email.",
+  },
+  password_reset_otp: {
+    subject: "{{otp}} is your Kutumb Advisory password reset code",
+    heading: "Password Reset Request",
+    intro: "Use the 6-digit verification code below to reset your Kutumb Advisory account password.",
+    footer: "If you did not request a password reset, please ignore this email.",
+  },
+  payment_confirmation: {
+    subject: "Payment Confirmed — Financial Kundali Unlocked ✓",
+    heading: "Payment Confirmed!",
+    intro: "Thank you, {{first_name}}. Your Financial Kundali is now unlocked.",
+    footer: null,
+  },
+};
+
+// Light HTML-escape on interpolated values only — the admin-authored
+// template text itself is trusted, but this guards against a substituted
+// value (a name, an OTP) accidentally breaking the surrounding markup.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function substituteVars(text: string, vars: Record<string, string>): string {
+  return text.replace(/\{\{(\w+)\}\}/g, (match, key) => (key in vars ? escapeHtml(vars[key]) : match));
+}
+
+async function getEmailTemplate(key: EmailTemplateKey): Promise<EmailTemplateContent> {
+  try {
+    const { data } = await createAdminClient()
+      .from("email_templates")
+      .select("subject, heading, intro_text, footer_text")
+      .eq("template_key", key)
+      .maybeSingle();
+    if (!data) return DEFAULT_TEMPLATES[key];
+    return { subject: data.subject, heading: data.heading, intro: data.intro_text, footer: data.footer_text };
+  } catch (err) {
+    console.error(`[email] Failed to load template "${key}", using default:`, err);
+    return DEFAULT_TEMPLATES[key];
+  }
 }
 
 // Resend doesn't expose a "remaining quota" API, so the admin Developer
@@ -108,12 +182,18 @@ export function buildNewsletterHtml(subject: string, body: string): string {
 }
 
 // ─── 2. Welcome email (on signup) ───────────────────────────────────
-export function buildWelcomeHtml(name: string): string {
+export async function buildWelcomeHtml(name: string): Promise<{ subject: string; html: string }> {
   const firstName = name.split(" ")[0] || name;
-  return wrap(
+  const t = await getEmailTemplate("welcome");
+  const vars = { first_name: firstName };
+  const heading = substituteVars(t.heading, vars);
+  const intro = substituteVars(t.intro, vars);
+  const footer = t.footer ? substituteVars(t.footer, vars) : DEFAULT_TEMPLATES.welcome.footer!;
+
+  const html = wrap(
     `
-    <h1 style="margin:0 0 8px;font-size:26px;font-weight:600;color:#172A4A;">Welcome to Kutumb Advisory, ${firstName} 🙏</h1>
-    <p style="margin:0 0 24px;font-size:15px;color:#555555;line-height:1.6;">We're honoured to have you take the first step towards understanding and strengthening your family's financial health.</p>
+    <h1 style="margin:0 0 8px;font-size:26px;font-weight:600;color:#172A4A;">${heading}</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#555555;line-height:1.6;">${intro}</p>
 
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9f7f3;border-radius:10px;padding:24px;margin-bottom:28px;">
       <tr><td>
@@ -133,26 +213,38 @@ export function buildWelcomeHtml(name: string): string {
     </table>
 
     <p style="margin:0;font-size:13px;color:#888888;line-height:1.6;">If you have any questions, just reply to this email — we respond to every message.</p>
-    <p style="margin:12px 0 0;font-size:13px;color:#888888;">With warmth,<br/><strong style="color:#172A4A;">The Kutumb Advisory Team</strong></p>
+    <p style="margin:12px 0 0;font-size:13px;color:#888888;">${footer}</p>
     `,
     `Welcome! Your Financial Kundali journey starts here.`
   );
+
+  return { subject: substituteVars(t.subject, vars), html };
 }
 
 // ─── 3. Payment confirmation email ──────────────────────────────────
-export function buildPaymentConfirmationHtml(name: string, amount: number, orderId: string): string {
+export async function buildPaymentConfirmationHtml(
+  name: string,
+  amount: number,
+  orderId: string
+): Promise<{ subject: string; html: string }> {
   const firstName = name.split(" ")[0] || name;
   const amountStr = `₹${(amount / 100).toLocaleString("en-IN")}`;
   const date = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
 
-  return wrap(
+  const t = await getEmailTemplate("payment_confirmation");
+  const vars = { first_name: firstName };
+  const heading = substituteVars(t.heading, vars);
+  const intro = substituteVars(t.intro, vars);
+  const footer = t.footer ? substituteVars(t.footer, vars) : null;
+
+  const html = wrap(
     `
     <div style="text-align:center;margin-bottom:28px;">
       <div style="display:inline-block;width:56px;height:56px;background:#e8f5e9;border-radius:50%;line-height:56px;font-size:28px;text-align:center;">✓</div>
     </div>
 
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:600;color:#172A4A;text-align:center;">Payment Confirmed!</h1>
-    <p style="margin:0 0 28px;font-size:15px;color:#555555;line-height:1.6;text-align:center;">Thank you, ${firstName}. Your Financial Kundali is now unlocked.</p>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:600;color:#172A4A;text-align:center;">${heading}</h1>
+    <p style="margin:0 0 28px;font-size:15px;color:#555555;line-height:1.6;text-align:center;">${intro}</p>
 
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9f7f3;border-radius:10px;padding:20px 24px;margin-bottom:28px;">
       <tr>
@@ -182,20 +274,31 @@ export function buildPaymentConfirmationHtml(name: string, amount: number, order
     </table>
 
     <p style="margin:0;font-size:13px;color:#888888;line-height:1.6;">
-      Questions about your purchase? Reply to this email or write to us at
-      <a href="mailto:hello@kutumbadvisory.com" style="color:#A8791F;">hello@kutumbadvisory.com</a>
+      ${
+        footer ??
+        `Questions about your purchase? Reply to this email or write to us at
+      <a href="mailto:hello@kutumbadvisory.com" style="color:#A8791F;">hello@kutumbadvisory.com</a>`
+      }
     </p>
     `,
     `Your Financial Kundali is now unlocked — payment confirmed.`
   );
+
+  return { subject: substituteVars(t.subject, vars), html };
 }
 
 // ─── 4. Password Reset OTP email ──────────────────────────────────────
-export function buildPasswordResetOtpHtml(otp: string): string {
-  return wrap(
+export async function buildPasswordResetOtpHtml(otp: string): Promise<{ subject: string; html: string }> {
+  const t = await getEmailTemplate("password_reset_otp");
+  const vars = { otp };
+  const heading = substituteVars(t.heading, vars);
+  const intro = substituteVars(t.intro, vars);
+  const footer = t.footer ? substituteVars(t.footer, vars) : DEFAULT_TEMPLATES.password_reset_otp.footer!;
+
+  const html = wrap(
     `
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:600;color:#172A4A;text-align:center;">Password Reset Request</h1>
-    <p style="margin:0 0 24px;font-size:15px;color:#555555;line-height:1.6;text-align:center;">Use the 6-digit verification code below to reset your Kutumb Advisory account password.</p>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:600;color:#172A4A;text-align:center;">${heading}</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#555555;line-height:1.6;text-align:center;">${intro}</p>
 
     <div style="text-align:center;margin:32px 0;">
       <div style="display:inline-block;background:#172A4A;color:#D7A52E;font-size:32px;font-weight:700;letter-spacing:0.35em;padding:16px 36px;border-radius:12px;font-family:monospace;">
@@ -204,18 +307,26 @@ export function buildPasswordResetOtpHtml(otp: string): string {
     </div>
 
     <p style="margin:0 0 16px;font-size:13px;color:#666666;text-align:center;line-height:1.5;">This verification code will expire in 15 minutes.</p>
-    <p style="margin:0;font-size:13px;color:#888888;line-height:1.6;text-align:center;">If you did not request a password reset, please ignore this email.</p>
+    <p style="margin:0;font-size:13px;color:#888888;line-height:1.6;text-align:center;">${footer}</p>
     `,
     `Your password reset verification code is ${otp}`
   );
+
+  return { subject: substituteVars(t.subject, vars), html };
 }
 
 // ─── 5. Signup verification OTP email ─────────────────────────────────
-export function buildSignupOtpHtml(otp: string): string {
-  return wrap(
+export async function buildSignupOtpHtml(otp: string): Promise<{ subject: string; html: string }> {
+  const t = await getEmailTemplate("signup_otp");
+  const vars = { otp };
+  const heading = substituteVars(t.heading, vars);
+  const intro = substituteVars(t.intro, vars);
+  const footer = t.footer ? substituteVars(t.footer, vars) : DEFAULT_TEMPLATES.signup_otp.footer!;
+
+  const html = wrap(
     `
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:600;color:#172A4A;text-align:center;">Verify Your Email</h1>
-    <p style="margin:0 0 24px;font-size:15px;color:#555555;line-height:1.6;text-align:center;">Use the 6-digit verification code below to complete your Kutumb Advisory account signup.</p>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:600;color:#172A4A;text-align:center;">${heading}</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#555555;line-height:1.6;text-align:center;">${intro}</p>
 
     <div style="text-align:center;margin:32px 0;">
       <div style="display:inline-block;background:#172A4A;color:#D7A52E;font-size:32px;font-weight:700;letter-spacing:0.35em;padding:16px 36px;border-radius:12px;font-family:monospace;">
@@ -224,43 +335,33 @@ export function buildSignupOtpHtml(otp: string): string {
     </div>
 
     <p style="margin:0 0 16px;font-size:13px;color:#666666;text-align:center;line-height:1.5;">This verification code will expire in 15 minutes.</p>
-    <p style="margin:0;font-size:13px;color:#888888;line-height:1.6;text-align:center;">If you did not request this, please ignore this email.</p>
+    <p style="margin:0;font-size:13px;color:#888888;line-height:1.6;text-align:center;">${footer}</p>
     `,
     `Your Kutumb Advisory verification code is ${otp}`
   );
+
+  return { subject: substituteVars(t.subject, vars), html };
 }
 
 // ─── Sender utilities ────────────────────────────────────────────────
 
 export async function sendWelcomeEmail(to: string, name: string) {
-  const result = await getResend().emails.send({
-    from: `${FROM_NAME} <${FROM}>`,
-    to,
-    subject: "Welcome to Kutumb Advisory — Your Journey Begins ✦",
-    html: buildWelcomeHtml(name),
-  });
+  const { subject, html } = await buildWelcomeHtml(name);
+  const result = await getResend().emails.send({ from: `${FROM_NAME} <${FROM}>`, to, subject, html });
   if (!result.error) await logEmailSend(1);
   return result;
 }
 
 export async function sendPasswordResetOtpEmail(to: string, otp: string) {
-  const result = await getResend().emails.send({
-    from: `${FROM_NAME} <${FROM}>`,
-    to,
-    subject: `${otp} is your Kutumb Advisory password reset code`,
-    html: buildPasswordResetOtpHtml(otp),
-  });
+  const { subject, html } = await buildPasswordResetOtpHtml(otp);
+  const result = await getResend().emails.send({ from: `${FROM_NAME} <${FROM}>`, to, subject, html });
   if (!result.error) await logEmailSend(1);
   return result;
 }
 
 export async function sendSignupOtpEmail(to: string, otp: string) {
-  const result = await getResend().emails.send({
-    from: `${FROM_NAME} <${FROM}>`,
-    to,
-    subject: `${otp} is your Kutumb Advisory verification code`,
-    html: buildSignupOtpHtml(otp),
-  });
+  const { subject, html } = await buildSignupOtpHtml(otp);
+  const result = await getResend().emails.send({ from: `${FROM_NAME} <${FROM}>`, to, subject, html });
   if (!result.error) await logEmailSend(1);
   return result;
 }
@@ -271,14 +372,27 @@ export async function sendPaymentConfirmationEmail(
   amountPaise: number,
   orderId: string
 ) {
-  const result = await getResend().emails.send({
-    from: `${FROM_NAME} <${FROM}>`,
-    to,
-    subject: "Payment Confirmed — Financial Kundali Unlocked ✓",
-    html: buildPaymentConfirmationHtml(name, amountPaise, orderId),
-  });
+  const { subject, html } = await buildPaymentConfirmationHtml(name, amountPaise, orderId);
+  const result = await getResend().emails.send({ from: `${FROM_NAME} <${FROM}>`, to, subject, html });
   if (!result.error) await logEmailSend(1);
   return result;
+}
+
+// Internal ops alert — not a customer-facing template, so it's not
+// DB-editable. Used sparingly (business-critical failures only) to avoid
+// spamming the inbox. Silently no-ops if ADMIN_EMAIL isn't configured.
+export async function sendAdminAlertEmail(subject: string, message: string) {
+  if (!ADMIN_EMAIL) return;
+  try {
+    await getResend().emails.send({
+      from: `${FROM_NAME} <${FROM}>`,
+      to: ADMIN_EMAIL,
+      subject: `[Kutumb Alert] ${subject}`,
+      html: `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;">${escapeHtml(message)}</pre>`,
+    });
+  } catch (err) {
+    console.error("[email] Failed to send admin alert:", err);
+  }
 }
 
 export async function sendNewsletterBatch(

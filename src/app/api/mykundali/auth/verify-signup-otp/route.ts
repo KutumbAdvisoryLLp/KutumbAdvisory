@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { logServerError } from "@/lib/errorLog";
 
 const MAX_ATTEMPTS = 5;
 
@@ -98,6 +99,11 @@ export async function POST(request: Request) {
   }
 
   if (created.error || !created.data.user) {
+    logServerError(
+      "auth.verify-signup-otp",
+      created.error?.message ?? "createUser returned no user",
+      { email: cleanEmail }
+    );
     // Code stays valid (not deleted, attempts unchanged) — this failure is
     // ours, not theirs.
     return NextResponse.json(
@@ -116,6 +122,9 @@ export async function POST(request: Request) {
   });
 
   if (insertError) {
+    logServerError("auth.verify-signup-otp", `customers insert failed: ${insertError.message}`, {
+      email: cleanEmail,
+    });
     await admin.auth.admin.deleteUser(user.id);
     // Same reasoning — roll back the just-created auth user, but leave the
     // OTP code alone so the next attempt doesn't need a resend.

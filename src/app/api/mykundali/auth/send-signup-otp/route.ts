@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin-client";
 import { sendSignupOtpEmail } from "@/lib/email";
 import { isAllowedEmailDomain, ALLOWED_EMAIL_PROVIDERS_LABEL } from "@/lib/allowedEmailDomains";
 import { checkRateLimit, releaseRateLimitHit, getClientIp } from "@/lib/rateLimit";
+import { getFeatureFlag } from "@/lib/featureFlags";
+import { logServerError } from "@/lib/errorLog";
 
 const OTP_TTL_MINUTES = 15;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,6 +19,13 @@ export async function POST(request: Request) {
 
   if (!fullName?.trim() || !email?.trim() || !phone?.trim() || !password) {
     return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+  }
+
+  if (await getFeatureFlag("pause_new_signups")) {
+    return NextResponse.json(
+      { error: "New signups are temporarily paused. Please check back shortly." },
+      { status: 503 }
+    );
   }
 
   if (!EMAIL_REGEX.test(email.trim())) {
@@ -103,6 +112,7 @@ export async function POST(request: Request) {
   const { error: emailError } = await sendSignupOtpEmail(cleanEmail, otp);
   if (emailError) {
     console.error("[send-signup-otp] Resend error:", emailError);
+    logServerError("auth.send-signup-otp", emailError.message ?? "Resend send failed", { email: cleanEmail });
     await releaseHits();
     return NextResponse.json(
       { error: "Could not send the verification email. Please try again shortly." },

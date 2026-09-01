@@ -14,7 +14,18 @@ import {
   SettingsIcon,
   CloseIcon,
 } from "@/components/icons/admin";
-import { Megaphone, MessageSquareQuote, HelpCircle, UserCheck, Code2, Inbox } from "lucide-react";
+import {
+  Megaphone,
+  MessageSquareQuote,
+  HelpCircle,
+  UserCheck,
+  Code2,
+  Inbox,
+  CreditCard,
+  History,
+  Mail,
+  ToggleLeft,
+} from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: DashboardIcon },
@@ -26,8 +37,12 @@ const navItems = [
   { label: "Journal", href: "/admin/journal", icon: JournalAdminIcon },
   { label: "Contact", href: "/admin/contact", icon: ContactAdminIcon },
   { label: "Customers", href: "/admin/customers", icon: UsersIcon },
+  { label: "Payments", href: "/admin/payments", icon: CreditCard },
   { label: "Newsletter", href: "/admin/newsletter", icon: NewsletterIcon },
   { label: "Analytics", href: "/admin/analytics", icon: AnalyticsIcon },
+  { label: "Email Templates", href: "/admin/email-templates", icon: Mail },
+  { label: "Feature Flags", href: "/admin/feature-flags", icon: ToggleLeft },
+  { label: "Audit Log", href: "/admin/audit-log", icon: History },
   { label: "Developer", href: "/admin/developer", icon: Code2 },
   { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
 ];

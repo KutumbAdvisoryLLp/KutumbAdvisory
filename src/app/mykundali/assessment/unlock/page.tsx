@@ -18,7 +18,7 @@ import {
   Star,
 } from 'lucide-react'
 import Button from '@/components/Button'
-import { FINANCIAL_KUNDALI_PRICE_INR } from '@/lib/payment'
+import { FINANCIAL_KUNDALI_PRICE_INR, getFinancialKundaliPriceInr } from '@/lib/payment'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 
 const features = [
@@ -68,6 +68,7 @@ export default function UnlockPage() {
   const { user, userId } = useMykundaliAuth()
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
+  const [priceInr, setPriceInr] = useState(FINANCIAL_KUNDALI_PRICE_INR)
 
   // Auto-redirect if user has already unlocked/paid
   useEffect(() => {
@@ -86,6 +87,10 @@ export default function UnlockPage() {
       }
     })()
   }, [userId])
+
+  useEffect(() => {
+    getFinancialKundaliPriceInr(createClient()).then(setPriceInr)
+  }, [])
 
   const handlePayment = async () => {
     setError('')
@@ -225,7 +230,7 @@ export default function UnlockPage() {
             One-time payment
           </p>
           <p className="font-serif text-4xl sm:text-5xl md:text-6xl text-gold mb-2">
-            ₹{FINANCIAL_KUNDALI_PRICE_INR}
+            ₹{priceInr}
           </p>
           <p className="text-white/50 text-xs sm:text-sm mb-6 sm:mb-8">Lifetime access · No recurring fees</p>
 
