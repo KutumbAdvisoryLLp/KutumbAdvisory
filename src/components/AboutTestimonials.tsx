@@ -45,7 +45,12 @@ function QuoteMark({ variant = "navy" }: { variant?: string }) {
 
 export default function AboutTestimonials() {
   const supabase = useMemo(() => createClient(), []);
+  // Starts with the hardcoded copy purely as a loading placeholder — once
+  // the real fetch resolves, an empty result means the admin genuinely
+  // cleared every testimonial, and the section hides rather than silently
+  // keep showing this fake content as if it were real.
   const [list, setList] = useState(defaultTestimonials);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -55,19 +60,23 @@ export default function AboutTestimonials() {
         .eq("is_featured", true)
         .order("display_order", { ascending: true });
 
-      if (data && data.length > 0) {
-        setList(
-          data.map((d: any, i: number) => ({
-            quote: d.quote,
-            author: d.name,
-            title: `${d.role}, ${d.location}`,
-            initials: d.name.split(" ").map((n: string) => n[0]).join(""),
-            variant: i === 0 ? "navy" : "ivory",
-          }))
-        );
-      }
+      setList(
+        data && data.length > 0
+          ? data.map((d: any, i: number) => ({
+              quote: d.quote,
+              author: d.name,
+              title: `${d.role}, ${d.location}`,
+              initials: d.name.split(" ").map((n: string) => n[0]).join(""),
+              variant: i === 0 ? "navy" : "ivory",
+            }))
+          : []
+      );
+      setLoaded(true);
     })();
   }, [supabase]);
+
+  if (loaded && list.length === 0) return null;
+
   return (
     <AnimatedSection className="bg-white py-28 sm:py-36 lg:py-44">
       <div className="mx-auto max-w-7xl px-8 lg:px-10">

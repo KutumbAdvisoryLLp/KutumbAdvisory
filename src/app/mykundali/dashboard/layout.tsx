@@ -19,6 +19,7 @@ import {
   MessageSquareQuote,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
+import { FINANCIAL_KUNDALI_PRICE_INR } from '@/lib/payment'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 import { useLoadingOverlay } from '@/components/LoadingOverlayContext'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
@@ -295,7 +296,7 @@ export default function DashboardLayout({
         title="Retake your Financial Kundali?"
         description={
           retakeError ||
-          "Retaking the assessment resets your current results. You'll need to complete payment of ₹999 again to unlock your new Financial Kundali."
+          `Retaking the assessment resets your current results. You'll need to complete payment of ₹${FINANCIAL_KUNDALI_PRICE_INR} again to unlock your new Financial Kundali.`
         }
         confirmLabel="Retake & Pay Again"
         cancelLabel="Cancel"

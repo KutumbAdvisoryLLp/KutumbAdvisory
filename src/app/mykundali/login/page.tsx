@@ -208,7 +208,7 @@ export default function MykundaliLoginPage() {
     }
     setOtp("");
     setInfoMessage(`A new verification code was sent to ${form.email}.`);
-    setResendCooldown(30);
+    setResendCooldown(63);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -245,7 +245,7 @@ export default function MykundaliLoginPage() {
       setOtp("");
       setInfoMessage(`Verification code sent to ${form.email}. Please check your inbox.`);
       setMode("signup-verify");
-      setResendCooldown(30);
+      setResendCooldown(63);
       return;
     }
 

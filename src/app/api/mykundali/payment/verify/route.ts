@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { sendPaymentConfirmationEmail } from "@/lib/email";
+import { FINANCIAL_KUNDALI_PRICE_PAISE } from "@/lib/payment";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
   const { data: order } = await admin
     .from("payments")
-    .select("customer_id")
+    .select("customer_id, amount")
     .eq("razorpay_order_id", razorpay_order_id)
     .maybeSingle();
 
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
         await sendPaymentConfirmationEmail(
           customer.email,
           customer.full_name || "Valued Client",
-          99900,
+          order.amount ?? FINANCIAL_KUNDALI_PRICE_PAISE,
           razorpay_order_id
         );
       }

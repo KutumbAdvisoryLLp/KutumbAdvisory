@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import Button from '@/components/Button'
 import { useRouter } from 'next/navigation'
+import { FINANCIAL_KUNDALI_PRICE_INR } from '@/lib/payment'
 
 const features = [
   'Complete Financial Kundali Report',
@@ -29,7 +30,7 @@ export function PaywallSection() {
               ✦ Unlock Your Complete Financial Kundali
             </p>
             <div className="flex items-center gap-3 mt-1">
-              <span className="font-serif text-2xl text-gold-dark font-semibold">₹999</span>
+              <span className="font-serif text-2xl text-gold-dark font-semibold">₹{FINANCIAL_KUNDALI_PRICE_INR}</span>
               <span className="text-xs text-slate-light">One-time · Lifetime access</span>
             </div>
           </div>

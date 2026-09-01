@@ -115,6 +115,7 @@ export default function LeaveTestimonialModal({
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
+                      maxLength={200}
                       className="w-full px-4 py-3 rounded-xl border border-stone/20 bg-cream/30 text-sm focus:border-gold outline-none"
                     />
                   </div>
@@ -127,8 +128,12 @@ export default function LeaveTestimonialModal({
                       value={testimonial}
                       onChange={(e) => setTestimonial(e.target.value)}
                       placeholder="Tell us about your experience with Kutumb..."
+                      maxLength={2000}
                       className="w-full px-4 py-3 rounded-xl border border-stone/20 bg-cream/30 text-sm focus:border-gold outline-none resize-none"
                     />
+                    <p className="mt-1 text-right text-[11px] text-stone/40">
+                      {testimonial.length}/2000
+                    </p>
                   </div>
 
                   {error && <p className="text-sm text-red-500">{error}</p>}

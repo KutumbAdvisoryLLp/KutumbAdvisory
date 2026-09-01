@@ -69,13 +69,16 @@ export default function AdminDeveloperPage() {
   const [pinging, setPinging] = useState(false);
 
   // Fetch Environment Variables from Next.js (sanitized for client)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wxgkexmsugnchmbsazrt.supabase.co";
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "Not configured";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "Not configured";
 
   const fetchStats = async () => {
     setLoading(true);
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    // Resend's daily quota resets on a UTC day boundary, not the admin's
+    // local browser timezone — using local midnight here could show a
+    // count that's off by several hours near the boundary.
+    const now = new Date();
+    const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
     const [c, fp, ar, l, ns, a, pv, emailLog] = await Promise.all([
       supabase.from("customers").select("*", { count: "exact", head: true }),
@@ -310,7 +313,7 @@ export default function AdminDeveloperPage() {
         </div>
 
         <p className="text-xs text-stone/60">
-          Counts welcome, OTP, payment, and newsletter emails actually sent today. Resets at midnight.
+          Counts welcome, OTP, payment, and newsletter emails actually sent today. Resets at midnight UTC.
         </p>
       </div>
 

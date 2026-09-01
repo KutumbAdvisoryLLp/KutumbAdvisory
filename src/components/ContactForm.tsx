@@ -260,12 +260,14 @@ function FloatingTextarea({
   value,
   error,
   onChange,
+  maxLength,
 }: {
   label: string;
   name: string;
   value: string;
   error?: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  maxLength?: number;
 }) {
   return (
     <div className="relative">
@@ -275,6 +277,7 @@ function FloatingTextarea({
         rows={5}
         value={value}
         onChange={onChange}
+        maxLength={maxLength}
         placeholder="Tell us anything you'd like us to know about your family's financial goals, concerns, or dreams."
         className={`peer w-full rounded-xl border bg-white px-6 pt-6 pb-4 text-sm text-navy outline-none resize-none transition-all duration-300 focus:ring-0 min-h-[160px] ${
           error
@@ -347,6 +350,10 @@ export default function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Honeypot — invisible to real visitors, but bots that auto-fill every
+  // field tend to fill this too. A non-empty value pretends to succeed
+  // without actually inserting anything, so the bot isn't tipped off.
+  const [honeypot, setHoneypot] = useState("");
 
   const handleChange = useCallback(
     (
@@ -379,6 +386,12 @@ export default function ContactForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError("");
+
+    if (honeypot) {
+      setSubmitted(true);
+      return;
+    }
+
     if (!validate()) return;
 
     setSubmitting(true);
@@ -482,6 +495,16 @@ export default function ContactForm() {
             className="mx-auto mt-16"
             noValidate
           >
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden"
+            />
             <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
               {/* Left Column — Form Cards */}
               <div className="space-y-10 lg:col-span-7">
@@ -721,6 +744,7 @@ export default function ContactForm() {
                       name="notes"
                       value={form.notes}
                       onChange={handleChange}
+                      maxLength={2000}
                     />
                   </div>
                 </motion.div>

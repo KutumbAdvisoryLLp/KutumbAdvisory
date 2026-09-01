@@ -19,6 +19,7 @@
 -- ═══════════════════════════════════════════════════════════════════
 create extension if not exists pgcrypto;
 
+drop table if exists public.rate_limit_hits          cascade;
 drop table if exists public.signup_otp_codes        cascade;
 drop table if exists public.email_send_log          cascade;
 drop table if exists public.testimonial_submissions cascade;
@@ -119,7 +120,7 @@ create table public.leads (
   preferred_meeting text,
   preferred_date    date,
   preferred_time    text,
-  notes             text,
+  notes             text        check (notes is null or char_length(notes) <= 2000),
   status            text        not null default 'new',
   submitted_at      timestamptz not null default now()
 );
@@ -260,8 +261,8 @@ create table public.device_sessions (
 create table public.testimonial_submissions (
   id            uuid        primary key default gen_random_uuid(),
   customer_id   uuid        references public.customers(id) on delete set null,
-  name          text        not null,
-  testimonial   text        not null,
+  name          text        not null check (char_length(name) <= 200),
+  testimonial   text        not null check (char_length(testimonial) <= 2000),
   status        text        not null default 'new' check (status in ('new','featured','dismissed')),
   created_at    timestamptz not null default now()
 );
@@ -282,6 +283,32 @@ create table public.signup_otp_codes (
   expires_at  timestamptz not null,
   created_at  timestamptz not null default now()
 );
+create index signup_otp_codes_expires_idx on public.signup_otp_codes (expires_at);
+
+-- No RLS policies defined on purpose — only the service-role client ever
+-- touches this table.
+create table public.rate_limit_hits (
+  id         uuid        primary key default gen_random_uuid(),
+  key        text        not null,
+  created_at timestamptz not null default now()
+);
+create index rate_limit_hits_key_created_idx on public.rate_limit_hits (key, created_at);
+
+-- SECURITY DEFINER function so "is this uid an admin" can be checked from
+-- within admin_users' own RLS policy without the self-reference causing
+-- Postgres's "infinite recursion detected in policy" error — the function
+-- runs as its owner, exempt from RLS on the table it queries, breaking the
+-- cycle. This is the standard pattern for a self-referencing permissions
+-- table.
+create or replace function public.is_admin(check_uid uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (select 1 from public.admin_users where id = check_uid);
+$$;
 
 -- ═══════════════════════════════════════════════════════════════════
 -- 6. ROW LEVEL SECURITY (RLS) & POLICIES
@@ -306,8 +333,9 @@ alter table public.device_sessions        enable row level security;
 alter table public.testimonial_submissions enable row level security;
 alter table public.email_send_log         enable row level security;
 alter table public.signup_otp_codes       enable row level security;
+alter table public.rate_limit_hits        enable row level security;
 
-create policy "Admins can view admin_users" on public.admin_users for select using (true);
+create policy "Admins can view admin_users" on public.admin_users for select using (auth.uid() = id or public.is_admin(auth.uid()));
 
 create policy "Public read active announcements" on public.announcements for select using (true);
 create policy "Admins manage announcements" on public.announcements for all using (auth.uid() in (select id from public.admin_users));
@@ -335,6 +363,17 @@ create policy "Admins manage site_settings" on public.site_settings for all usin
 
 create policy "Customers view own profile" on public.customers for select using (auth.uid() = id or auth.uid() in (select id from public.admin_users));
 create policy "Customers update own profile" on public.customers for update using (auth.uid() = id);
+-- RLS restricts which rows; column-level grants restrict which columns —
+-- a customer can update their own row but not, say, their own email
+-- (which would desync from their real Supabase Auth login email).
+-- NOTE: Postgres roles don't distinguish "admin" from "customer" within
+-- `authenticated` — this grant applies to admins too. There's currently no
+-- admin feature that updates other customer columns directly (all such
+-- writes already go through service-role API routes), but if one is ever
+-- built as a plain client-side table call, it will silently fail here and
+-- needs to go through a service-role route instead.
+revoke update on public.customers from authenticated;
+grant update (full_name, phone) on public.customers to authenticated;
 
 create policy "Customers manage own family_profile" on public.family_profiles for all using (auth.uid() = customer_id or auth.uid() in (select id from public.admin_users));
 create policy "Customers manage own assessment_answers" on public.assessment_answers for all using (auth.uid() = customer_id or auth.uid() in (select id from public.admin_users));

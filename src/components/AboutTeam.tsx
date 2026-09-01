@@ -60,7 +60,12 @@ const defaultTeam = [
 
 export default function AboutTeam() {
   const supabase = useMemo(() => createClient(), []);
+  // Starts with the hardcoded copy purely as a loading placeholder — once
+  // the real fetch resolves, an empty result means the admin genuinely
+  // cleared the team list, and the section hides rather than silently keep
+  // showing this fake content as if it were real.
   const [members, setMembers] = useState(defaultTeam);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -70,18 +75,22 @@ export default function AboutTeam() {
         .eq("is_founder", false)
         .order("display_order", { ascending: true });
 
-      if (data && data.length > 0) {
-        setMembers(
-          data.map((d: any) => ({
-            name: d.name,
-            role: d.role,
-            bio: d.bio,
-            image: d.image_url,
-          }))
-        );
-      }
+      setMembers(
+        data && data.length > 0
+          ? data.map((d: any) => ({
+              name: d.name,
+              role: d.role,
+              bio: d.bio,
+              image: d.image_url,
+            }))
+          : []
+      );
+      setLoaded(true);
     })();
   }, [supabase]);
+
+  if (loaded && members.length === 0) return null;
+
   return (
     <AnimatedSection className="bg-cream py-28 sm:py-36 lg:py-44">
       <div className="mx-auto max-w-7xl px-8 lg:px-10">

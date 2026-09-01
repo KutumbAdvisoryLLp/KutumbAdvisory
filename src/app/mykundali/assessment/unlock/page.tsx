@@ -18,6 +18,7 @@ import {
   Star,
 } from 'lucide-react'
 import Button from '@/components/Button'
+import { FINANCIAL_KUNDALI_PRICE_INR } from '@/lib/payment'
 import { useMykundaliAuth } from '@/components/mykundali/AuthContext'
 
 const features = [
@@ -224,7 +225,7 @@ export default function UnlockPage() {
             One-time payment
           </p>
           <p className="font-serif text-4xl sm:text-5xl md:text-6xl text-gold mb-2">
-            ₹999
+            ₹{FINANCIAL_KUNDALI_PRICE_INR}
           </p>
           <p className="text-white/50 text-xs sm:text-sm mb-6 sm:mb-8">Lifetime access · No recurring fees</p>
 

@@ -8,10 +8,19 @@ export default function JournalNewsletter() {
   const supabase = useMemo(() => createClient(), []);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  // Honeypot — invisible to real visitors, but bots that auto-fill every
+  // field tend to fill this too.
+  const [honeypot, setHoneypot] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
+
+    if (honeypot) {
+      setEmail("");
+      setStatus("success");
+      return;
+    }
 
     setStatus("submitting");
     const { error } = await supabase
@@ -74,6 +83,16 @@ export default function JournalNewsletter() {
               onSubmit={handleSubmit}
               className="mt-10 mx-auto flex max-w-md flex-col gap-3 sm:flex-row"
             >
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden"
+              />
               <input
                 type="email"
                 required

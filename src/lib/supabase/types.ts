@@ -298,13 +298,15 @@ export interface Database {
           razorpay_order_id: string;
           razorpay_payment_id: string | null;
           amount: number;
-          status: "created" | "paid" | "failed";
+          currency: string;
+          status: "created" | "paid" | "failed" | "superseded_by_retake";
           created_at: string;
           paid_at: string | null;
         };
-        Insert: Omit<Database["public"]["Tables"]["payments"]["Row"], "id" | "created_at"> & {
+        Insert: Omit<Database["public"]["Tables"]["payments"]["Row"], "id" | "created_at" | "currency"> & {
           id?: string;
           created_at?: string;
+          currency?: string;
         };
         Update: Partial<Database["public"]["Tables"]["payments"]["Insert"]>;
         Relationships: [];
@@ -373,6 +375,19 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["signup_otp_codes"]["Insert"]>;
+        Relationships: [];
+      };
+      rate_limit_hits: {
+        Row: {
+          id: string;
+          key: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["rate_limit_hits"]["Row"], "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["rate_limit_hits"]["Insert"]>;
         Relationships: [];
       };
     };

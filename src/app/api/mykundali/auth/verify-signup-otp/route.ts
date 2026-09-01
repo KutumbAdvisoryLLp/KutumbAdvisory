@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { sendWelcomeEmail } from "@/lib/email";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const MAX_ATTEMPTS = 5;
 
@@ -14,6 +15,14 @@ export async function POST(request: Request) {
 
   if (!email?.trim() || !otp?.trim() || !fullName?.trim() || !phone?.trim() || !password) {
     return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+  }
+
+  // Per-code attempts already cap guessing a single OTP; this caps one
+  // source from hammering many different emails' verify endpoints.
+  const ip = getClientIp(request);
+  const ipCheck = await checkRateLimit(`verify-otp:ip:${ip}`, 20, 60 * 60);
+  if (!ipCheck.allowed) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
   }
 
   const admin = createAdminClient();
@@ -56,8 +65,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid verification code." }, { status: 400 });
   }
 
-  // Code is correct and consumed — only now does an account get created.
-  await admin.from("signup_otp_codes").delete().eq("email", cleanEmail);
+  // The code is correct — but it's deliberately NOT deleted yet. If account
+  // creation below fails for a reason that isn't the user's fault (a
+  // transient Supabase error, etc.), leaving the code in place means they
+  // can immediately retry with the same, already-correct code instead of
+  // being forced to request a whole new one.
 
   let created = await admin.auth.admin.createUser({
     email: cleanEmail,
@@ -86,6 +98,8 @@ export async function POST(request: Request) {
   }
 
   if (created.error || !created.data.user) {
+    // Code stays valid (not deleted, attempts unchanged) — this failure is
+    // ours, not theirs.
     return NextResponse.json(
       { error: created.error?.message ?? "Could not create your account. Please try again." },
       { status: 400 }
@@ -103,8 +117,13 @@ export async function POST(request: Request) {
 
   if (insertError) {
     await admin.auth.admin.deleteUser(user.id);
+    // Same reasoning — roll back the just-created auth user, but leave the
+    // OTP code alone so the next attempt doesn't need a resend.
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
+
+  // Everything succeeded — only now is the code actually consumed.
+  await admin.from("signup_otp_codes").delete().eq("email", cleanEmail);
 
   await admin.from("leads").insert({
     full_name: fullName.trim(),
