@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "@/components/Button";
@@ -96,6 +96,13 @@ export default function MykundaliLoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,7 +185,7 @@ export default function MykundaliLoginPage() {
     if (!validate()) return;
     setSubmitting(true);
     setFormError("");
-    const result = await verifySignupOtp(form.email, otp);
+    const result = await verifySignupOtp(form, otp);
     setSubmitting(false);
     if (!result.ok) {
       setFormError(result.error ?? "Invalid or expired verification code.");
@@ -186,6 +193,22 @@ export default function MykundaliLoginPage() {
     }
     showLoadingOverlay("Setting up your account...");
     router.push("/mykundali/assessment/landing");
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || submitting) return;
+    setSubmitting(true);
+    setFormError("");
+    setInfoMessage("");
+    const result = await sendSignupOtp(form);
+    setSubmitting(false);
+    if (!result.ok) {
+      setFormError(result.error ?? "Could not resend the code. Please try again.");
+      return;
+    }
+    setOtp("");
+    setInfoMessage(`A new verification code was sent to ${form.email}.`);
+    setResendCooldown(30);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -222,6 +245,7 @@ export default function MykundaliLoginPage() {
       setOtp("");
       setInfoMessage(`Verification code sent to ${form.email}. Please check your inbox.`);
       setMode("signup-verify");
+      setResendCooldown(30);
       return;
     }
 
@@ -426,17 +450,29 @@ export default function MykundaliLoginPage() {
             )}
 
             {mode === "signup-verify" && (
-              <FloatingInput
-                label="Verification Code"
-                name="otp"
-                type="text"
-                value={otp}
-                error={errors.otp}
-                onChange={(e) => {
-                  setOtp(e.target.value);
-                  if (errors.otp) setErrors((prev) => ({ ...prev, otp: "" }));
-                }}
-              />
+              <>
+                <FloatingInput
+                  label="Verification Code"
+                  name="otp"
+                  type="text"
+                  value={otp}
+                  error={errors.otp}
+                  onChange={(e) => {
+                    setOtp(e.target.value);
+                    if (errors.otp) setErrors((prev) => ({ ...prev, otp: "" }));
+                  }}
+                />
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={resendCooldown > 0 || submitting}
+                    className="text-xs font-medium text-gold hover:underline disabled:text-stone/40 disabled:no-underline disabled:cursor-not-allowed"
+                  >
+                    {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code"}
+                  </button>
+                </div>
+              </>
             )}
 
             {formError && (

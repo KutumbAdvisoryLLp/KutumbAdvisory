@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Download } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { downloadCsv } from "@/lib/exportCsv";
+import { useToast } from "@/components/admin/ToastContext";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { SearchIcon, UsersIcon } from "@/components/icons/admin";
 import CustomerDetailModal from "@/components/admin/CustomerDetailModal";
 
@@ -28,43 +30,68 @@ function formatDate(iso: string) {
 
 export default function AdminCustomersPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { showToast } = useToast();
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<CustomerListItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CustomerListItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const fetchCustomers = async () => {
+    const [customersRes, profilesRes, resultsRes] = await Promise.all([
+      supabase.from("customers").select("*").order("created_at", { ascending: false }),
+      supabase.from("family_profiles").select("customer_id"),
+      supabase.from("assessment_results").select("customer_id, overall_score"),
+    ]);
+
+    const profileIds = new Set((profilesRes.data ?? []).map((p: any) => p.customer_id));
+    const resultsById = new Map(
+      (resultsRes.data ?? []).map((r: any) => [r.customer_id, r.overall_score])
+    );
+
+    const rows: CustomerListItem[] = (customersRes.data ?? []).map((c: any) => {
+      const overallScore = resultsById.get(c.id) ?? null;
+      const status: CustomerListItem["status"] =
+        overallScore !== null ? "completed" : profileIds.has(c.id) ? "in-progress" : "not-started";
+      return {
+        id: c.id,
+        fullName: c.full_name,
+        email: c.email,
+        phone: c.phone ?? "",
+        createdAt: c.created_at,
+        status,
+        overallScore,
+      };
+    });
+
+    setCustomers(rows);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    (async () => {
-      const [customersRes, profilesRes, resultsRes] = await Promise.all([
-        supabase.from("customers").select("*").order("created_at", { ascending: false }),
-        supabase.from("family_profiles").select("customer_id"),
-        supabase.from("assessment_results").select("customer_id, overall_score"),
-      ]);
-
-      const profileIds = new Set((profilesRes.data ?? []).map((p: any) => p.customer_id));
-      const resultsById = new Map(
-        (resultsRes.data ?? []).map((r: any) => [r.customer_id, r.overall_score])
-      );
-
-      const rows: CustomerListItem[] = (customersRes.data ?? []).map((c: any) => {
-        const overallScore = resultsById.get(c.id) ?? null;
-        const status: CustomerListItem["status"] =
-          overallScore !== null ? "completed" : profileIds.has(c.id) ? "in-progress" : "not-started";
-        return {
-          id: c.id,
-          fullName: c.full_name,
-          email: c.email,
-          phone: c.phone ?? "",
-          createdAt: c.created_at,
-          status,
-          overallScore,
-        };
-      });
-
-      setCustomers(rows);
-      setLoading(false);
-    })();
+    fetchCustomers();
   }, [supabase]);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const res = await fetch("/api/admin/customers/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customerId: deleteTarget.id }),
+    });
+    setDeleting(false);
+    if (!res.ok) {
+      const body = await res.json();
+      showToast(body.error ?? "Could not delete customer.", "error");
+      return;
+    }
+    showToast(`Deleted ${deleteTarget.fullName}.`, "success");
+    setDeleteTarget(null);
+    if (selected?.id === deleteTarget.id) setSelected(null);
+    fetchCustomers();
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -158,37 +185,57 @@ export default function AdminCustomersPage() {
         ) : (
           <div className="divide-y divide-navy/6">
             {filtered.map((c) => (
-              <button
+              <div
                 key={c.id}
-                onClick={() => setSelected(c)}
-                className="grid w-full grid-cols-1 gap-3 p-5 text-left sm:grid-cols-[1.6fr_1fr_1fr_auto] sm:items-center sm:gap-4 sm:p-6"
+                className="grid w-full grid-cols-1 gap-3 p-5 text-left sm:grid-cols-[1.6fr_1fr_1fr_auto_auto] sm:items-center sm:gap-4 sm:p-6"
               >
-                <div className="min-w-0">
+                <button onClick={() => setSelected(c)} className="min-w-0 text-left">
                   <p className="truncate text-sm font-semibold text-navy">{c.fullName}</p>
                   <p className="truncate text-xs text-stone/50">
                     {c.email} &middot; {c.phone || "—"}
                   </p>
-                </div>
-                <div className="text-sm text-stone/70">
+                </button>
+                <button onClick={() => setSelected(c)} className="text-left text-sm text-stone/70">
                   Signed up {formatDate(c.createdAt)}
-                </div>
-                <div>
+                </button>
+                <button onClick={() => setSelected(c)} className="text-left">
                   <span
                     className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${statusStyles[c.status]}`}
                   >
                     {statusLabel[c.status]}
                   </span>
-                </div>
-                <div className="text-sm font-medium text-navy sm:text-right">
+                </button>
+                <button
+                  onClick={() => setSelected(c)}
+                  className="text-left text-sm font-medium text-navy sm:text-right"
+                >
                   {c.overallScore !== null ? `${c.overallScore}/90` : "—"}
-                </div>
-              </button>
+                </button>
+                <button
+                  onClick={() => setDeleteTarget(c)}
+                  aria-label={`Delete ${c.fullName}`}
+                  className="flex h-9 w-9 items-center justify-center justify-self-end rounded-lg text-stone/40 transition-colors duration-300 hover:bg-red-50 hover:text-red-500"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             ))}
           </div>
         )}
       </motion.div>
 
       <CustomerDetailModal customer={selected} onClose={() => setSelected(null)} />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete this customer?"
+        description={`This permanently deletes ${
+          deleteTarget?.fullName ?? "this customer"
+        }'s account, including their assessment answers, results, family profile, and payment records. This cannot be undone.`}
+        confirmLabel={deleting ? "Deleting..." : "Delete"}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

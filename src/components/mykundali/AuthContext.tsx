@@ -39,7 +39,7 @@ interface AuthContextValue {
   hasPaid: boolean;
   deviceConflict: DeviceConflict | null;
   sendSignupOtp: (params: SignUpParams) => Promise<AuthResult>;
-  verifySignupOtp: (email: string, otp: string) => Promise<AuthResult>;
+  verifySignupOtp: (params: SignUpParams, otp: string) => Promise<AuthResult>;
   login: (params: LoginParams) => Promise<AuthResult>;
   resolveDeviceConflict: () => Promise<void>;
   cancelDeviceConflict: () => Promise<void>;
@@ -183,36 +183,52 @@ export function MykundaliAuthProvider({ children }: { children: React.ReactNode 
   }, []);
 
   const verifySignupOtp = useCallback(
-    async (email: string, otp: string): Promise<AuthResult> => {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: otp.trim(),
-        type: "signup",
-      });
-      if (error || !data.session || !data.user) {
-        return { ok: false, error: error?.message ?? "Invalid or expired verification code." };
+    async ({ fullName, email, phone, password }: SignUpParams, otp: string): Promise<AuthResult> => {
+      pendingLoginRef.current = true;
+      try {
+        const res = await fetch("/api/mykundali/auth/verify-signup-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email.trim(),
+            otp: otp.trim(),
+            fullName: fullName.trim(),
+            phone: phone.trim(),
+            password,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          return { ok: false, error: body.error ?? "Could not verify your code." };
+        }
+
+        // The account now exists (email_confirm: true) — sign in with the
+        // password they just set to establish the session.
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error || !data.user) {
+          return { ok: false, error: error?.message ?? "Account created — please sign in." };
+        }
+
+        await supabase.from("device_sessions").upsert(
+          {
+            user_id: data.user.id,
+            user_type: "mykundali",
+            device_id: getDeviceId(),
+            device_label: getDeviceLabel(),
+            last_seen_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,device_id" }
+        );
+
+        setUser({ fullName: body.fullName, email: body.email });
+        setUserId(data.user.id);
+        return { ok: true };
+      } finally {
+        pendingLoginRef.current = false;
       }
-
-      const res = await fetch("/api/mykundali/signup/finalize", { method: "POST" });
-      const body = await res.json();
-      if (!res.ok) {
-        return { ok: false, error: body.error ?? "Could not finish creating your account." };
-      }
-
-      await supabase.from("device_sessions").upsert(
-        {
-          user_id: data.user.id,
-          user_type: "mykundali",
-          device_id: getDeviceId(),
-          device_label: getDeviceLabel(),
-          last_seen_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,device_id" }
-      );
-
-      setUser({ fullName: body.fullName, email: body.email });
-      setUserId(data.user.id);
-      return { ok: true };
     },
     [supabase]
   );

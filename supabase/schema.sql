@@ -19,6 +19,7 @@
 -- ═══════════════════════════════════════════════════════════════════
 create extension if not exists pgcrypto;
 
+drop table if exists public.signup_otp_codes        cascade;
 drop table if exists public.email_send_log          cascade;
 drop table if exists public.testimonial_submissions cascade;
 drop table if exists public.device_sessions         cascade;
@@ -271,6 +272,17 @@ create table public.email_send_log (
   sent_at  timestamptz not null default now()
 );
 
+-- No RLS policies defined on purpose — only the service-role client ever
+-- touches this table.
+create table public.signup_otp_codes (
+  id          uuid        primary key default gen_random_uuid(),
+  email       text        not null unique,
+  otp_hash    text        not null,
+  attempts    integer     not null default 0,
+  expires_at  timestamptz not null,
+  created_at  timestamptz not null default now()
+);
+
 -- ═══════════════════════════════════════════════════════════════════
 -- 6. ROW LEVEL SECURITY (RLS) & POLICIES
 -- ═══════════════════════════════════════════════════════════════════
@@ -293,6 +305,7 @@ alter table public.payments               enable row level security;
 alter table public.device_sessions        enable row level security;
 alter table public.testimonial_submissions enable row level security;
 alter table public.email_send_log         enable row level security;
+alter table public.signup_otp_codes       enable row level security;
 
 create policy "Admins can view admin_users" on public.admin_users for select using (true);
 

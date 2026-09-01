@@ -358,6 +358,23 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["email_send_log"]["Insert"]>;
         Relationships: [];
       };
+      signup_otp_codes: {
+        Row: {
+          id: string;
+          email: string;
+          otp_hash: string;
+          attempts: number;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: Omit<Database["public"]["Tables"]["signup_otp_codes"]["Row"], "id" | "attempts" | "created_at"> & {
+          id?: string;
+          attempts?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["signup_otp_codes"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

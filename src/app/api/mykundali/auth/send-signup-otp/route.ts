@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
+import { randomInt, createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { sendSignupOtpEmail } from "@/lib/email";
 import { isAllowedEmailDomain, ALLOWED_EMAIL_PROVIDERS_LABEL } from "@/lib/allowedEmailDomains";
+
+const OTP_TTL_MINUTES = 15;
+
+function hashOtp(otp: string) {
+  return createHash("sha256").update(otp).digest("hex");
+}
 
 export async function POST(request: Request) {
   const { fullName, email, phone, password } = await request.json();
@@ -20,24 +27,39 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const cleanEmail = email.trim().toLowerCase();
 
-  // generateLink with type "signup" creates the auth user (unconfirmed) as a
-  // side effect and hands back a raw OTP — mirrors the forgot-password flow,
-  // which does the same thing with type "recovery" for an existing user.
-  const { data, error } = await admin.auth.admin.generateLink({
-    type: "signup",
-    email: cleanEmail,
-    password,
-    options: { data: { full_name: fullName.trim(), phone: phone.trim() } },
-  });
+  // Only block on an email that's actually a real, confirmed customer —
+  // never on Supabase's own auth.users side effects, since this route no
+  // longer creates any account. That's the whole point: a failed/expired
+  // OTP here leaves nothing behind to get stuck on.
+  const { data: existingCustomer } = await admin
+    .from("customers")
+    .select("id")
+    .eq("email", cleanEmail)
+    .maybeSingle();
 
-  if (error || !data?.properties?.email_otp) {
+  if (existingCustomer) {
     return NextResponse.json(
-      { error: error?.message ?? "Could not start signup. Please try again." },
+      { error: "An account with this email already exists. Try signing in instead." },
       { status: 400 }
     );
   }
 
-  const otp = data.properties.email_otp;
+  const otp = randomInt(0, 100000000).toString().padStart(8, "0");
+  const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000).toISOString();
+
+  const { error: upsertError } = await admin.from("signup_otp_codes").upsert(
+    {
+      email: cleanEmail,
+      otp_hash: hashOtp(otp),
+      attempts: 0,
+      expires_at: expiresAt,
+    },
+    { onConflict: "email" }
+  );
+
+  if (upsertError) {
+    return NextResponse.json({ error: "Could not start signup. Please try again." }, { status: 500 });
+  }
 
   const { error: emailError } = await sendSignupOtpEmail(cleanEmail, otp);
   if (emailError) {
