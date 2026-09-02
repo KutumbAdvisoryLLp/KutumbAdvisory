@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import AnimatedSection from "./AnimatedSection";
 
@@ -15,29 +16,13 @@ export default function AboutWhyExists() {
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-ivory shadow-lg"
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center px-8">
-                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-navy/5">
-                  <svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#201B62"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <circle cx="12" cy="12" r="6" />
-                    <circle cx="12" cy="12" r="2" />
-                  </svg>
-                </div>
-                <p className="font-serif text-xl text-navy/40">
-                  Financial Kundali Origin
-                </p>
-              </div>
-            </div>
+            <Image
+              src="/images/4.png"
+              alt="An abstract navy and gold architectural composition of arches and steps"
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
           </motion.div>
 
           <div>

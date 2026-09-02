@@ -582,7 +582,7 @@ export default function FamilyProfilePage() {
         </div>
         <AnimatePresence>
           {profile.existingInsurance.map((ins, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-[1.2fr_1fr_1fr_1fr_auto] gap-3 items-start mb-3">
+            <motion.div key={i} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr_1fr_1fr_auto] gap-3 items-start mb-3 pb-4 border-b border-slate-lighter/30 sm:border-none sm:pb-0">
               <select value={ins.type} onChange={(e) => { const c = [...profile.existingInsurance]; c[i] = { ...c[i], type: e.target.value }; update('existingInsurance', c) }} className="px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm">
                 {insuranceTypes.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -591,8 +591,9 @@ export default function FamilyProfilePage() {
               <select value={ins.paymentMode} onChange={(e) => { const c = [...profile.existingInsurance]; c[i] = { ...c[i], paymentMode: e.target.value as InsuranceEntry['paymentMode'] }; update('existingInsurance', c) }} className="px-3 py-2.5 rounded-xl border-2 border-slate-lighter bg-white focus:border-gold focus:outline-none text-sm">
                 {paymentModes.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
-              <button onClick={() => setProfile(p => ({ ...p, existingInsurance: p.existingInsurance.filter((_, j) => j !== i) }))} className="text-slate-light hover:text-error transition-colors p-1 mt-1">
+              <button onClick={() => setProfile(p => ({ ...p, existingInsurance: p.existingInsurance.filter((_, j) => j !== i) }))} className="flex items-center gap-1.5 justify-self-end text-slate-light hover:text-error transition-colors p-1 sm:mt-1">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                <span className="text-xs sm:hidden">Remove</span>
               </button>
             </motion.div>
           ))}

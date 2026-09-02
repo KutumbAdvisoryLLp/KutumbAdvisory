@@ -273,6 +273,14 @@ export default function UnlockPage() {
             <span>·</span>
             <span>Net Banking</span>
           </div>
+
+          <p className="mt-4 text-[11px] text-white/30">
+            By paying, you agree to our{' '}
+            <a href="/refund-policy" className="underline decoration-white/20 underline-offset-2 hover:text-white/50">
+              Refund &amp; Cancellation Policy
+            </a>
+            .
+          </p>
         </motion.div>
 
 

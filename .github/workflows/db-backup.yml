@@ -1,0 +1,111 @@
+# Nightly encrypted database backup.
+#
+# WHY THIS EXISTS: Supabase's free tier keeps zero backup retention — no
+# automated daily backups, no point-in-time recovery. If a bad query, a
+# migration mistake, or a bug ever deletes real data, there is nothing on
+# Supabase's side to restore from. This workflow is the safety net: it
+# dumps the whole database every night, encrypts it, and pushes it to a
+# private repo on a SEPARATE GitHub account — so even if this account or
+# repo is ever compromised, the backups aren't reachable from here.
+#
+# ── ONE-TIME SETUP (do this before the first run) ──────────────────────
+# 1. On the OTHER GitHub account: create a new private repo (e.g.
+#    "kutumb-backups"). It just needs to exist — this workflow creates
+#    the folder structure inside it.
+# 2. On that SAME other account: Settings → Developer settings → Personal
+#    access tokens → Fine-grained tokens → generate one scoped to ONLY
+#    that one repo, with Contents: Read and write permission. Nothing
+#    else. Copy the token — you won't see it again.
+# 3. Back in THIS repo (Settings → Secrets and variables → Actions →
+#    New repository secret), add:
+#      - SUPABASE_DB_URL      → Supabase dashboard → Project Settings →
+#                                Database → Connection string → URI
+#                                (the "Direct connection" one, not the
+#                                pooler). This contains your DB password
+#                                — treat it as fully sensitive.
+#      - BACKUP_GPG_PASSPHRASE → any long random passphrase YOU generate
+#                                and store somewhere safe (e.g. a password
+#                                manager). You will need this exact
+#                                passphrase to ever decrypt a backup —
+#                                losing it makes every backup unreadable.
+#      - BACKUP_REPO_PAT      → the token from step 2.
+# 4. BACKUP_REPO_SLUG below is already set to KutumbAdvisoryLLp/kutumb-backups.
+# 5. Trigger a run manually once (Actions tab → this workflow → Run
+#    workflow) to confirm it works before trusting the nightly schedule.
+#
+# ── HOW TO RESTORE FROM A BACKUP ────────────────────────────────────────
+#   gpg --batch --yes --passphrase "<BACKUP_GPG_PASSPHRASE>" \
+#       --decrypt backups/kutumb_2026-09-02.dump.gpg > kutumb.dump
+#   pg_restore --clean --if-exists --no-owner --no-privileges \
+#       -d "<SUPABASE_DB_URL>" kutumb.dump
+# Test this at least once against a scratch database — a backup you've
+# never restored isn't a verified backup.
+
+name: Nightly Database Backup
+
+on:
+  schedule:
+    - cron: "17 2 * * *" # ~7:47am IST daily; off-the-hour to avoid GitHub's cron thundering-herd
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab
+
+env:
+  BACKUP_REPO_SLUG: "KutumbAdvisoryLLp/kutumb-backups"
+  RETENTION_DAYS: 30
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Postgres client + GPG
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client gnupg
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::SUPABASE_DB_URL secret is not set — see setup instructions at the top of this file."
+            exit 1
+          fi
+          pg_dump "$DATABASE_URL" --no-owner --no-privileges -F c -f kutumb.dump
+
+      - name: Encrypt dump
+        env:
+          PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PASSPHRASE:-}" ]; then
+            echo "::error::BACKUP_GPG_PASSPHRASE secret is not set — see setup instructions at the top of this file."
+            exit 1
+          fi
+          DATE=$(date +%Y-%m-%d)
+          gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase "$PASSPHRASE" \
+            -o "kutumb_${DATE}.dump.gpg" kutumb.dump
+          rm kutumb.dump
+          echo "BACKUP_FILE=kutumb_${DATE}.dump.gpg" >> "$GITHUB_ENV"
+
+      - name: Push encrypted backup to the other-account repo
+        env:
+          GH_TOKEN: ${{ secrets.BACKUP_REPO_PAT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::BACKUP_REPO_PAT secret is not set — see setup instructions at the top of this file."
+            exit 1
+          fi
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${BACKUP_REPO_SLUG}.git" backup-repo
+          mkdir -p backup-repo/backups
+          mv "$BACKUP_FILE" "backup-repo/backups/$BACKUP_FILE"
+
+          cd backup-repo
+          git config user.email "backups@kutumbadvisory.com"
+          git config user.name "Kutumb Backup Bot"
+
+          # Prune backups older than the retention window before committing,
+          # so the repo doesn't grow forever.
+          find backups -name "*.dump.gpg" -mtime "+${RETENTION_DAYS}" -delete
+
+          git add backups/
+          git commit -m "Backup ${BACKUP_FILE}" || echo "Nothing to commit"
+          git push

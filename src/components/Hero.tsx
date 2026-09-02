@@ -1,119 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import Button from "./Button";
-import { KundaliEmblem, FamiliesIcon, AssetsIcon, YearsIcon } from "./icons";
-
-function KundaliIllustration() {
-  return (
-    <div className="relative flex items-center justify-center w-full h-full min-h-[420px] lg:min-h-[520px]">
-      <div className="absolute inset-0 bg-gradient-to-br from-navy/[0.02] via-transparent to-gold/[0.02] rounded-3xl" />
-
-      <div className="relative flex items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-          className="absolute w-72 h-72 sm:w-80 sm:h-80 rounded-full border border-navy/8"
-        />
-
-        <motion.div
-          animate={{ rotate: -360 }}
-          transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
-          className="absolute w-60 h-60 sm:w-72 sm:h-72 rounded-full border border-dashed border-gold/15"
-        />
-
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
-          className="absolute w-48 h-48 sm:w-56 sm:h-56 rounded-full border border-navy/6"
-        />
-
-        <motion.div
-          animate={{ rotate: -360 }}
-          transition={{ duration: 100, repeat: Infinity, ease: "linear" }}
-          className="absolute w-36 h-36 sm:w-44 sm:h-44 rounded-full border border-dashed border-gold/10"
-        />
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 flex items-center justify-center"
-        >
-          <div className="relative">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-navy to-navy-light flex items-center justify-center shadow-2xl shadow-navy/20">
-              <KundaliEmblem size={44} className="text-white" />
-            </div>
-            <motion.div
-              animate={{ opacity: [0.3, 0.6, 0.3] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -inset-4 rounded-full bg-gold/10 blur-2xl -z-10"
-            />
-          </div>
-        </motion.div>
-
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
-          className="absolute"
-        >
-          {[0, 60, 120, 180, 240, 300].map((angle) => (
-            <div
-              key={angle}
-              className="absolute w-2 h-2 rounded-full bg-gold/20"
-              style={{
-                transform: `rotate(${angle}deg) translateX(130px)`,
-              }}
-            />
-          ))}
-        </motion.div>
-
-        <motion.div
-          animate={{ rotate: -360 }}
-          transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
-          className="absolute"
-        >
-          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-            <div
-              key={angle}
-              className="absolute w-1.5 h-1.5 rounded-full bg-navy/10"
-              style={{
-                transform: `rotate(${angle}deg) translateX(100px)`,
-              }}
-            />
-          ))}
-        </motion.div>
-
-        <svg
-          className="absolute w-80 h-80 sm:w-96 sm:h-96"
-          viewBox="0 0 400 400"
-          fill="none"
-        >
-          <motion.path
-            d="M 80 200 A 120 120 0 0 1 320 200"
-            stroke="#A8791F"
-            strokeWidth="0.5"
-            strokeOpacity="0.15"
-            fill="none"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          />
-          <motion.path
-            d="M 50 200 A 150 150 0 0 0 350 200"
-            stroke="#201B62"
-            strokeWidth="0.5"
-            strokeOpacity="0.1"
-            fill="none"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2, delay: 1, ease: [0.22, 1, 0.36, 1] }}
-          />
-        </svg>
-      </div>
-    </div>
-  );
-}
+import { FamiliesIcon, AssetsIcon, YearsIcon } from "./icons";
 
 const stats = [
   { value: "400+", label: "Families Guided", icon: FamiliesIcon },
@@ -210,12 +100,17 @@ export default function Hero() {
             initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-3xl bg-ivory/80 shadow-xl shadow-navy/5"
+            className="relative flex items-center justify-center self-start lg:mt-16 lg:justify-end"
           >
-            <KundaliIllustration />
-
-            <div className="absolute -bottom-12 -right-12 h-64 w-64 rounded-full bg-gold/5 blur-3xl" />
-            <div className="absolute -top-12 -left-12 h-64 w-64 rounded-full bg-navy/[0.02] blur-3xl" />
+            <Image
+              src="/images/hero-family-tree.png"
+              alt="A family of three generations standing together beneath a tree"
+              width={840}
+              height={645}
+              priority
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="h-auto w-full max-w-[670px]"
+            />
           </motion.div>
         </div>
       </div>

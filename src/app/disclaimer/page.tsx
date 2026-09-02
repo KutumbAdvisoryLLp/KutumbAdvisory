@@ -1,17 +1,25 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Disclaimer — Kutumb Advisory",
+  title: "Disclaimer",
   description:
-    "Important information about the nature of the content on the Kutumb Advisory website.",
+    "Important information about the nature of the content on the Kutumb Advisory website and the My Kundali platform.",
+  alternates: { canonical: "/disclaimer" },
 };
 
 const sections = [
   {
     heading: "Informational Purposes Only",
     body: [
-      "All content on this website — including descriptions of the Financial Kundali, the Financial Toolkit, articles in the Family Wealth Journal, and any figures or examples shown — is provided for general informational purposes only.",
-      "Nothing on this site should be interpreted as personalised financial, investment, tax, legal, or estate planning advice for your specific circumstances.",
+      "All content on this website and within My Kundali — including descriptions of the Financial Kundali, the Financial Toolkit, articles in the Family Wealth Journal, and any figures or examples shown — is provided for general informational purposes only.",
+      "Nothing on this site or within My Kundali should be interpreted as personalised financial, investment, tax, legal, or estate planning advice for your specific circumstances.",
+    ],
+  },
+  {
+    heading: "About Your Financial Kundali Score",
+    body: [
+      "Your Financial Kundali score, 9-Graha breakdown, and recommendations are generated algorithmically from the information and figures you enter during the assessment. We do not independently verify these inputs.",
+      "This is a self-assessment and educational tool, not a licensed financial audit, credit assessment, or certified advisory report, and should not be treated as one.",
     ],
   },
   {
@@ -48,7 +56,7 @@ export default function DisclaimerPage() {
             Disclaimer
           </h1>
           <p className="mt-6 text-base text-stone/60">
-            Effective 30 July 2026
+            Effective 2 September 2026
           </p>
         </div>
       </section>

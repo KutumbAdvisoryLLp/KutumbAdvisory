@@ -143,3 +143,14 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Any focused input/select/textarea under 16px triggers iOS Safari's
+   automatic page zoom — jarring on a real phone. Deliberately left
+   unlayered (outside @layer) so it overrides Tailwind utility classes like
+   text-sm regardless of source order, without needing !important. Scoped
+   to mobile widths only so desktop/tablet form density is untouched. */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+}

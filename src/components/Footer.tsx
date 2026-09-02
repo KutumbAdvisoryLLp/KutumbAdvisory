@@ -15,6 +15,7 @@ const navigateLinks = [
 const legalLinks = [
   { label: "Privacy Policy", href: "/privacy-policy" },
   { label: "Terms of Service", href: "/terms-of-service" },
+  { label: "Refund & Cancellation", href: "/refund-policy" },
   { label: "Disclaimer", href: "/disclaimer" },
 ];
 

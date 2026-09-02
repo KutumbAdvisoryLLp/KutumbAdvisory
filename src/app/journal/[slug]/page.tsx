@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { SITE_URL, SITE_NAME } from "@/lib/site";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", {
@@ -8,6 +10,45 @@ function formatDate(iso: string) {
     month: "short",
     year: "numeric",
   });
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: article } = await supabase
+    .from("articles")
+    .select("title, excerpt, cover_image, author, article_date, category")
+    .eq("slug", slug)
+    .eq("published", true)
+    .maybeSingle();
+
+  if (!article) return { title: "Article Not Found" };
+
+  return {
+    title: article.title,
+    description: article.excerpt,
+    alternates: { canonical: `/journal/${slug}` },
+    openGraph: {
+      title: article.title,
+      description: article.excerpt,
+      url: `/journal/${slug}`,
+      type: "article",
+      publishedTime: article.article_date,
+      authors: [article.author],
+      section: article.category,
+      images: article.cover_image ? [{ url: article.cover_image }] : undefined,
+    },
+    twitter: {
+      card: article.cover_image ? "summary_large_image" : "summary",
+      title: article.title,
+      description: article.excerpt,
+      images: article.cover_image ? [article.cover_image] : undefined,
+    },
+  };
 }
 
 export default async function ArticlePage({
@@ -28,8 +69,25 @@ export default async function ArticlePage({
 
   const paragraphs: string[] = (article.content as string).split(/\n\s*\n/).filter((p: string) => p.trim());
 
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.excerpt,
+    image: article.cover_image ? [article.cover_image] : undefined,
+    datePublished: article.article_date,
+    dateModified: article.updated_at,
+    author: { "@type": "Person", name: article.author },
+    publisher: { "@type": "Organization", name: SITE_NAME },
+    mainEntityOfPage: `${SITE_URL}/journal/${slug}`,
+  };
+
   return (
     <article className="bg-white py-28 sm:py-36">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <div className="mx-auto max-w-3xl px-8 lg:px-10">
         <Link
           href="/journal"

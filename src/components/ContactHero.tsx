@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import Button from "./Button";
 
@@ -53,46 +54,15 @@ export default function ContactHero() {
             transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="relative"
           >
-            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-gradient-to-br from-navy/[0.04] via-ivory to-gold/[0.05] shadow-[0_0_0_1px_rgba(168,121,31,0.1),0_8px_32px_rgba(32,27,98,0.06)]">
-              {/* Decorative gold mandala rings */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-56 sm:size-72 rounded-full border border-gold/[0.12]" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-40 sm:size-52 rounded-full border border-gold/10" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-24 sm:size-32 rounded-full border border-gold/[0.15]" />
-
-              {/* Geometric architectural lines */}
-              <div className="absolute top-[35%] left-[20%] w-20 h-px bg-gold/15" />
-              <div className="absolute top-[35%] left-[20%] w-px h-20 bg-gold/12" />
-              <div className="absolute bottom-[30%] right-[18%] w-16 h-px bg-gold/12" />
-              <div className="absolute bottom-[30%] right-[18%] w-px h-16 bg-gold/10" />
-
-              {/* Abstract dots */}
-              <div className="absolute top-[25%] right-[28%] size-2.5 rounded-full bg-navy/10" />
-              <div className="absolute top-[55%] left-[22%] size-1.5 rounded-full bg-gold/25" />
-              <div className="absolute bottom-[32%] right-[35%] size-2 rounded-full bg-navy/8" />
-
-              {/* Family silhouette */}
-              <div className="absolute bottom-[20%] left-[40%] flex items-end gap-3">
-                <div className="w-4 h-10 rounded-t-full bg-navy/6" />
-                <div className="w-5 h-14 rounded-t-full bg-navy/8" />
-                <div className="w-4 h-9 rounded-t-full bg-navy/5" />
-              </div>
-
-              {/* Bottom editorial label */}
-              <div className="absolute bottom-5 left-6 right-6 flex justify-between items-end">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-wider uppercase text-navy/30">
-                    Kutumb Advisory
-                  </p>
-                  <p className="text-[9px] tracking-wide text-navy/20 mt-0.5">
-                    Family Wealth Architecture
-                  </p>
-                </div>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A8791F" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="opacity-30">
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="12" r="6" />
-                  <circle cx="12" cy="12" r="2" />
-                </svg>
-              </div>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl shadow-[0_0_0_1px_rgba(168,121,31,0.1),0_8px_32px_rgba(32,27,98,0.06)]">
+              <Image
+                src="/images/3.png"
+                alt="A golden winding path leading toward a glowing horizon, flanked by icons representing wealth, protection, and growth"
+                fill
+                priority
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-cover"
+              />
             </div>
 
             {/* Floating stat card */}

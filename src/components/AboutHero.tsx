@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import Button from "./Button";
 
@@ -62,35 +63,17 @@ export default function AboutHero() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-white shadow-lg lg:aspect-[3/4]"
+            className="relative flex items-center justify-center self-stretch"
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center px-8">
-                <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-navy/5">
-                  <svg
-                    width="40"
-                    height="40"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#201B62"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                  </svg>
-                </div>
-                <p className="font-serif text-xl text-navy/40">
-                  Three Generations
-                </p>
-                <p className="mt-2 text-sm text-stone/40">Visual</p>
-              </div>
-            </div>
-
-            <div className="absolute -bottom-12 -right-12 h-64 w-64 rounded-full bg-gold/5 blur-3xl" />
-            <div className="absolute -top-12 -left-12 h-64 w-64 rounded-full bg-navy/[0.02] blur-3xl" />
+            <Image
+              src="/images/about-dna-helix.png"
+              alt="A golden and navy double-helix graphic surrounded by icons representing pillars of family wealth"
+              width={584}
+              height={1459}
+              priority
+              sizes="(min-width: 1024px) 40vw, 80vw"
+              className="h-auto max-h-full w-auto max-w-[260px] lg:max-w-none lg:h-full lg:w-auto"
+            />
           </motion.div>
         </div>
       </div>
